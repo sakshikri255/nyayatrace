@@ -4,7 +4,6 @@ import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
 import { ParoleTimelineCard } from '@/components/bail/ParoleTimelineCard'
 import { cn } from '@/lib/utils'
-import { PageTransition } from '@/components/layout/PageTransition'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +25,6 @@ export default function BailBriefsPage() {
   const allCases = getAllCases()
 
   return (
-    <PageTransition>
     <div className="px-6 py-6 max-w-7xl mx-auto flex flex-col gap-5">
       {/* Page header */}
       <div>
@@ -46,7 +44,7 @@ export default function BailBriefsPage() {
           <Link href="/cases?new=1" className="mt-4 rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white">Create a case</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-grid">
           {allCases.map((c) => {
             const typeCfg = caseTypeConfig[c.caseType] ?? { label: 'Not specified', highlight: false, className: 'bg-slate-50 text-slate-600 border-slate-200' }
             const statusCfg = statusConfig[c.status] ?? { label: 'Not specified', className: 'bg-slate-100 text-slate-600' }
@@ -55,6 +53,7 @@ export default function BailBriefsPage() {
               <div
                 key={c.id}
                 className={cn(
+                  'animate-fade-up',
                       'bg-white rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
                       c.caseType === 'parole' ? 'border-violet-200' :
                       c.caseType === 'bail'   ? 'border-teal-200'   : 'border-slate-200'
@@ -113,6 +112,5 @@ export default function BailBriefsPage() {
         </div>
       )}
     </div>
-    </PageTransition>
   )
 }

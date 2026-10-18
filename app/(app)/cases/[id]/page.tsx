@@ -12,8 +12,6 @@ import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBad
 import { CaseDetailTabs } from '@/components/cases/CaseDetailTabs'
 import { EditCaseDialog } from '@/components/cases/EditCaseDialog'
 import { DeleteCaseDialog } from '@/components/cases/DeleteCaseDialog'
-import { PageTransition } from '@/components/layout/PageTransition'
-
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
@@ -43,7 +41,6 @@ export default function CaseDetailPage({ params }: PageProps) {
     .all()
 
   return (
-    <PageTransition>
     <div className="max-w-7xl mx-auto px-6 py-6">
       {/* Back nav */}
       <Link
@@ -140,6 +137,5 @@ export default function CaseDetailPage({ params }: PageProps) {
         conditions={conditionList}
       />
     </div>
-    </PageTransition>
   )
 }

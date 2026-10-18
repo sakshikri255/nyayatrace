@@ -35,14 +35,20 @@ export function loginUser(email: string, password: string): UserRecord | null {
     (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
   )
   if (!found) return null
-  const { password: _pw, ...session } = found
+  const session: UserRecord = {
+    id: found.id,
+    name: found.name,
+    email: found.email,
+    role: found.role,
+  }
   if (typeof window !== 'undefined') {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   }
   return session
 }
 
-export function signUpUser(name: string, email: string, _password: string): UserRecord {
+export function signUpUser(name: string, email: string, _password?: string): UserRecord {
+  void _password
   const session: UserRecord = {
     id: Date.now().toString(),
     name,

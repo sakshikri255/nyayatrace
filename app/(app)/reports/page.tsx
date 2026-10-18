@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { FileText } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { cn } from '@/lib/utils'
-import { PageTransition } from '@/components/layout/PageTransition'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +25,6 @@ export default function ReportsPage() {
   const cases = getAllCases()
 
   return (
-    <PageTransition>
     <div className="min-h-full bg-offwhite">
       <div className="px-6 py-6 max-w-7xl mx-auto space-y-6">
         {/* Page header */}
@@ -44,7 +42,7 @@ export default function ReportsPage() {
             <p className="text-sm font-medium text-slate-700">No cases available for reports.</p>
             <Link href="/cases?new=1" className="mt-3 inline-block text-sm font-medium text-teal-700 underline">Create a case</Link>
           </div>
-        ) : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ) : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-grid">
           {cases.map((c) => {
             const statusCfg = statusConfig[c.status] ?? statusConfig.unspecified
             const typeCfg = caseTypeConfig[c.caseType] ?? caseTypeConfig.unspecified
@@ -52,7 +50,7 @@ export default function ReportsPage() {
             return (
               <div
                 key={c.id}
-                className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
+                className="animate-fade-up bg-white rounded-lg border border-slate-200 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
               >
                 {/* Case number + badges */}
                 <div className="flex flex-wrap items-center gap-2">
@@ -102,6 +100,5 @@ export default function ReportsPage() {
         )}
       </div>
     </div>
-    </PageTransition>
   )
 }

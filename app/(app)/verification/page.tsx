@@ -3,7 +3,6 @@ import { ArrowRightIcon, FileSearchIcon, AlertTriangleIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
 import { CaseStatusBadge } from '@/components/cases/CaseStatusBadge'
-import { PageTransition } from '@/components/layout/PageTransition'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +18,6 @@ export default function VerificationIndexPage() {
   const cases = getAllCases()
 
   return (
-    <PageTransition>
     <div className="flex flex-col h-full">
       <div className="max-w-6xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
         {/* Heading */}
@@ -46,7 +44,7 @@ export default function VerificationIndexPage() {
             <Link href="/cases?new=1" className="mt-4 text-sm font-medium text-teal-700 underline">Create a case</Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-grid">
             {cases.map((c) => {
               const { total, needsReview, verified } = FindingBreakdown({ caseId: c.id })
               return (
@@ -66,7 +64,6 @@ export default function VerificationIndexPage() {
         )}
       </div>
     </div>
-    </PageTransition>
   )
 }
 
@@ -90,7 +87,7 @@ function CaseCard({
   verified,
 }: CaseCardProps) {
   return (
-    <div className="group bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 hover:border-teal/50 hover:shadow-sm transition-all">
+    <div className="animate-fade-up group bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 hover:border-teal/50 hover:shadow-sm transition-all">
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-1 min-w-0">

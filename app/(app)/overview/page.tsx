@@ -7,8 +7,6 @@ import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { ActivityLineChart } from '@/components/dashboard/ActivityLineChart'
 import { RecentCasesTable } from '@/components/dashboard/RecentCasesTable'
-import { PageTransition } from '@/components/layout/PageTransition'
-
 export default function OverviewPage() {
   const stats = getDashboardStats()
   const recentCases = getRecentCases(5)
@@ -27,7 +25,6 @@ export default function OverviewPage() {
   })
 
   return (
-    <PageTransition>
     <div className="min-h-full bg-offwhite">
       <div className="px-6 py-6 space-y-6">
         {stats.totalCases === 0 ? (
@@ -166,6 +163,5 @@ export default function OverviewPage() {
         )}
       </div>
     </div>
-    </PageTransition>
   )
 }

@@ -16,10 +16,6 @@ db.pragma('journal_mode = WAL')
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function run(sql: string, params: unknown[] = []) {
-  return db.prepare(sql).run(...params)
-}
-
 function get<T>(sql: string, params: unknown[] = []): T | undefined {
   return db.prepare(sql).get(...params) as T | undefined
 }
@@ -80,7 +76,7 @@ if (!existingBail) {
   console.log(`✓ Bail case inserted  — id ${bailCaseId}`)
 
   // 2. Judicial orders
-  const order1 = db.prepare(`
+  db.prepare(`
     INSERT INTO judicial_orders (case_id, order_date, order_type, summary, issued_by, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(
@@ -91,9 +87,8 @@ if (!existingBail) {
     'Metropolitan Magistrate, 12th Court, Andheri',
     now
   )
-  const order1Id = order1.lastInsertRowid as number
 
-  const order2 = db.prepare(`
+  db.prepare(`
     INSERT INTO judicial_orders (case_id, order_date, order_type, summary, issued_by, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(
@@ -104,7 +99,6 @@ if (!existingBail) {
     'Metropolitan Magistrate, 12th Court, Andheri',
     now
   )
-  const order2Id = order2.lastInsertRowid as number
 
   const order3 = db.prepare(`
     INSERT INTO judicial_orders (case_id, order_date, order_type, summary, issued_by, created_at)
@@ -135,7 +129,7 @@ if (!existingBail) {
   )
   const cond1Id = cond1.lastInsertRowid as number
 
-  const cond2 = db.prepare(`
+  db.prepare(`
     INSERT INTO bail_conditions (case_id, condition_text, condition_type, status, order_id, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(
@@ -146,7 +140,6 @@ if (!existingBail) {
     order3Id,
     now
   )
-  const cond2Id = cond2.lastInsertRowid as number
 
   const cond3 = db.prepare(`
     INSERT INTO bail_conditions (case_id, condition_text, condition_type, status, order_id, created_at)
@@ -288,7 +281,7 @@ if (!existingParole) {
   console.log(`\n✓ Parole case inserted — id ${paroleCaseId}`)
 
   // 2. Judicial orders
-  const pOrder1 = db.prepare(`
+  db.prepare(`
     INSERT INTO judicial_orders (case_id, order_date, order_type, summary, issued_by, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(
@@ -329,7 +322,7 @@ if (!existingParole) {
   )
   const pCond1Id = pCond1.lastInsertRowid as number
 
-  const pCond2 = db.prepare(`
+  db.prepare(`
     INSERT INTO bail_conditions (case_id, condition_text, condition_type, status, order_id, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(

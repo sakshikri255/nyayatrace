@@ -3,8 +3,6 @@ import Link from 'next/link'
 import { ArrowLeftIcon } from 'lucide-react'
 import { getBailBriefData } from '@/lib/queries/cases'
 import { BailBriefView } from '@/components/bail/BailBriefView'
-import { PageTransition } from '@/components/layout/PageTransition'
-
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
@@ -19,7 +17,6 @@ export default function BailBriefDetailPage({ params }: PageProps) {
   if (!data) notFound()
 
   return (
-    <PageTransition>
     <div className="max-w-7xl mx-auto px-6 py-6">
       {/* Back navigation */}
       <Link
@@ -32,6 +29,5 @@ export default function BailBriefDetailPage({ params }: PageProps) {
 
       <BailBriefView data={data} />
     </div>
-    </PageTransition>
   )
 }

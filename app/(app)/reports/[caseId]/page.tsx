@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { CaseBriefView, type CaseBriefData } from '@/components/reports/CaseBriefView'
-import { PageTransition } from '@/components/layout/PageTransition'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,9 +21,5 @@ export default async function ReportDetailPage({ params }: Props) {
 
   const data: CaseBriefData = await res.json()
 
-  return (
-    <PageTransition>
-      <CaseBriefView data={data} />
-    </PageTransition>
-  )
+  return <CaseBriefView data={data} />
 }

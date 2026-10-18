@@ -3,7 +3,6 @@ import { CalendarIcon, ArrowRightIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { getHearingsByCaseId } from '@/lib/queries/hearings'
 import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBadge'
-import { PageTransition } from '@/components/layout/PageTransition'
 
 export const runtime = 'nodejs'
 
@@ -29,7 +28,6 @@ export default function CaseProgressPage() {
   }
 
   return (
-    <PageTransition>
     <div className="flex flex-col gap-6 p-6 max-w-6xl mx-auto w-full">
       {/* Page header */}
       <div>
@@ -47,7 +45,7 @@ export default function CaseProgressPage() {
           <Link href="/cases?new=1" className="mt-3 text-sm font-medium text-teal-700 underline">Create a case</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-grid">
           {enriched.map((c) => {
             const firstFmt = formatDate(c.firstHearing)
             const lastFmt = formatDate(c.lastHearing)
@@ -62,7 +60,7 @@ export default function CaseProgressPage() {
               <Link
                 key={c.id}
                 href={`/case-progress/${c.id}`}
-                className="group bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 hover:border-teal-400 hover:shadow-sm transition-all"
+                className="animate-fade-up group bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 hover:border-teal-400 hover:shadow-sm transition-all"
               >
                 {/* Case number + badges */}
                 <div className="flex items-center gap-2 flex-wrap">
@@ -104,6 +102,5 @@ export default function CaseProgressPage() {
       )}
 
     </div>
-    </PageTransition>
   )
 }

@@ -4,8 +4,6 @@ import { ChevronLeftIcon } from 'lucide-react'
 import { getCaseById, getBailBriefData } from '@/lib/queries/cases'
 import { getHearingsByCaseId, getCaseHearingsPerMonth } from '@/lib/queries/hearings'
 import { CaseProgressView } from '@/components/progress/CaseProgressView'
-import { PageTransition } from '@/components/layout/PageTransition'
-
 export const runtime = 'nodejs'
 
 interface CaseProgressDetailPageProps {
@@ -29,7 +27,6 @@ export default async function CaseProgressDetailPage({ params }: CaseProgressDet
   const orders = briefData?.orders ?? []
 
   return (
-    <PageTransition>
     <div className="p-6 max-w-6xl mx-auto w-full">
       {/* Breadcrumb */}
       <div className="mb-5">
@@ -49,6 +46,5 @@ export default async function CaseProgressDetailPage({ params }: CaseProgressDet
         orders={orders}
       />
     </div>
-    </PageTransition>
   )
 }
