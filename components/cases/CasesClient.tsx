@@ -221,7 +221,13 @@ export function CasesClient({
       {/* Table */}
       {filtered.length > 0 ? (
         <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-          <CasesTable cases={filtered} />
+          <CasesTable
+            cases={filtered}
+            onDeleteCase={(id) => {
+              setCases((prev) => prev.filter((c) => c.id !== id))
+              setSearchMatches((prev) => (prev ? prev.filter((c) => c.id !== id) : null))
+            }}
+          />
         </div>
       ) : cases.length === 0 ? (
         <div className="flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">

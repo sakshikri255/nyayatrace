@@ -5,14 +5,16 @@ import Link from 'next/link'
 import { FileTextIcon, AlertTriangleIcon, EyeIcon, FolderOpenIcon } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { CaseStatusBadge, CaseTypeBadge } from './CaseStatusBadge'
+import { DeleteCaseDialog } from './DeleteCaseDialog'
 import type { CaseWithCounts } from '@/lib/queries/cases'
 import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 
 interface CasesTableProps {
   cases: CaseWithCounts[]
+  onDeleteCase?: (id: number) => void
 }
 
-export function CasesTable({ cases }: CasesTableProps) {
+export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
   if (cases.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -151,13 +153,22 @@ export function CasesTable({ cases }: CasesTableProps) {
 
               {/* Actions */}
               <td className="py-3 px-4">
-                <Link
-                  href={`/cases/${c.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-teal hover:text-teal-light transition-colors px-2 py-1 rounded border border-teal/30 hover:border-teal/60 hover:bg-teal/5"
-                >
-                  <EyeIcon className="w-3.5 h-3.5" />
-                  View
-                </Link>
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href={`/cases/${c.id}`}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-teal hover:text-teal-light transition-colors px-2 py-1 rounded border border-teal/30 hover:border-teal/60 hover:bg-teal/5"
+                  >
+                    <EyeIcon className="w-3.5 h-3.5" />
+                    View
+                  </Link>
+                  <DeleteCaseDialog
+                    caseId={c.id}
+                    caseNumber={c.caseNumber}
+                    caseTitle={c.title}
+                    variant="icon"
+                    onDeleted={() => onDeleteCase?.(c.id)}
+                  />
+                </div>
               </td>
             </motion.tr>
           ))}

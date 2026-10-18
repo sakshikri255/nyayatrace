@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCaseById } from '@/lib/queries/cases'
+import { getCaseById, deleteCase } from '@/lib/queries/cases'
 import { getDocumentsByCaseId } from '@/lib/queries/documents'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
 import { getHearingsByCaseId } from '@/lib/queries/hearings'
@@ -126,6 +126,28 @@ export async function PATCH(
     return NextResponse.json(updated)
   } catch (error) {
     console.error('[PATCH /api/cases/[id]]', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = parseInt(params.id, 10)
+    if (isNaN(id)) {
+      return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
+    }
+
+    const success = deleteCase(id)
+    if (!success) {
+      return NextResponse.json({ error: 'Case not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Case deleted successfully' })
+  } catch (error) {
+    console.error('[DELETE /api/cases/[id]]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

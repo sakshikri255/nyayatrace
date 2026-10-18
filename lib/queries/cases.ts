@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import { db } from '@/lib/db'
 import { cases, documents, findings, judicialOrders, bailConditions, hearings } from '@/lib/db/schema'
 import { eq, and, count, desc, sql } from 'drizzle-orm'
@@ -293,4 +295,40 @@ export function getCaseStats(): CaseStats {
     if (row.status === 'stayed') result.stayed = row.cnt
   }
   return result
+}
+
+export function deleteCase(id: number): boolean {
+  const existingCase = db.select().from(cases).where(eq(cases.id, id)).get()
+  if (!existingCase) return false
+
+  // Remove files for this case
+  const caseUploadsDir = path.join(process.cwd(), 'uploads', String(id))
+  if (fs.existsSync(caseUploadsDir)) {
+    try {
+      fs.rmSync(caseUploadsDir, { recursive: true, force: true })
+    } catch (err) {
+      console.error('[deleteCase] Failed to remove uploads directory:', err)
+    }
+  }
+
+  // Also clean up any document files that may have custom filePaths
+  const caseDocs = db.select().from(documents).where(eq(documents.caseId, id)).all()
+  for (const doc of caseDocs) {
+    if (doc.filePath) {
+      const fullPath = path.isAbsolute(doc.filePath)
+        ? doc.filePath
+        : path.join(process.cwd(), doc.filePath)
+      if (fs.existsSync(fullPath)) {
+        try {
+          fs.unlinkSync(fullPath)
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+  // Delete case from DB (cascading foreign keys will delete related records)
+  db.delete(cases).where(eq(cases.id, id)).run()
+  return true
 }

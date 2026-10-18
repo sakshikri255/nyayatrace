@@ -6,6 +6,7 @@ import { UploadCloudIcon, FileTextIcon, ImageIcon, FileIcon, RefreshCwIcon } fro
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 import type { DocumentRow } from '@/lib/queries/documents'
+import { DeleteDocumentDialog } from '@/components/cases/DeleteDocumentDialog'
 import { cn } from 'cn'
 
 interface DocumentsTabProps {
@@ -228,6 +229,7 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
                 <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 text-center">Pages</th>
                 <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-28">Status</th>
                 <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-32">Uploaded</th>
+                <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -268,6 +270,15 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
                           ? formatDistanceToNow(new Date(doc.uploadDate), { addSuffix: true })
                           : '—'}
                       </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right">
+                      <DeleteDocumentDialog
+                        documentId={doc.id}
+                        documentName={doc.originalName}
+                        onDeleted={() => {
+                          setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
+                        }}
+                      />
                     </td>
                   </tr>
                 )

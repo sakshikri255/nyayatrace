@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm'
 import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBadge'
 import { CaseDetailTabs } from '@/components/cases/CaseDetailTabs'
 import { EditCaseDialog } from '@/components/cases/EditCaseDialog'
+import { DeleteCaseDialog } from '@/components/cases/DeleteCaseDialog'
 import { PageTransition } from '@/components/layout/PageTransition'
 
 export const dynamic = 'force-dynamic'
@@ -100,7 +101,15 @@ export default function CaseDetailPage({ params }: PageProps) {
           </div>
           {/* Quick stats strip */}
           <div className="flex flex-wrap items-center justify-end gap-4 shrink-0">
-            <EditCaseDialog caseData={caseData} />
+            <div className="flex items-center gap-2">
+              <EditCaseDialog caseData={caseData} />
+              <DeleteCaseDialog
+                caseId={caseData.id}
+                caseNumber={caseData.caseNumber}
+                caseTitle={caseData.title}
+                redirectAfterDelete
+              />
+            </div>
             <div className="flex gap-4 text-center">
             <div className="flex flex-col">
               <span className="text-2xl font-bold text-slate-800">{documents.length}</span>

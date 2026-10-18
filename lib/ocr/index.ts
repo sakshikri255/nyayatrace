@@ -25,6 +25,41 @@ export function detectScriptFromText(text: string): string {
   return 'eng'
 }
 
+async function createSafeTesseractWorker(lang: string): Promise<Tesseract.Worker | null> {
+  const workerPath = path.join(
+    process.cwd(),
+    'node_modules',
+    'tesseract.js',
+    'src',
+    'worker-script',
+    'node',
+    'index.js'
+  )
+
+  const initWorker = async (targetLang: string) => {
+    const workerPromise = Tesseract.createWorker(targetLang, 1, { workerPath })
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Tesseract worker timeout for ${targetLang}`)), 20000)
+    )
+    return await Promise.race([workerPromise, timeoutPromise])
+  }
+
+  try {
+    return await initWorker(lang)
+  } catch (error) {
+    console.warn(`[OCR] Failed to initialize worker for "${lang}", falling back to "eng":`, error)
+    if (lang !== 'eng') {
+      try {
+        return await initWorker('eng')
+      } catch (fallbackError) {
+        console.error('[OCR] Failed to initialize fallback worker:', fallbackError)
+        return null
+      }
+    }
+    return null
+  }
+}
+
 export async function processDocument(filePath: string, language: string = 'eng'): Promise<PageResult[]> {
   const extension = path.extname(filePath).toLowerCase()
   const ocrLang = language && language !== 'auto' ? language : 'eng'
@@ -53,52 +88,84 @@ export async function processDocument(filePath: string, language: string = 'eng'
         let detected = detectScriptFromText(text)
         let quality: PageResult['quality'] = text ? 'good' : 'unreadable'
 
+        // Scanned page without digital text - run OCR
         if (!text) {
-          if (!ocrWorker) {
-            try {
-              ocrWorker = await Tesseract.createWorker(ocrLang)
-            } catch {
-              ocrWorker = await Tesseract.createWorker('eng')
+          try {
+            if (!ocrWorker) {
+              ocrWorker = await createSafeTesseractWorker(ocrLang)
             }
+
+            if (ocrWorker) {
+              const viewport = page.getViewport({ scale: 1.5 })
+              const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height))
+              const context = canvas.getContext('2d')
+
+              await page.render({
+                canvasContext: context as unknown as CanvasRenderingContext2D,
+                viewport,
+              }).promise
+
+              const imageBuffer = canvas.toBuffer('image/png')
+              const ocrPromise = ocrWorker.recognize(imageBuffer)
+              const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Page OCR timeout')), 30000)
+              )
+
+              const result = await Promise.race([ocrPromise, timeoutPromise])
+              text = result.data.text.trim()
+              detected = detectScriptFromText(text)
+              quality = text ? (result.data.confidence < 45 ? 'poor' : 'good') : 'unreadable'
+            }
+          } catch (ocrError) {
+            console.error(`[OCR] Error recognizing page ${pageNumber}:`, ocrError)
+            quality = 'unreadable'
           }
-          const viewport = page.getViewport({ scale: 2 })
-          const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height))
-          const context = canvas.getContext('2d')
-          await page.render({
-            canvasContext: context as unknown as CanvasRenderingContext2D,
-            viewport,
-          }).promise
-          const result = await ocrWorker.recognize(canvas.toBuffer('image/png'))
-          text = result.data.text.trim()
-          detected = detectScriptFromText(text)
-          quality = text ? (result.data.confidence < 45 ? 'poor' : 'good') : 'unreadable'
         }
 
         pages.push({ pageNumber, text, quality, detectedLanguage: detected })
         page.cleanup()
       }
     } finally {
-      if (ocrWorker) await ocrWorker.terminate()
-      await document.destroy()
+      if (ocrWorker) {
+        try {
+          await ocrWorker.terminate()
+        } catch {
+          // ignore termination errors
+        }
+      }
+      try {
+        await document.destroy()
+      } catch {
+        // ignore destroy errors
+      }
     }
     return pages
   }
 
   if (['.jpg', '.jpeg', '.png'].includes(extension)) {
-    let worker: Tesseract.Worker
+    let worker: Tesseract.Worker | null = null
     try {
-      worker = await Tesseract.createWorker(ocrLang)
-    } catch {
-      worker = await Tesseract.createWorker('eng')
-    }
-    try {
-      const result = await worker.recognize(filePath)
+      worker = await createSafeTesseractWorker(ocrLang)
+      if (!worker) {
+        return [{ pageNumber: 1, text: '', quality: 'unreadable', detectedLanguage: 'eng' }]
+      }
+      const ocrPromise = worker.recognize(filePath)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Image OCR timeout')), 45000)
+      )
+      const result = await Promise.race([ocrPromise, timeoutPromise])
       const text = result.data.text.trim()
       const detected = detectScriptFromText(text)
       const quality = text ? (result.data.confidence < 45 ? 'poor' : 'good') : 'unreadable'
       return [{ pageNumber: 1, text, quality, detectedLanguage: detected }]
     } finally {
-      await worker.terminate()
+      if (worker) {
+        try {
+          await worker.terminate()
+        } catch {
+          // ignore
+        }
+      }
     }
   }
 

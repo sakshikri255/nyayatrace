@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { db } from '@/lib/db'
-import { documents, pages } from '@/lib/db/schema'
+import { cases, documents, pages } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
 // Ensure uploads directory exists
@@ -59,4 +59,32 @@ export function getDocumentWithPages(id: number): DocumentWithPages | null {
     ...(doc as DocumentRow),
     pages: docPages as DocumentWithPages['pages'],
   }
+}
+
+export function deleteDocument(id: number): boolean {
+  const doc = db.select().from(documents).where(eq(documents.id, id)).get()
+  if (!doc) return false
+
+  if (doc.filePath) {
+    const fullPath = path.isAbsolute(doc.filePath)
+      ? doc.filePath
+      : path.join(process.cwd(), doc.filePath)
+    if (fs.existsSync(fullPath)) {
+      try {
+        fs.unlinkSync(fullPath)
+      } catch (err) {
+        console.error('[deleteDocument] Failed to unlink file:', fullPath, err)
+      }
+    }
+  }
+
+  db.delete(documents).where(eq(documents.id, id)).run()
+
+  // Update case updatedAt
+  db.update(cases)
+    .set({ updatedAt: new Date().toISOString() })
+    .where(eq(cases.id, doc.caseId))
+    .run()
+
+  return true
 }
