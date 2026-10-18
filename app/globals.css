@@ -67,6 +67,41 @@ html {
   .analysis-print, .analysis-print * { visibility: visible !important; }
   .analysis-print { position: absolute; inset: 0; width: 100%; border: 0; box-shadow: none; }
   .analysis-controls { display: none !important; }
+
+  /* ── Bail Brief print layout ─────────────────────────────── */
+  .bail-brief-print, .bail-brief-print * { visibility: visible !important; }
+  .bail-brief-print {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 20pt;
+    font-size: 11pt;
+    color: #000;
+    background: #fff;
+  }
+  .bail-brief-print .print-section {
+    page-break-before: auto;
+    margin-bottom: 24pt;
+  }
+  .bail-brief-print .print-section-break {
+    page-break-before: always;
+  }
+  .bail-brief-print .print-section-heading {
+    font-size: 13pt;
+    font-weight: 700;
+    border-bottom: 1.5pt solid #334155;
+    padding-bottom: 4pt;
+    margin-bottom: 10pt;
+    color: #0F172A;
+  }
+  .bail-brief-print table { width: 100%; border-collapse: collapse; }
+  .bail-brief-print th, .bail-brief-print td {
+    border: 0.5pt solid #94A3B8;
+    padding: 4pt 6pt;
+    font-size: 10pt;
+    text-align: left;
+  }
+  .bail-brief-print th { background: #F1F5F9; font-weight: 600; }
 }
 
 @layer utilities {

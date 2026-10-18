@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getAllCases } from '@/lib/queries/cases'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
+import { ParoleTimelineCard } from '@/components/bail/ParoleTimelineCard'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/layout/PageTransition'
 
@@ -54,9 +55,10 @@ export default function BailBriefsPage() {
               <div
                 key={c.id}
                 className={cn(
-                  'bg-white rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
-                  typeCfg.highlight ? 'border-teal-200' : 'border-slate-200'
-                )}
+                      'bg-white rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
+                      c.caseType === 'parole' ? 'border-violet-200' :
+                      c.caseType === 'bail'   ? 'border-teal-200'   : 'border-slate-200'
+                    )}
               >
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-2">
@@ -74,7 +76,10 @@ export default function BailBriefsPage() {
                 </div>
 
                 {/* Title */}
-                <h2 className={cn('text-sm font-semibold leading-snug', typeCfg.highlight ? 'text-teal-900' : 'text-slate-800')}>
+                <h2 className={cn('text-sm font-semibold leading-snug',
+                  c.caseType === 'parole' ? 'text-violet-900' :
+                  c.caseType === 'bail'   ? 'text-teal-900'   : 'text-slate-800'
+                )}>
                   {c.title}
                 </h2>
 
@@ -83,17 +88,21 @@ export default function BailBriefsPage() {
                   <span>{c.documentCount} document{c.documentCount !== 1 ? 's' : ''}</span>
                 </div>
 
-                {/* Statutory Default Bail Tracker */}
-                <StatutoryBailCard caseData={c} compact />
+                {/* Statutory Default Bail / Parole Tracker */}
+                {c.caseType === 'parole' ? (
+                  <ParoleTimelineCard caseData={c} compact />
+                ) : (
+                  <StatutoryBailCard caseData={c} compact />
+                )}
 
                 {/* View brief link */}
                 <Link
                   href={`/bail-briefs/${c.id}`}
                   className={cn(
                     'mt-auto inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors',
-                    typeCfg.highlight
-                      ? 'bg-teal-600 text-white hover:bg-teal-700'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    c.caseType === 'parole' ? 'bg-violet-600 text-white hover:bg-violet-700' :
+                    c.caseType === 'bail'   ? 'bg-teal-600 text-white hover:bg-teal-700'     :
+                                             'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   )}
                 >
                   View Brief →

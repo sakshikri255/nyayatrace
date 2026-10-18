@@ -20,6 +20,10 @@ export type CaseWithCounts = {
   statutoryPeriodDays: number | null
   chargesheetFiled: number | null
   chargesheetDate: string | null
+  applicableLaw: 'crpc' | 'bnss' | 'auto' | null
+  paroleGrantDate: string | null
+  paroleEndDate: string | null
+  paroleReportingFrequency: 'weekly' | 'fortnightly' | 'monthly' | null
   createdAt: string | null
   updatedAt: string | null
   documentCount: number
@@ -40,6 +44,10 @@ export type CaseDetail = {
   statutoryPeriodDays: number | null
   chargesheetFiled: number | null
   chargesheetDate: string | null
+  applicableLaw: 'crpc' | 'bnss' | 'auto' | null
+  paroleGrantDate: string | null
+  paroleEndDate: string | null
+  paroleReportingFrequency: 'weekly' | 'fortnightly' | 'monthly' | null
   createdAt: string | null
   updatedAt: string | null
 }
@@ -204,6 +212,19 @@ export interface BailBriefData {
   hearings: Array<typeof hearings.$inferSelect>
   findings: FindingWithSources[]
   documents: Array<typeof documents.$inferSelect>
+  nextHearing: typeof hearings.$inferSelect | null
+}
+
+export function getNextHearing(caseId: number): typeof hearings.$inferSelect | null {
+  const today = new Date().toISOString().slice(0, 10)
+  const row = db
+    .select()
+    .from(hearings)
+    .where(and(eq(hearings.caseId, caseId), sql`${hearings.hearingDate} >= ${today}`))
+    .orderBy(hearings.hearingDate)
+    .limit(1)
+    .get()
+  return row ?? null
 }
 
 export function getBailBriefData(caseId: number): BailBriefData | null {
@@ -266,6 +287,8 @@ export function getBailBriefData(caseId: number): BailBriefData | null {
     .where(eq(documents.caseId, caseId))
     .all()
 
+  const nextHearingRow = getNextHearing(caseId)
+
   return {
     case: caseRecord as typeof cases.$inferSelect,
     orders: ordersRaw as Array<typeof judicialOrders.$inferSelect & { sourceDocument?: string }>,
@@ -273,6 +296,7 @@ export function getBailBriefData(caseId: number): BailBriefData | null {
     hearings: hearingRows as Array<typeof hearings.$inferSelect>,
     findings: findingsWithSources,
     documents: documentRows as Array<typeof documents.$inferSelect>,
+    nextHearing: nextHearingRow,
   }
 }
 

@@ -4,8 +4,13 @@ import { getDocumentsByCaseId } from '@/lib/queries/documents'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
 import { getHearingsByCaseId } from '@/lib/queries/hearings'
 import { db } from '@/lib/db'
-import { cases, judicialOrders, bailConditions } from '@/lib/db/schema'
+import { cases, judicialOrders, bailConditions, auditEvents } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+
+const BAIL_AUDIT_FIELDS = [
+  'remandDate', 'statutoryPeriodDays', 'chargesheetFiled', 'chargesheetDate',
+  'applicableLaw', 'paroleGrantDate', 'paroleEndDate', 'paroleReportingFrequency',
+] as const
 
 export const runtime = 'nodejs'
 
@@ -80,6 +85,10 @@ export async function PATCH(
       'statutoryPeriodDays',
       'chargesheetFiled',
       'chargesheetDate',
+      'applicableLaw',
+      'paroleGrantDate',
+      'paroleEndDate',
+      'paroleReportingFrequency',
     ] as const
     const updates: Record<string, unknown> = {}
     for (const key of allowed) {
@@ -104,6 +113,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
+    // Capture pre-update values for bail audit fields
+    const preUpdate = getCaseById(id)
+
     let updated
     try {
       updated = db
@@ -121,6 +133,24 @@ export async function PATCH(
 
     if (!updated) {
       return NextResponse.json({ error: 'Case not found' }, { status: 404 })
+    }
+
+    // Write audit log entries for changed bail fields
+    if (preUpdate) {
+      const now = new Date().toISOString()
+      for (const field of BAIL_AUDIT_FIELDS) {
+        if (!(field in updates)) continue
+        const oldVal = preUpdate[field as keyof typeof preUpdate]
+        const newVal = updates[field]
+        if (String(oldVal ?? '') !== String(newVal ?? '')) {
+          db.insert(auditEvents).values({
+            caseId: id,
+            eventType: 'bail_field_changed',
+            description: JSON.stringify({ field, oldValue: oldVal, newValue: newVal }),
+            performedAt: now,
+          }).run()
+        }
+      }
     }
 
     return NextResponse.json(updated)

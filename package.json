@@ -10,6 +10,7 @@
     "db:migrate": "tsx lib/db/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:seed-demo": "tsx lib/db/seed-demo.ts",
     "db:remove-demo": "tsx lib/db/cleanup-demo-data.ts"
   },
   "dependencies": {

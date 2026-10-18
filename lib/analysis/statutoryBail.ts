@@ -13,8 +13,30 @@ export interface StatutoryBailCalculation {
   chargesheetFiled: boolean
   chargesheetDate: string | null
   statutorySection: string
+  effectiveLaw: 'crpc' | 'bnss'
   legalGround: string
   summary: string
+}
+
+/** BNSS effective date — 1 July 2024 */
+const BNSS_CUTOFF = '2024-07-01'
+
+function resolveEffectiveLaw(
+  applicableLaw: 'crpc' | 'bnss' | 'auto' | null | undefined,
+  remandDate: string | null | undefined,
+): 'crpc' | 'bnss' {
+  if (applicableLaw === 'crpc') return 'crpc'
+  if (applicableLaw === 'bnss') return 'bnss'
+  // auto — infer from remand date
+  if (remandDate) {
+    return remandDate >= BNSS_CUTOFF ? 'bnss' : 'crpc'
+  }
+  // fallback to showing both if no date context
+  return 'bnss'
+}
+
+function sectionLabel(law: 'crpc' | 'bnss'): string {
+  return law === 'bnss' ? 'Sec 187 BNSS' : 'Sec 167(2) CrPC'
 }
 
 export function calculateStatutoryBail(caseData: {
@@ -22,10 +44,13 @@ export function calculateStatutoryBail(caseData: {
   statutoryPeriodDays?: number | null
   chargesheetFiled?: number | null
   chargesheetDate?: string | null
+  applicableLaw?: 'crpc' | 'bnss' | 'auto' | null
 }): StatutoryBailCalculation {
   const statutoryPeriod = caseData.statutoryPeriodDays === 90 ? 90 : 60
   const chargesheetFiled = Boolean(caseData.chargesheetFiled)
   const chargesheetDate = caseData.chargesheetDate ?? null
+  const effectiveLaw = resolveEffectiveLaw(caseData.applicableLaw, caseData.remandDate)
+  const section = sectionLabel(effectiveLaw)
 
   if (!caseData.remandDate) {
     return {
@@ -40,7 +65,8 @@ export function calculateStatutoryBail(caseData: {
       statusLabel: 'Remand Date Not Set',
       chargesheetFiled,
       chargesheetDate,
-      statutorySection: 'Sec 167(2) CrPC / Sec 187 BNSS',
+      statutorySection: section,
+      effectiveLaw,
       legalGround: 'Set date of first remand to compute statutory default bail window.',
       summary: 'Remand date not recorded for this case.',
     }
@@ -60,7 +86,8 @@ export function calculateStatutoryBail(caseData: {
       statusLabel: 'Invalid Remand Date',
       chargesheetFiled,
       chargesheetDate,
-      statutorySection: 'Sec 167(2) CrPC / Sec 187 BNSS',
+      statutorySection: section,
+      effectiveLaw,
       legalGround: 'Invalid date format provided for remand.',
       summary: 'Unable to calculate statutory period due to invalid date format.',
     }
@@ -89,8 +116,9 @@ export function calculateStatutoryBail(caseData: {
         statusLabel: `Chargesheet Delayed by ${delayDays}d`,
         chargesheetFiled: true,
         chargesheetDate,
-        statutorySection: 'Sec 167(2) CrPC / Sec 187 BNSS',
-        legalGround: `The investigation agency exceeded the statutory ${statutoryPeriod}-day limit by ${delayDays} days before filing the chargesheet. Accused held an accrued right to default bail.`,
+        statutorySection: section,
+        effectiveLaw,
+        legalGround: `The investigation agency exceeded the statutory ${statutoryPeriod}-day limit by ${delayDays} days before filing the chargesheet. Accused held an accrued right to default bail under ${section}.`,
         summary: `Chargesheet was filed after ${daysTaken} days (${delayDays} days beyond statutory deadline).`,
       }
     }
@@ -107,8 +135,9 @@ export function calculateStatutoryBail(caseData: {
       statusLabel: 'Chargesheet Filed Within Period',
       chargesheetFiled: true,
       chargesheetDate,
-      statutorySection: 'Sec 167(2) CrPC / Sec 187 BNSS',
-      legalGround: `Chargesheet was submitted on ${chargesheetDate} within the prescribed ${statutoryPeriod}-day period. Regular bail grounds apply.`,
+      statutorySection: section,
+      effectiveLaw,
+      legalGround: `Chargesheet was submitted on ${chargesheetDate} within the prescribed ${statutoryPeriod}-day period under ${section}. Regular bail grounds apply.`,
       summary: `Investigation completed and chargesheet filed on time (${daysTaken} days from remand).`,
     }
   }
@@ -132,8 +161,9 @@ export function calculateStatutoryBail(caseData: {
       statusLabel: 'Default Bail Accrued!',
       chargesheetFiled: false,
       chargesheetDate: null,
-      statutorySection: 'Sec 167(2) CrPC / Sec 187 BNSS',
-      legalGround: `Indefeasible statutory right to Default Bail has accrued under Section 167(2) CrPC / Section 187 BNSS. Overdue by ${overdueDays} days without a chargesheet.`,
+      statutorySection: section,
+      effectiveLaw,
+      legalGround: `Indefeasible statutory right to Default Bail has accrued under ${section}. Overdue by ${overdueDays} days without a chargesheet.`,
       summary: `Investigation period expired (${daysElapsed}/${statutoryPeriod} days). Immediate application for default bail recommended.`,
     }
   }
@@ -151,8 +181,9 @@ export function calculateStatutoryBail(caseData: {
       statusLabel: `${daysRemaining} Days to Statutory Bail`,
       chargesheetFiled: false,
       chargesheetDate: null,
-      statutorySection: 'Sec 167(2) CrPC / Sec 187 BNSS',
-      legalGround: `Approaching mandatory 60/90-day threshold. If chargesheet is not filed within ${daysRemaining} days, default bail right accrues immediately.`,
+      statutorySection: section,
+      effectiveLaw,
+      legalGround: `Approaching mandatory ${statutoryPeriod}-day threshold under ${section}. If chargesheet is not filed within ${daysRemaining} days, default bail right accrues immediately.`,
       summary: `Custody at ${daysElapsed}/${statutoryPeriod} days. Default bail window opening in ${daysRemaining} days.`,
     }
   }
@@ -169,8 +200,9 @@ export function calculateStatutoryBail(caseData: {
     statusLabel: `${daysRemaining} Days Remaining`,
     chargesheetFiled: false,
     chargesheetDate: null,
-    statutorySection: 'Sec 167(2) CrPC / Sec 187 BNSS',
-    legalGround: `Statutory clock running under Section 167(2) CrPC / Section 187 BNSS (${daysElapsed} days in custody).`,
+    statutorySection: section,
+    effectiveLaw,
+    legalGround: `Statutory clock running under ${section} (${daysElapsed} days in custody).`,
     summary: `${daysElapsed} of ${statutoryPeriod} days elapsed. Deadline on ${deadlineStr}.`,
   }
 }

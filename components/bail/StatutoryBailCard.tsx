@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertCircle, Clock, Edit2, ShieldAlert } from 'lucide-react'
+import { AlertCircle, Clock, Edit2, ShieldAlert, InfoIcon } from 'lucide-react'
 import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ interface StatutoryBailCardProps {
     statutoryPeriodDays?: number | null
     chargesheetFiled?: number | null
     chargesheetDate?: string | null
+    applicableLaw?: 'crpc' | 'bnss' | 'auto' | null
   }
   onUpdate?: () => void
   compact?: boolean
@@ -28,6 +29,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
   const [statutoryPeriod, setStatutoryPeriod] = useState(caseData.statutoryPeriodDays ?? 60)
   const [chargesheetFiled, setChargesheetFiled] = useState(Boolean(caseData.chargesheetFiled))
   const [chargesheetDate, setChargesheetDate] = useState(caseData.chargesheetDate ?? '')
+  const [applicableLaw, setApplicableLaw] = useState<'crpc' | 'bnss' | 'auto'>(caseData.applicableLaw ?? 'auto')
   const [saving, setSaving] = useState(false)
 
   const bail = calculateStatutoryBail({
@@ -35,6 +37,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
     statutoryPeriodDays: caseData.statutoryPeriodDays,
     chargesheetFiled: caseData.chargesheetFiled,
     chargesheetDate: caseData.chargesheetDate,
+    applicableLaw: caseData.applicableLaw,
   })
 
   async function handleSave() {
@@ -44,11 +47,12 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          remandDate: remandDate || null,
-          statutoryPeriodDays: Number(statutoryPeriod),
-          chargesheetFiled: chargesheetFiled ? 1 : 0,
-          chargesheetDate: chargesheetFiled && chargesheetDate ? chargesheetDate : null,
-        }),
+            remandDate: remandDate || null,
+            statutoryPeriodDays: Number(statutoryPeriod),
+            chargesheetFiled: chargesheetFiled ? 1 : 0,
+            chargesheetDate: chargesheetFiled && chargesheetDate ? chargesheetDate : null,
+            applicableLaw,
+          }),
       })
 
       if (!res.ok) {
@@ -309,6 +313,41 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
                   <div className="text-[11px] text-slate-500">Death, life, or &ge; 10 years</div>
                 </button>
               </div>
+            </div>
+
+            {/* Applicable Law toggle */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <label className="text-xs font-semibold text-slate-700">
+                  Applicable Law
+                </label>
+                <span title="BNSS applies to cases registered on or after 1 July 2024. CrPC applies to earlier cases. 'Auto' infers from remand date.">
+                  <InfoIcon className="w-3 h-3 text-slate-400 cursor-help" />
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(['auto', 'crpc', 'bnss'] as const).map((law) => (
+                  <button
+                    key={law}
+                    type="button"
+                    onClick={() => setApplicableLaw(law)}
+                    className={cn(
+                      'rounded-md border p-2 text-center text-xs font-medium transition-colors',
+                      applicableLaw === law
+                        ? 'border-teal-600 bg-teal-50 text-teal-900'
+                        : 'border-slate-200 hover:bg-slate-50'
+                    )}
+                  >
+                    <div className="font-bold uppercase">{law === 'auto' ? 'Auto' : law.toUpperCase()}</div>
+                    <div className="text-[10px] text-slate-500">
+                      {law === 'auto' ? 'Infer from date' : law === 'bnss' ? 'Post Jul 2024' : 'Pre Jul 2024'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Auto: BNSS if remand date ≥ 1 Jul 2024, CrPC otherwise.
+              </p>
             </div>
 
             <div className="border-t border-slate-200 pt-3">

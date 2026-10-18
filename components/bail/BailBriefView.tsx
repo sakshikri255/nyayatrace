@@ -1,12 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, type Variants } from 'framer-motion'
-import { GavelIcon, FileTextIcon, CalendarIcon, AlertTriangleIcon } from 'lucide-react'
+import { GavelIcon, FileTextIcon, CalendarIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, PrinterIcon } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { ConditionsTable } from '@/components/bail/ConditionsTable'
 import { HearingsTab } from '@/components/cases/tabs/HearingsTab'
+import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
+import { ParoleTimelineCard } from '@/components/bail/ParoleTimelineCard'
+import { NextHearingWidget } from '@/components/bail/NextHearingWidget'
+import { ChangelogTab } from '@/components/bail/ChangelogTab'
+import { DraftApplicationTab } from '@/components/bail/DraftApplicationTab'
+import { RiskFlagPanel } from '@/components/bail/RiskFlagPanel'
+import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { cn } from '@/lib/utils'
 import type { BailBriefData } from '@/lib/queries/cases'
 
@@ -14,7 +21,7 @@ interface BailBriefViewProps {
   data: BailBriefData
 }
 
-type TabId = 'overview' | 'orders' | 'conditions' | 'hearings' | 'findings'
+export type TabId = 'overview' | 'orders' | 'conditions' | 'hearings' | 'findings' | 'draft' | 'changelog'
 
 const tabVariants: Variants = {
   hidden: { opacity: 0, x: -4 },
@@ -66,11 +73,34 @@ const findingTypeLabels: Record<string, string> = {
 
 export function BailBriefView({ data }: BailBriefViewProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [keyDatesCollapsed, setKeyDatesCollapsed] = useState(false)
+  const [caseSummaryCollapsed, setCaseSummaryCollapsed] = useState(false)
+  const [printMode, setPrintMode] = useState(false)
+
+  // Trigger window.print() when printMode activates, then reset
+  useEffect(() => {
+    if (!printMode) return
+    const timer = setTimeout(() => {
+      window.print()
+      const handler = () => setPrintMode(false)
+      window.addEventListener('afterprint', handler, { once: true })
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [printMode])
 
   const { case: caseRecord, orders, conditions, hearings, findings, documents } = data
 
   const caseTypeCfg = caseTypeConfig[caseRecord.caseType] ?? caseTypeConfig.criminal
   const statusCfg = statusConfig[caseRecord.status] ?? statusConfig.active
+
+  // Bail calculation (for RiskFlagPanel)
+  const bailCalc = calculateStatutoryBail({
+    remandDate: caseRecord.remandDate,
+    statutoryPeriodDays: caseRecord.statutoryPeriodDays,
+    chargesheetFiled: caseRecord.chargesheetFiled,
+    chargesheetDate: caseRecord.chargesheetDate,
+    applicableLaw: (caseRecord as { applicableLaw?: 'crpc' | 'bnss' | 'auto' | null }).applicableLaw,
+  })
 
   // Key dates
   const firstHearing = hearings.length > 0
@@ -81,23 +111,43 @@ export function BailBriefView({ data }: BailBriefViewProps) {
     : null
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn('flex flex-col gap-4', printMode && 'bail-brief-print')}>
       {/* Non-dismissable disclaimer — always at top */}
       <BailDisclaimer />
+
+      {/* Risk flags panel — only shown when flags exist */}
+      <RiskFlagPanel
+        bail={bailCalc}
+        caseType={caseRecord.caseType}
+        conditions={conditions}
+        hearings={hearings}
+        findings={findings}
+        onTabChange={setActiveTab}
+      />
 
       {/* Brief header card */}
       <div className="bg-white rounded-lg border border-slate-200 px-6 py-5">
         {/* Case number + badges row */}
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          <span className="text-xs font-mono font-semibold text-slate-500 tracking-wide">
-            {caseRecord.caseNumber}
-          </span>
-          <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium', caseTypeCfg.className)}>
-            {caseTypeCfg.label}
-          </span>
-          <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', statusCfg.className)}>
-            {statusCfg.label}
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-mono font-semibold text-slate-500 tracking-wide">
+              {caseRecord.caseNumber}
+            </span>
+            <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium', caseTypeCfg.className)}>
+              {caseTypeCfg.label}
+            </span>
+            <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', statusCfg.className)}>
+              {statusCfg.label}
+            </span>
+          </div>
+          {/* Print / Export button */}
+          <button
+            onClick={() => setPrintMode(true)}
+            className="no-print inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            <PrinterIcon className="w-3.5 h-3.5" />
+            Export Brief
+          </button>
         </div>
 
         {/* Title */}
@@ -126,7 +176,7 @@ export function BailBriefView({ data }: BailBriefViewProps) {
         onValueChange={(v) => setActiveTab(v as TabId)}
         className="w-full"
       >
-        <TabsList variant="line" className="w-full border-b border-slate-200 rounded-none pb-0 mb-4 h-auto">
+        <TabsList variant="line" className="w-full border-b border-slate-200 rounded-none pb-0 mb-4 h-auto sticky top-0 z-10 bg-white shadow-sm">
           <TabsTrigger value="overview">Case Overview</TabsTrigger>
           <TabsTrigger value="orders">
             Judicial Orders
@@ -144,6 +194,8 @@ export function BailBriefView({ data }: BailBriefViewProps) {
             Findings
             {findings.length > 0 && <span className="ml-1 text-xs text-amber-500">({findings.length})</span>}
           </TabsTrigger>
+          <TabsTrigger value="draft">Draft Application</TabsTrigger>
+          <TabsTrigger value="changelog">Changelog</TabsTrigger>
         </TabsList>
 
         <AnimatePresence mode="wait">
@@ -157,6 +209,16 @@ export function BailBriefView({ data }: BailBriefViewProps) {
             {/* ── Case Overview ── */}
             <TabsContent value="overview">
               <div className="flex flex-col gap-4">
+                {/* Statutory bail tracker or parole timeline */}
+                {caseRecord.caseType === 'parole' ? (
+                  <ParoleTimelineCard caseData={caseRecord} />
+                ) : (
+                  <StatutoryBailCard caseData={caseRecord} />
+                )}
+
+                {/* Next Hearing Widget */}
+                {data.nextHearing && <NextHearingWidget hearing={data.nextHearing} />}
+
                 <div className="bg-white rounded-lg border border-slate-200 p-5">
                   <h2 className="text-sm font-semibold text-slate-700 mb-3">Case Description</h2>
                   <p className="text-sm text-slate-600 leading-relaxed">
@@ -165,69 +227,111 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Key Dates — collapsible */}
                   <div className="bg-white rounded-lg border border-slate-200 p-5">
-                    <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Key Dates</h2>
-                    <div className="flex flex-col gap-2 text-sm">
-                      {firstHearing ? (
-                        <div className="flex items-start gap-2">
-                          <CalendarIcon className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-xs text-slate-500">First Hearing</p>
-                            <p className="font-medium text-slate-700">
-                              {new Date(firstHearing.hearingDate).toLocaleDateString('en-IN', {
-                                day: 'numeric', month: 'long', year: 'numeric',
-                              })}
-                            </p>
+                    <button
+                      className="flex items-center justify-between w-full text-left"
+                      onClick={() => setKeyDatesCollapsed((v) => !v)}
+                    >
+                      <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Key Dates</h2>
+                      {keyDatesCollapsed
+                        ? <ChevronDownIcon className="w-4 h-4 text-slate-400" />
+                        : <ChevronUpIcon className="w-4 h-4 text-slate-400" />}
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {!keyDatesCollapsed && (
+                        <motion.div
+                          key="key-dates"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto', transition: { duration: 0.2 } }}
+                          exit={{ opacity: 0, height: 0, transition: { duration: 0.15 } }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex flex-col gap-2 text-sm mt-3">
+                            {firstHearing ? (
+                              <div className="flex items-start gap-2">
+                                <CalendarIcon className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-xs text-slate-500">First Hearing</p>
+                                  <p className="font-medium text-slate-700">
+                                    {new Date(firstHearing.hearingDate).toLocaleDateString('en-IN', {
+                                      day: 'numeric', month: 'long', year: 'numeric',
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : null}
+                            {latestOrder ? (
+                              <div className="flex items-start gap-2">
+                                <GavelIcon className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-xs text-slate-500">Latest Order</p>
+                                  <p className="font-medium text-slate-700">
+                                    {new Date(latestOrder.orderDate).toLocaleDateString('en-IN', {
+                                      day: 'numeric', month: 'long', year: 'numeric',
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : null}
+                            {!firstHearing && !latestOrder && (
+                              <p className="text-slate-400 text-sm">No key dates available.</p>
+                            )}
                           </div>
-                        </div>
-                      ) : null}
-                      {latestOrder ? (
-                        <div className="flex items-start gap-2">
-                          <GavelIcon className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-xs text-slate-500">Latest Order</p>
-                            <p className="font-medium text-slate-700">
-                              {new Date(latestOrder.orderDate).toLocaleDateString('en-IN', {
-                                day: 'numeric', month: 'long', year: 'numeric',
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      ) : null}
-                      {!firstHearing && !latestOrder && (
-                        <p className="text-slate-400 text-sm">No key dates available.</p>
+                        </motion.div>
                       )}
-                    </div>
+                    </AnimatePresence>
                   </div>
 
+                  {/* Case Summary — collapsible */}
                   <div className="bg-white rounded-lg border border-slate-200 p-5">
-                    <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Case Summary</h2>
-                    <div className="flex flex-col gap-1.5 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Type</span>
-                        <span className="font-medium text-slate-700">{caseTypeCfg.label}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Status</span>
-                        <span className="font-medium text-slate-700">{statusCfg.label}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Documents</span>
-                        <span className="font-medium text-slate-700">{documents.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Hearings</span>
-                        <span className="font-medium text-slate-700">{hearings.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Orders</span>
-                        <span className="font-medium text-slate-700">{orders.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Conditions</span>
-                        <span className="font-medium text-slate-700">{conditions.length}</span>
-                      </div>
-                    </div>
+                    <button
+                      className="flex items-center justify-between w-full text-left"
+                      onClick={() => setCaseSummaryCollapsed((v) => !v)}
+                    >
+                      <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Case Summary</h2>
+                      {caseSummaryCollapsed
+                        ? <ChevronDownIcon className="w-4 h-4 text-slate-400" />
+                        : <ChevronUpIcon className="w-4 h-4 text-slate-400" />}
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {!caseSummaryCollapsed && (
+                        <motion.div
+                          key="case-summary"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto', transition: { duration: 0.2 } }}
+                          exit={{ opacity: 0, height: 0, transition: { duration: 0.15 } }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex flex-col gap-1.5 text-sm mt-3">
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Type</span>
+                              <span className="font-medium text-slate-700">{caseTypeCfg.label}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Status</span>
+                              <span className="font-medium text-slate-700">{statusCfg.label}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Documents</span>
+                              <span className="font-medium text-slate-700">{documents.length}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Hearings</span>
+                              <span className="font-medium text-slate-700">{hearings.length}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Orders</span>
+                              <span className="font-medium text-slate-700">{orders.length}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Conditions</span>
+                              <span className="font-medium text-slate-700">{conditions.length}</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 
@@ -240,6 +344,7 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <GavelIcon className="w-8 h-8 text-slate-300 mb-3" />
                   <p className="text-sm font-medium text-slate-500">No judicial orders recorded for this case</p>
+                  <p className="text-xs text-slate-400 mt-1">Upload and verify case documents to extract judicial orders.</p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
@@ -299,7 +404,7 @@ export function BailBriefView({ data }: BailBriefViewProps) {
 
             {/* ── Conditions ── */}
             <TabsContent value="conditions">
-              <ConditionsTable conditions={conditions} showEmpty />
+              <ConditionsTable conditions={conditions} showEmpty caseId={caseRecord.id} />
             </TabsContent>
 
             {/* ── Hearing History ── */}
@@ -327,7 +432,7 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                     <AlertTriangleIcon className="w-8 h-8 text-slate-300 mb-3" />
                     <p className="text-sm font-medium text-slate-500">No document findings recorded</p>
                     <p className="text-xs text-slate-400 mt-1">
-                      Findings are identified during document verification.
+                      Run document verification from the case page to generate findings.
                     </p>
                   </div>
                 ) : (
@@ -366,6 +471,16 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                   </div>
                 )}
               </div>
+            </TabsContent>
+
+            {/* ── Draft Application ── */}
+            <TabsContent value="draft">
+              <DraftApplicationTab data={data} />
+            </TabsContent>
+
+            {/* ── Changelog ── */}
+            <TabsContent value="changelog">
+              <ChangelogTab caseId={caseRecord.id} />
             </TabsContent>
           </motion.div>
         </AnimatePresence>

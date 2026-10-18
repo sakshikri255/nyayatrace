@@ -29,6 +29,14 @@ export const cases = sqliteTable(
     statutoryPeriodDays: integer('statutory_period_days', { mode: 'number' }).default(60),
     chargesheetFiled: integer('chargesheet_filed', { mode: 'number' }).default(0),
     chargesheetDate: text('chargesheet_date'),
+    applicableLaw: text('applicable_law', {
+      enum: ['crpc', 'bnss', 'auto'],
+    }).default('auto'),
+    paroleGrantDate: text('parole_grant_date'),
+    paroleEndDate: text('parole_end_date'),
+    paroleReportingFrequency: text('parole_reporting_frequency', {
+      enum: ['weekly', 'fortnightly', 'monthly'],
+    }),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
   },
@@ -288,7 +296,52 @@ export const bailConditions = sqliteTable(
   })
 )
 
-// ─── 10. audit_events ─────────────────────────────────────────────────────────
+// ─── 10. condition_compliance_events ──────────────────────────────────────────
+
+export const conditionComplianceEvents = sqliteTable(
+  'condition_compliance_events',
+  {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    conditionId: integer('condition_id', { mode: 'number' })
+      .notNull()
+      .references(() => bailConditions.id, { onDelete: 'cascade' }),
+    eventDate: text('event_date').notNull(),
+    eventType: text('event_type', {
+      enum: ['complied', 'violated'],
+    }).notNull(),
+    note: text('note'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    conditionIdIdx: index('compliance_events_condition_id_idx').on(t.conditionId),
+  })
+)
+
+// ─── 11. surety_bonds ─────────────────────────────────────────────────────────
+
+export const suretyBonds = sqliteTable(
+  'surety_bonds',
+  {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    conditionId: integer('condition_id', { mode: 'number' })
+      .notNull()
+      .references(() => bailConditions.id, { onDelete: 'cascade' }),
+    suretyName: text('surety_name').notNull(),
+    relationship: text('relationship').notNull(),
+    bondAmount: text('bond_amount').notNull(),
+    documentReference: text('document_reference'),
+    verificationStatus: text('verification_status', {
+      enum: ['pending', 'verified', 'rejected'],
+    }).notNull().default('pending'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    conditionIdIdx: index('surety_bonds_condition_id_idx').on(t.conditionId),
+  })
+)
+
+// ─── 12. audit_events ─────────────────────────────────────────────────────────
 
 export const auditEvents = sqliteTable(
   'audit_events',
