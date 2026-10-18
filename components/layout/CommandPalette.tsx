@@ -12,8 +12,6 @@ import {
   BookOpen,
   ArrowRight,
   X,
-  Clock,
-  Sparkles,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'

@@ -160,7 +160,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       engine: !useAi
         ? 'local-extract-v1'
         : aiProvider === 'gemini'
-          ? `gemini:${process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash'}`
+          ? `gemini:${process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash'}`
           : `openai:${process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini'}`,
       createdAt: new Date().toISOString(),
     }).returning().get()

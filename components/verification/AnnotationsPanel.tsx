@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bookmark, Plus, Trash2, Tag, FileText, Sparkles } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Bookmark, Plus, Trash2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -48,10 +48,10 @@ export function AnnotationsPanel({
   const [note, setNote] = useState('')
   const [selectedText, setSelectedText] = useState('')
   const [tag, setTag] = useState<AnnotationItem['tag']>('general')
-  const [color, setColor] = useState<AnnotationItem['color']>('amber')
   const [saving, setSaving] = useState(false)
+  const color: AnnotationItem['color'] = tag === 'alibi' ? 'emerald' : tag === 'medical' ? 'rose' : tag === 'panchnama' ? 'teal' : tag === 'eyewitness' ? 'blue' : 'amber'
 
-  async function loadAnnotations() {
+  const loadAnnotations = useCallback(async () => {
     try {
       const res = await fetch(`/api/annotations?caseId=${caseId}`)
       if (res.ok) {
@@ -63,11 +63,11 @@ export function AnnotationsPanel({
     } finally {
       setLoading(false)
     }
-  }
+  }, [caseId])
 
   useEffect(() => {
     loadAnnotations()
-  }, [caseId])
+  }, [loadAnnotations])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()

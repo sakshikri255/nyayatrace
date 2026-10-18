@@ -4,6 +4,7 @@ import { pages, documents, cases, findings } from '@/lib/db/schema'
 import { eq, sql, and } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export interface SearchResultItem {
   id: string

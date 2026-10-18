@@ -1,10 +1,13 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { MobileSidebarProvider } from '@/components/layout/MobileSidebarContext'
+import { NavigationProgressBar } from '@/components/layout/NavigationProgressBar'
+import { AnimatedPageWrapper } from '@/components/layout/AnimatedPageWrapper'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <MobileSidebarProvider>
+      <NavigationProgressBar />
       <div className="flex h-screen w-full overflow-hidden bg-offwhite">
         {/* Sidebar — desktop fixed, mobile overlay */}
         <Sidebar />
@@ -15,7 +18,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Topbar />
           </div>
           <main className="flex-1 overflow-y-auto">
-            {children}
+            <AnimatedPageWrapper>
+              {children}
+            </AnimatedPageWrapper>
           </main>
         </div>
       </div>

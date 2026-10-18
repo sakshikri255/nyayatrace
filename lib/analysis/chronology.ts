@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { cases, hearings, judicialOrders, documents, pages, findings, findingSources } from '@/lib/db/schema'
+import { cases, hearings, judicialOrders, documents, findings, findingSources } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { calculateStatutoryBail } from './statutoryBail'
 import { parseISO, isValid, compareAsc, differenceInDays } from 'date-fns'
@@ -172,8 +172,9 @@ export function buildCaseChronology(caseId: number): ChronologyReport {
         documentId: primary?.docId ?? undefined,
         pageNumber: primary?.pageNumber ?? undefined,
         hasConflict: true,
-        conflictSeverity: f.severity === 'high' ? 'high' : 'medium',
-        conflictReason: `Conflicting dates across exhibits: Primary document states "${f.extractedValue}" while comparison document states "${f.comparisonValue}".`,
+        conflictReason: comparison?.docName
+          ? `Conflicting date: ${primary?.docName ?? 'Exhibit 1'} (${f.extractedValue}) vs ${comparison.docName} (${f.comparisonValue}).`
+          : `Conflicting dates across exhibits: Primary document states "${f.extractedValue}" while comparison document states "${f.comparisonValue}".`,
       })
     }
   }

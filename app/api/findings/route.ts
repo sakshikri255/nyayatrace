@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getFindingsByCaseId, getFindingWithSources } from '@/lib/queries/findings'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, Search, Shield, Scale, Sparkles, AlertCircle } from 'lucide-react'
+import { BookOpen, Search, Sparkles } from 'lucide-react'
 import { LEGAL_SECTIONS_DB, searchLegalSections, detectLegalSections, type LegalSectionMapping } from '@/lib/legal/sections'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'

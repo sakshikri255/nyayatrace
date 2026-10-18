@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertCircle, Calendar, CheckCircle2, Clock, Edit2, ShieldAlert, Sparkles } from 'lucide-react'
-import { calculateStatutoryBail, type StatutoryBailCalculation } from '@/lib/analysis/statutoryBail'
+import { AlertCircle, Clock, Edit2, ShieldAlert } from 'lucide-react'
+import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'

@@ -3,6 +3,7 @@ import { getCaseHearingsPerMonth, getHearingsByCaseId } from '@/lib/queries/hear
 import { getCaseById } from '@/lib/queries/cases'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {

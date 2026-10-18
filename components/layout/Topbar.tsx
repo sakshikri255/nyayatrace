@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
 import { CommandPalette } from '@/components/layout/CommandPalette'
@@ -24,7 +24,6 @@ function getPageInfo(pathname: string) {
 
 export function Topbar() {
   const pathname = usePathname()
-  const router = useRouter()
   const { setMobileOpen } = useMobileSidebar()
   const { title, breadcrumb } = getPageInfo(pathname)
 

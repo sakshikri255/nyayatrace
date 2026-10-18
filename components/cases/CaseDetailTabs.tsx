@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { AnimatePresence, motion, type Variants } from 'framer-motion'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { DocumentRow } from '@/lib/queries/documents'
 import type { FindingRow } from '@/lib/queries/findings'
