@@ -66,6 +66,11 @@ export async function POST(request: NextRequest) {
           typeof body.jurisdiction === 'string'
             ? body.jurisdiction.trim() || null
             : null,
+        judge: typeof body.judge === 'string' ? body.judge.trim() || null : null,
+        remandDate: typeof body.remandDate === 'string' ? body.remandDate.trim() || null : null,
+        statutoryPeriodDays: typeof body.statutoryPeriodDays === 'number' ? body.statutoryPeriodDays : 60,
+        chargesheetFiled: body.chargesheetFiled ? 1 : 0,
+        chargesheetDate: typeof body.chargesheetDate === 'string' ? body.chargesheetDate.trim() || null : null,
         status,
       })
       .returning()

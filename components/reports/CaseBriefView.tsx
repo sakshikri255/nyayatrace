@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, Printer, AlertTriangle, FileText } from 'lucide-react'
+import { Copy, Check, Printer, AlertTriangle, FileText, FileDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { exportCourtDocx } from '@/lib/export/wordExport'
 
 // ── Types (mirrors the API response shape) ────────────────────────────────────
 
@@ -299,6 +300,14 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
           >
             <Printer className="w-3.5 h-3.5" />
             Print
+          </button>
+          <button
+            onClick={() => exportCourtDocx(data)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-teal-200 text-teal-800 bg-teal-50 hover:bg-teal-100 text-xs font-semibold transition-colors"
+            title="Download formatted court petition document"
+          >
+            <FileDown className="w-3.5 h-3.5 text-teal" />
+            Court Word Brief (.doc)
           </button>
         </div>
       </div>

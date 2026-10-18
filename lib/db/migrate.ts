@@ -25,8 +25,24 @@ for (const name of fs.readdirSync(migrationsPath).filter((file) => file.endsWith
   if (applied.includes(name)) continue
 
   const migration = fs.readFileSync(path.join(migrationsPath, name), 'utf8')
+  const statements = migration
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+
   sqlite.transaction(() => {
-    sqlite.exec(migration)
+    for (const stmt of statements) {
+      try {
+        sqlite.exec(stmt)
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (msg.includes('duplicate column name') || msg.includes('already exists')) {
+          // Column or table already present from prior setup
+          continue
+        }
+        throw err
+      }
+    }
     recordMigration.run(name)
   })()
   console.log(`Applied ${name}`)

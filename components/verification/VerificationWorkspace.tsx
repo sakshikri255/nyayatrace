@@ -2,13 +2,16 @@
 
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeftIcon, FileSearchIcon } from 'lucide-react'
+import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical } from 'lucide-react'
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { DocumentPanel } from './DocumentPanel'
 import { DocumentViewer } from './DocumentViewer'
 import { FindingsPanel } from './FindingsPanel'
+import { AnnotationsPanel } from './AnnotationsPanel'
 import type { DocumentRow, DocumentWithPages } from '@/lib/queries/documents'
 import type { FindingWithSources } from '@/lib/queries/findings'
 import type { CaseDetail } from '@/lib/queries/cases'
+import { cn } from '@/lib/utils'
 
 interface Props {
   caseData: CaseDetail
@@ -16,7 +19,8 @@ interface Props {
   initialFindings: FindingWithSources[]
 }
 
-type MobileTab = 'documents' | 'viewer' | 'findings'
+type MobileTab = 'documents' | 'viewer' | 'findings' | 'annotations'
+type RightTab = 'findings' | 'annotations'
 
 export function VerificationWorkspace({ caseData, initialDocuments, initialFindings }: Props) {
   const [documents, setDocuments] = useState<DocumentRow[]>(initialDocuments)
@@ -28,6 +32,8 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
   const [documentPages, setDocumentPages] = useState<DocumentWithPages['pages']>([])
   const [loadingPages, setLoadingPages] = useState(false)
   const [mobileTab, setMobileTab] = useState<MobileTab>('documents')
+  const [rightTab, setRightTab] = useState<RightTab>('findings')
+  const [activePage, setActivePage] = useState<number>(1)
 
   const needsReview = findings.filter((f) => f.reviewStatus === 'needs_review').length
   const verified = findings.filter((f) => f.reviewStatus === 'verified').length
@@ -54,10 +60,8 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
       const finding = findings.find((f) => f.id === findingId)
       if (!finding) return
 
-      // If the primary source is from a different document, switch to it
       const primarySource = finding.sources.find((s) => s.role === 'primary')
       if (primarySource && primarySource.documentId !== selectedDocumentId) {
-        // Don't auto-switch — DocumentViewer shows the prompt. But on mobile switch to viewer tab.
         setMobileTab('viewer')
         return
       }
@@ -85,6 +89,7 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
     { id: 'documents', label: 'Documents' },
     { id: 'viewer', label: 'Viewer' },
     { id: 'findings', label: `Findings (${findings.length})` },
+    { id: 'annotations', label: 'Notes' },
   ]
 
   return (
@@ -129,7 +134,7 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
         </div>
       </header>
 
-      {/* ── Mobile tab strip ───────────────────────────────────────────── */}
+      {/* ── Mobile Tab Strip (Small screens only) ───────────────────────── */}
       <div className="flex-shrink-0 flex lg:hidden border-b border-slate-200 bg-white">
         {TABS.map((tab) => (
           <button
@@ -146,46 +151,147 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
         ))}
       </div>
 
-      {/* ── Desktop three-panel layout ─────────────────────────────────── */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Document Panel — 24% */}
-        <div
-          className={`${mobileTab === 'documents' ? 'flex' : 'hidden'} lg:flex flex-col w-full lg:w-[24%] border-r border-slate-200 bg-white overflow-hidden`}
-        >
-          <DocumentPanel
-            caseId={caseData.id}
-            documents={documents}
-            selectedDocumentId={selectedDocumentId}
-            onSelectDocument={handleSelectDocument}
-            onDocumentAdded={handleDocumentAdded}
-            onDocumentUpdated={handleDocumentUpdated}
-          />
-        </div>
+      {/* ── Desktop Resizable Workspace (lg screens) ──────────────────── */}
+      <div className="hidden lg:flex flex-1 overflow-hidden">
+        <PanelGroup direction="horizontal" className="h-full w-full">
+          {/* Panel 1: Documents Tree (Default 22%) */}
+          <Panel defaultSize={22} minSize={16} maxSize={35} className="flex flex-col bg-white overflow-hidden">
+            <DocumentPanel
+              caseId={caseData.id}
+              documents={documents}
+              selectedDocumentId={selectedDocumentId}
+              onSelectDocument={handleSelectDocument}
+              onDocumentAdded={handleDocumentAdded}
+              onDocumentUpdated={handleDocumentUpdated}
+            />
+          </Panel>
 
-        {/* Document Viewer — 48% */}
-        <div
-          className={`${mobileTab === 'viewer' ? 'flex' : 'hidden'} lg:flex flex-col w-full lg:w-[48%] border-r border-slate-200 bg-slate-50 overflow-hidden`}
-        >
-          <DocumentViewer
-            document={selectedDocument}
-            pages={documentPages}
-            loadingPages={loadingPages}
-            selectedFinding={selectedFinding}
-            onSwitchDocument={handleSelectDocument}
-          />
-        </div>
+          {/* Resizer 1 */}
+          <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-teal transition-colors cursor-col-resize flex items-center justify-center group">
+            <GripVertical className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+          </PanelResizeHandle>
 
-        {/* Findings Panel — 28% */}
-        <div
-          className={`${mobileTab === 'findings' ? 'flex' : 'hidden'} lg:flex flex-col w-full lg:w-[28%] bg-white overflow-hidden`}
-        >
-          <FindingsPanel
-            findings={findings}
-            selectedFindingId={selectedFindingId}
-            onSelectFinding={handleSelectFinding}
-            onFindingUpdate={handleFindingUpdate}
-          />
-        </div>
+          {/* Panel 2: Document Viewer (Default 48%) */}
+          <Panel defaultSize={48} minSize={30} className="flex flex-col bg-slate-50 overflow-hidden">
+            <DocumentViewer
+              document={selectedDocument}
+              pages={documentPages}
+              loadingPages={loadingPages}
+              selectedFinding={selectedFinding}
+              onSwitchDocument={handleSelectDocument}
+              allDocuments={documents}
+              allFindings={findings}
+              onPageChange={setActivePage}
+            />
+          </Panel>
+
+          {/* Resizer 2 */}
+          <PanelResizeHandle className="w-1.5 bg-slate-200 hover:bg-teal transition-colors cursor-col-resize flex items-center justify-center group">
+            <GripVertical className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+          </PanelResizeHandle>
+
+          {/* Panel 3: Findings & Evidence Annotations Tabs (Default 30%) */}
+          <Panel defaultSize={30} minSize={20} maxSize={45} className="flex flex-col bg-white overflow-hidden">
+            {/* Tab switch header */}
+            <div className="flex border-b border-slate-200 bg-slate-50 p-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setRightTab('findings')}
+                className={cn(
+                  'flex-1 rounded py-1.5 text-xs font-semibold transition-all flex items-center justify-center gap-1.5',
+                  rightTab === 'findings'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                <Search className="h-3.5 w-3.5" />
+                Findings ({findings.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setRightTab('annotations')}
+                className={cn(
+                  'flex-1 rounded py-1.5 text-xs font-semibold transition-all flex items-center justify-center gap-1.5',
+                  rightTab === 'annotations'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+                Evidence Notes
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+              {rightTab === 'findings' ? (
+                <FindingsPanel
+                  findings={findings}
+                  selectedFindingId={selectedFindingId}
+                  onSelectFinding={handleSelectFinding}
+                  onFindingUpdate={handleFindingUpdate}
+                />
+              ) : (
+                <AnnotationsPanel
+                  caseId={caseData.id}
+                  documentId={selectedDocumentId}
+                  currentPage={activePage}
+                />
+              )}
+            </div>
+          </Panel>
+        </PanelGroup>
+      </div>
+
+      {/* ── Mobile Viewport ────────────────────────────────────────────── */}
+      <div className="flex lg:hidden flex-1 overflow-hidden">
+        {mobileTab === 'documents' && (
+          <div className="w-full h-full flex flex-col bg-white overflow-hidden">
+            <DocumentPanel
+              caseId={caseData.id}
+              documents={documents}
+              selectedDocumentId={selectedDocumentId}
+              onSelectDocument={handleSelectDocument}
+              onDocumentAdded={handleDocumentAdded}
+              onDocumentUpdated={handleDocumentUpdated}
+            />
+          </div>
+        )}
+
+        {mobileTab === 'viewer' && (
+          <div className="w-full h-full flex flex-col bg-slate-50 overflow-hidden">
+            <DocumentViewer
+              document={selectedDocument}
+              pages={documentPages}
+              loadingPages={loadingPages}
+              selectedFinding={selectedFinding}
+              onSwitchDocument={handleSelectDocument}
+              allDocuments={documents}
+              allFindings={findings}
+              onPageChange={setActivePage}
+            />
+          </div>
+        )}
+
+        {mobileTab === 'findings' && (
+          <div className="w-full h-full flex flex-col bg-white overflow-hidden">
+            <FindingsPanel
+              findings={findings}
+              selectedFindingId={selectedFindingId}
+              onSelectFinding={handleSelectFinding}
+              onFindingUpdate={handleFindingUpdate}
+            />
+          </div>
+        )}
+
+        {mobileTab === 'annotations' && (
+          <div className="w-full h-full flex flex-col bg-white overflow-hidden">
+            <AnnotationsPanel
+              caseId={caseData.id}
+              documentId={selectedDocumentId}
+              currentPage={activePage}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

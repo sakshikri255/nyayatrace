@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Check, CircleAlert, FileText, LoaderCircle, Printer, RefreshCw, Save } from 'lucide-react'
+import { AlertTriangle, Check, CircleAlert, FileText, LoaderCircle, Printer, RefreshCw, Save, GitCompare } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { CitationHoverCard } from '@/components/shared/CitationHoverCard'
+import { cn } from '@/lib/utils'
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { FindingWithSources } from '@/lib/queries/findings'
 import type { DocumentRow } from '@/lib/queries/documents'
@@ -41,14 +43,16 @@ function SourceLink({
   onOpen: (source: EvidenceReference) => void
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(source)}
-      className="inline-flex items-center gap-1 text-left text-xs font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-900"
+    <CitationHoverCard
+      documentId={source.documentId}
+      documentName={source.documentName}
+      pageNumber={source.pageNumber}
+      passage={source.passage}
+      onOpen={() => onOpen(source)}
     >
       <FileText className="h-3.5 w-3.5" />
       {source.documentName}, p. {source.pageNumber}
-    </button>
+    </CitationHoverCard>
   )
 }
 
@@ -98,6 +102,7 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
   const [savingNotes, setSavingNotes] = useState(false)
   const [notesDraft, setNotesDraft] = useState('')
   const [isDirty, setIsDirty] = useState(false)
+  const [showDiff, setShowDiff] = useState(false)
   const [selectedSource, setSelectedSource] = useState<(EvidenceReference & { relatedFinding?: string }) | null>(null)
   const documentStateKey = documents
     .map((document) => `${document.id}:${document.processingStatus}:${document.processedAt ?? ''}`)
@@ -284,24 +289,119 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
               </span>
               <span className="text-slate-500">Version {selectedRun.version} · {selectedRun.createdAt ? new Date(selectedRun.createdAt).toLocaleString() : 'Date unavailable'}</span>
             </div>
-            {runs.length > 1 && (
-              <label className="flex items-center gap-2 text-xs text-slate-500">
-                Saved versions
-                <select
-                  value={selectedRun.id}
-                  onChange={(event) => {
-                    const next = runs.find((run) => run.id === Number(event.target.value))
-                    setSelectedRunId(next?.id ?? null)
-                    setNotesDraft(next?.reviewNotes ?? '')
-                    setIsDirty(false)
-                  }}
-                  className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700"
-                >
-                  {runs.map((run) => <option key={run.id} value={run.id}>Version {run.version} · {run.status}</option>)}
-                </select>
-              </label>
-            )}
+            <div className="flex items-center gap-2">
+              {runs.length > 1 && (
+                <>
+                  <label className="flex items-center gap-2 text-xs text-slate-500">
+                    Saved versions
+                    <select
+                      value={selectedRun.id}
+                      onChange={(event) => {
+                        const next = runs.find((run) => run.id === Number(event.target.value))
+                        setSelectedRunId(next?.id ?? null)
+                        setNotesDraft(next?.reviewNotes ?? '')
+                        setIsDirty(false)
+                      }}
+                      className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700"
+                    >
+                      {runs.map((run) => <option key={run.id} value={run.id}>Version {run.version} · {run.status}</option>)}
+                    </select>
+                  </label>
+                  <Button
+                    size="sm"
+                    variant={showDiff ? 'default' : 'outline'}
+                    onClick={() => setShowDiff((prev) => !prev)}
+                    className={cn('h-7 text-xs gap-1 border-slate-300', showDiff && 'bg-teal text-white')}
+                    title="Compare this run with previous run"
+                  >
+                    <GitCompare className="h-3 w-3" />
+                    {showDiff ? 'Close Diff' : 'Compare Runs'}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
+
+          {/* ── Version Diff Inspector ────────────────────────────── */}
+          {showDiff && runs.length > 1 && (() => {
+            const previousRun = runs.find((r) => r.version === selectedRun.version - 1) || runs[runs.indexOf(selectedRun) + 1]
+            if (!previousRun) return null
+
+            const newFindings = selectedRun.findings.filter(
+              (f) => !previousRun.findings.some((pf) => pf.findingType === f.findingType && pf.extractedValue === f.extractedValue)
+            )
+            const resolvedFindings = previousRun.findings.filter(
+              (pf) => !selectedRun.findings.some((f) => f.findingType === pf.findingType && f.extractedValue === pf.extractedValue)
+            )
+
+            return (
+              <div className="my-4 rounded-xl border border-teal-300 bg-gradient-to-r from-teal-50/70 to-slate-50 p-4 text-xs">
+                <div className="flex items-center justify-between border-b border-teal-200/60 pb-2">
+                  <div className="flex items-center gap-2 font-bold text-teal-900">
+                    <GitCompare className="h-4 w-4 text-teal" />
+                    <span>Run Diff: Version {selectedRun.version} vs Version {previousRun.version}</span>
+                  </div>
+                  <span className="text-slate-500 text-[11px]">
+                    {selectedRun.findings.length} findings vs {previousRun.findings.length} findings
+                  </span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* New findings */}
+                  <div className="rounded-lg bg-white p-3 border border-emerald-200">
+                    <span className="text-[11px] font-bold uppercase text-emerald-800 block mb-1.5">
+                      + New Observations in Version {selectedRun.version} ({newFindings.length})
+                    </span>
+                    {newFindings.length === 0 ? (
+                      <p className="text-slate-400 italic text-[11px]">No new findings detected in this run.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {newFindings.map((nf, i) => (
+                          <li key={i} className="text-slate-700 bg-emerald-50/50 p-1.5 rounded text-[11px] border border-emerald-100">
+                            <strong>[{nf.findingType}]</strong> {nf.description}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Resolved findings */}
+                  <div className="rounded-lg bg-white p-3 border border-slate-200">
+                    <span className="text-[11px] font-bold uppercase text-slate-500 block mb-1.5">
+                      Resolved / Omitted Since Version {previousRun.version} ({resolvedFindings.length})
+                    </span>
+                    {resolvedFindings.length === 0 ? (
+                      <p className="text-slate-400 italic text-[11px]">No discrepancies removed.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {resolvedFindings.map((rf, i) => (
+                          <li key={i} className="text-slate-400 line-through bg-slate-50 p-1.5 rounded text-[11px]">
+                            [{rf.findingType}] {rf.description}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                {previousRun.reviewNotes !== selectedRun.reviewNotes && (
+                  <div className="mt-3 p-2.5 rounded bg-white border border-slate-200 text-[11px]">
+                    <strong className="text-slate-700 block mb-1">Notes Revision:</strong>
+                    <div className="grid grid-cols-2 gap-2 text-slate-600">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Version {previousRun.version} Notes:</span>
+                        <p className="italic">{previousRun.reviewNotes || 'Empty'}</p>
+                      </div>
+                      <div>
+                        <span className="text-teal-700 block text-[10px] font-semibold">Version {selectedRun.version} Notes:</span>
+                        <p>{selectedRun.reviewNotes || 'Empty'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           <header className="py-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">NyayaTrace · Local extraction analysis</p>

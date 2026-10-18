@@ -1,8 +1,9 @@
-import { PlusCircle, Upload, Search } from 'lucide-react'
+import { PlusCircle, Upload, Search, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 
-import { getDashboardStats, getRecentCases } from '@/lib/queries/cases'
+import { getDashboardStats, getRecentCases, getAllCases } from '@/lib/queries/cases'
 import { getAllHearingsPerMonth } from '@/lib/queries/hearings'
+import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { ActivityLineChart } from '@/components/dashboard/ActivityLineChart'
 import { RecentCasesTable } from '@/components/dashboard/RecentCasesTable'
@@ -12,6 +13,11 @@ export default function OverviewPage() {
   const stats = getDashboardStats()
   const recentCases = getRecentCases(5)
   const chartData = getAllHearingsPerMonth()
+  const allCases = getAllCases()
+  const statutoryBailCases = allCases.filter((c) => {
+    const bail = calculateStatutoryBail(c)
+    return bail.status === 'accrued' || bail.status === 'urgent'
+  })
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -49,6 +55,37 @@ export default function OverviewPage() {
             <p className="text-xs text-gray-400 mt-0.5">{today}</p>
           </div>
         </div>
+
+        {/* Statutory Default Bail Pulse Alert */}
+        {statutoryBailCases.length > 0 && (
+          <div className="rounded-xl border border-rose-300 bg-gradient-to-r from-rose-50 via-white to-rose-100/30 p-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-3.5 w-3.5 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-rose-600" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-bold text-rose-950 flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-rose-600 inline" />
+                    Statutory Default Bail Watchlist ({statutoryBailCases.length} Cases)
+                  </h3>
+                  <p className="text-xs text-rose-700 mt-0.5">
+                    Indefeasible statutory right accrued or nearing expiry under Section 167(2) CrPC / Section 187 BNSS.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/bail-briefs"
+                  className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 transition-colors"
+                >
+                  Inspect Bail Briefs &rarr;
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* KPI cards row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

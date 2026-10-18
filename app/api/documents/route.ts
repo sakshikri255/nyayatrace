@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     const fileValue = formData.get('file')
     const file = fileValue instanceof File ? fileValue : null
     const caseIdStr = formData.get('caseId') as string | null
+    const docLanguage = (formData.get('language') as string | null) || 'eng'
 
     if (!file || !caseIdStr) {
       return NextResponse.json(
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
         filePath: path.relative(process.cwd(), filePath),
         fileSize: file.size,
         fileHash,
+        language: docLanguage,
       })
         .returning()
         .get()
@@ -137,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const pageResults = await processDocument(filePath)
+      const pageResults = await processDocument(filePath, docLanguage)
       const hasReadableText = pageResults.some((page) => page.text.trim().length > 0)
       const processingError = hasReadableText
         ? null

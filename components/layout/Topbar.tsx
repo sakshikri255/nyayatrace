@@ -1,8 +1,9 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, Search } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
+import { CommandPalette } from '@/components/layout/CommandPalette'
 
 const PAGE_TITLES: Record<string, { title: string; breadcrumb: string[] }> = {
   '/overview': { title: 'Overview', breadcrumb: ['Dashboard', 'Overview'] },
@@ -58,17 +59,8 @@ export function Topbar() {
         </h1>
       </div>
 
-      {/* Center: search bar */}
-      <button
-        type="button"
-        onClick={() => router.push('/cases')}
-        className="hidden md:flex items-center gap-2 h-8 w-64 px-3 rounded-md border border-gray-200 bg-white text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors"
-        aria-label="Search cases"
-      >
-        <Search size={13} className="shrink-0" />
-        <span>Search cases…</span>
-      </button>
-
+      {/* Center: Command Palette */}
+      <CommandPalette />
     </header>
   )
 }

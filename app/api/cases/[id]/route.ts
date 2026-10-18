@@ -67,7 +67,20 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const allowed = ['caseNumber', 'title', 'description', 'status', 'caseType', 'court', 'jurisdiction'] as const
+    const allowed = [
+      'caseNumber',
+      'title',
+      'description',
+      'status',
+      'caseType',
+      'court',
+      'jurisdiction',
+      'judge',
+      'remandDate',
+      'statutoryPeriodDays',
+      'chargesheetFiled',
+      'chargesheetDate',
+    ] as const
     const updates: Record<string, unknown> = {}
     for (const key of allowed) {
       if (!(key in body)) continue

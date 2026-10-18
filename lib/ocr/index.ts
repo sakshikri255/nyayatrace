@@ -13,10 +13,21 @@ export interface PageResult {
   pageNumber: number
   text: string
   quality: 'good' | 'poor' | 'unreadable'
+  detectedLanguage?: string
 }
 
-export async function processDocument(filePath: string): Promise<PageResult[]> {
+export function detectScriptFromText(text: string): string {
+  if (/[\u0900-\u097F]/.test(text)) return 'hin' // Devanagari (Hindi/Marathi)
+  if (/[\u0980-\u09FF]/.test(text)) return 'ben' // Bengali
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'tam' // Tamil
+  if (/[\u0C00-\u0C7F]/.test(text)) return 'tel' // Telugu
+  if (/[\u0A80-\u0AFF]/.test(text)) return 'guj' // Gujarati
+  return 'eng'
+}
+
+export async function processDocument(filePath: string, language: string = 'eng'): Promise<PageResult[]> {
   const extension = path.extname(filePath).toLowerCase()
+  const ocrLang = language && language !== 'auto' ? language : 'eng'
 
   if (extension === '.pdf') {
     const buffer = await fs.readFile(filePath)
@@ -39,9 +50,17 @@ export async function processDocument(filePath: string): Promise<PageResult[]> {
           .replace(/\s+/g, ' ')
           .trim()
 
+        let detected = detectScriptFromText(text)
         let quality: PageResult['quality'] = text ? 'good' : 'unreadable'
+
         if (!text) {
-          if (!ocrWorker) ocrWorker = await Tesseract.createWorker('eng')
+          if (!ocrWorker) {
+            try {
+              ocrWorker = await Tesseract.createWorker(ocrLang)
+            } catch {
+              ocrWorker = await Tesseract.createWorker('eng')
+            }
+          }
           const viewport = page.getViewport({ scale: 2 })
           const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height))
           const context = canvas.getContext('2d')
@@ -51,10 +70,11 @@ export async function processDocument(filePath: string): Promise<PageResult[]> {
           }).promise
           const result = await ocrWorker.recognize(canvas.toBuffer('image/png'))
           text = result.data.text.trim()
-          quality = text ? result.data.confidence < 45 ? 'poor' : 'good' : 'unreadable'
+          detected = detectScriptFromText(text)
+          quality = text ? (result.data.confidence < 45 ? 'poor' : 'good') : 'unreadable'
         }
 
-        pages.push({ pageNumber, text, quality })
+        pages.push({ pageNumber, text, quality, detectedLanguage: detected })
         page.cleanup()
       }
     } finally {
@@ -65,12 +85,18 @@ export async function processDocument(filePath: string): Promise<PageResult[]> {
   }
 
   if (['.jpg', '.jpeg', '.png'].includes(extension)) {
-    const worker = await Tesseract.createWorker('eng')
+    let worker: Tesseract.Worker
+    try {
+      worker = await Tesseract.createWorker(ocrLang)
+    } catch {
+      worker = await Tesseract.createWorker('eng')
+    }
     try {
       const result = await worker.recognize(filePath)
       const text = result.data.text.trim()
-      const quality = text ? result.data.confidence < 45 ? 'poor' : 'good' : 'unreadable'
-      return [{ pageNumber: 1, text, quality }]
+      const detected = detectScriptFromText(text)
+      const quality = text ? (result.data.confidence < 45 ? 'poor' : 'good') : 'unreadable'
+      return [{ pageNumber: 1, text, quality, detectedLanguage: detected }]
     } finally {
       await worker.terminate()
     }

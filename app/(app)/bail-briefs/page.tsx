@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getAllCases } from '@/lib/queries/cases'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
+import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/layout/PageTransition'
 
@@ -81,6 +82,9 @@ export default function BailBriefsPage() {
                 <div className="flex gap-4 text-xs text-slate-400">
                   <span>{c.documentCount} document{c.documentCount !== 1 ? 's' : ''}</span>
                 </div>
+
+                {/* Statutory Default Bail Tracker */}
+                <StatutoryBailCard caseData={c} compact />
 
                 {/* View brief link */}
                 <Link

@@ -14,6 +14,8 @@ import { HearingsTab } from './tabs/HearingsTab'
 import { OrdersTab } from './tabs/OrdersTab'
 import { BriefTab } from './tabs/BriefTab'
 import { AnalysisWorkspace } from './tabs/AnalysisWorkspace'
+import { MasterChronologyView } from '@/components/progress/MasterChronologyView'
+import { LegalSectionsTab } from './tabs/LegalSectionsTab'
 
 type JudicialOrder = {
   id: number
@@ -45,7 +47,16 @@ interface CaseDetailTabsProps {
   conditions: BailCondition[]
 }
 
-type TabId = 'overview' | 'documents' | 'synopsis' | 'findings' | 'hearings' | 'orders' | 'brief'
+type TabId =
+  | 'overview'
+  | 'documents'
+  | 'synopsis'
+  | 'findings'
+  | 'chronology'
+  | 'sections'
+  | 'hearings'
+  | 'orders'
+  | 'brief'
 
 const tabVariants: Variants = {
   hidden: { opacity: 0, x: -4 },
@@ -74,10 +85,12 @@ export function CaseDetailTabs({
         <TabsTrigger value="documents" className="flex-none px-3">
           Documents{documents.length > 0 && <span className="ml-1 text-xs text-slate-400">({documents.length})</span>}
         </TabsTrigger>
-        <TabsTrigger value="synopsis" className="flex-none px-3">Synopsis</TabsTrigger>
+        <TabsTrigger value="synopsis" className="flex-none px-3">Analysis &amp; Synopsis</TabsTrigger>
         <TabsTrigger value="findings" className="flex-none px-3">
           Findings{findings.length > 0 && <span className="ml-1 text-xs text-amber-500">({findings.length})</span>}
         </TabsTrigger>
+        <TabsTrigger value="chronology" className="flex-none px-3">Chronology</TabsTrigger>
+        <TabsTrigger value="sections" className="flex-none px-3">Legal Sections</TabsTrigger>
         <TabsTrigger value="hearings" className="flex-none px-3">
           Hearings{hearings.length > 0 && <span className="ml-1 text-xs text-slate-400">({hearings.length})</span>}
         </TabsTrigger>
@@ -92,32 +105,45 @@ export function CaseDetailTabs({
           initial="hidden"
           animate="visible"
           exit="exit"
+          className="w-full pt-1"
         >
-          <TabsContent value="overview">
-            <OverviewTab caseData={caseData} documents={documents} findings={findings} hearings={hearings} />
-          </TabsContent>
-          <TabsContent value="documents">
+          {activeTab === 'overview' && (
+            <OverviewTab
+              caseData={caseData}
+              documents={documents}
+              findings={findings}
+              hearings={hearings}
+              onGoToAnalysis={() => setActiveTab('synopsis')}
+            />
+          )}
+          {activeTab === 'documents' && (
             <DocumentsTab caseId={caseData.id} initialDocuments={documents} />
-          </TabsContent>
-          <TabsContent value="synopsis">
+          )}
+          {activeTab === 'synopsis' && (
             <AnalysisWorkspace
               caseData={caseData}
               documents={documents}
               onUploadDocuments={() => setActiveTab('documents')}
             />
-          </TabsContent>
-          <TabsContent value="findings">
+          )}
+          {activeTab === 'findings' && (
             <FindingsTab caseId={caseData.id} findings={findings} />
-          </TabsContent>
-          <TabsContent value="hearings">
+          )}
+          {activeTab === 'chronology' && (
+            <MasterChronologyView caseId={caseData.id} />
+          )}
+          {activeTab === 'sections' && (
+            <LegalSectionsTab caseData={caseData} />
+          )}
+          {activeTab === 'hearings' && (
             <HearingsTab hearings={hearings} />
-          </TabsContent>
-          <TabsContent value="orders">
+          )}
+          {activeTab === 'orders' && (
             <OrdersTab caseId={caseData.id} orders={orders} conditions={conditions} />
-          </TabsContent>
-          <TabsContent value="brief">
+          )}
+          {activeTab === 'brief' && (
             <BriefTab caseId={caseData.id} />
-          </TabsContent>
+          )}
         </motion.div>
       </AnimatePresence>
     </Tabs>

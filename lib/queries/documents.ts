@@ -22,6 +22,7 @@ export type DocumentRow = {
   filePath: string | null
   fileSize: number
   fileHash: string | null
+  language: string | null
   createdAt: string | null
 }
 

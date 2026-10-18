@@ -6,6 +6,7 @@ import { FileTextIcon, AlertTriangleIcon, EyeIcon, FolderOpenIcon } from 'lucide
 import { formatDistanceToNow } from 'date-fns'
 import { CaseStatusBadge, CaseTypeBadge } from './CaseStatusBadge'
 import type { CaseWithCounts } from '@/lib/queries/cases'
+import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 
 interface CasesTableProps {
   cases: CaseWithCounts[]
@@ -91,7 +92,32 @@ export function CasesTable({ cases }: CasesTableProps) {
 
               {/* Status */}
               <td className="py-3 px-4">
-                <CaseStatusBadge status={c.status} />
+                <div className="flex flex-col gap-1">
+                  <CaseStatusBadge status={c.status} />
+                  {(() => {
+                    const bail = calculateStatutoryBail(c)
+                    if (bail.status === 'accrued') {
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-600" />
+                          </span>
+                          Default Bail Accrued
+                        </span>
+                      )
+                    }
+                    if (bail.status === 'urgent') {
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          {bail.daysRemaining}d to Default Bail
+                        </span>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
               </td>
 
               {/* Docs count */}

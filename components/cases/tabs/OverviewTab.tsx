@@ -4,15 +4,19 @@ import type { CaseDetail } from '@/lib/queries/cases'
 import type { DocumentRow } from '@/lib/queries/documents'
 import type { FindingRow } from '@/lib/queries/findings'
 import type { HearingRow } from '@/lib/queries/hearings'
+import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
+
+import { Button } from '@/components/ui/button'
 
 interface OverviewTabProps {
   caseData: CaseDetail
   documents: DocumentRow[]
   findings: FindingRow[]
   hearings: HearingRow[]
+  onGoToAnalysis?: () => void
 }
 
-export function OverviewTab({ caseData, documents, findings, hearings }: OverviewTabProps) {
+export function OverviewTab({ caseData, documents, findings, hearings, onGoToAnalysis }: OverviewTabProps) {
   const needsReview = findings.filter((f) => f.reviewStatus === 'needs_review').length
   const verified = findings.filter((f) => f.reviewStatus === 'verified').length
   const notDiscrepancy = findings.filter((f) => f.reviewStatus === 'not_a_discrepancy').length
@@ -26,6 +30,31 @@ export function OverviewTab({ caseData, documents, findings, hearings }: Overvie
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Statutory Bail Tracker */}
+      <StatutoryBailCard caseData={caseData} />
+
+      {/* Analysis Call to Action if documents exist */}
+      {documents.length > 0 && findings.length === 0 && (
+        <div className="rounded-xl border border-teal/20 bg-teal/5 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-teal-900">
+              {documents.length} document{documents.length > 1 ? 's' : ''} uploaded — Case Analysis ready
+            </h3>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Review extractive findings, chronology, and contradictory statements in the Analysis &amp; Synopsis workspace.
+            </p>
+          </div>
+          {onGoToAnalysis && (
+            <Button
+              onClick={onGoToAnalysis}
+              className="bg-teal text-white hover:bg-teal-light text-xs h-8 px-3"
+            >
+              Open Analysis &rarr;
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Description */}
       {caseData.description && (
         <div className="rounded-lg border border-slate-200 bg-white p-4">

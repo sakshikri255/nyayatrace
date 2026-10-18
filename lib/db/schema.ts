@@ -25,6 +25,10 @@ export const cases = sqliteTable(
     court: text('court'),
     jurisdiction: text('jurisdiction'),
     judge: text('judge'),
+    remandDate: text('remand_date'),
+    statutoryPeriodDays: integer('statutory_period_days', { mode: 'number' }).default(60),
+    chargesheetFiled: integer('chargesheet_filed', { mode: 'number' }).default(0),
+    chargesheetDate: text('chargesheet_date'),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
   },
@@ -58,6 +62,7 @@ export const documents = sqliteTable(
     filePath: text('file_path'),
     fileSize: integer('file_size').notNull().default(0),
     fileHash: text('file_hash'),
+    language: text('language').default('eng'),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
   },
   (t) => ({
@@ -301,3 +306,33 @@ export const auditEvents = sqliteTable(
     caseIdIdx: index('audit_events_case_id_idx').on(t.caseId),
   })
 )
+
+// ─── 11. document_annotations ──────────────────────────────────────────────────
+
+export const documentAnnotations = sqliteTable(
+  'document_annotations',
+  {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    caseId: integer('case_id', { mode: 'number' })
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+    documentId: integer('document_id', { mode: 'number' })
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    pageNumber: integer('page_number', { mode: 'number' }).notNull(),
+    selectedText: text('selected_text'),
+    note: text('note').notNull(),
+    tag: text('tag', {
+      enum: ['alibi', 'medical', 'panchnama', 'fir_lapse', 'eyewitness', 'procedural_lapse', 'general'],
+    }).notNull().default('general'),
+    color: text('color', {
+      enum: ['amber', 'emerald', 'teal', 'rose', 'blue'],
+    }).notNull().default('amber'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    caseIdIdx: index('document_annotations_case_id_idx').on(t.caseId),
+    documentIdIdx: index('document_annotations_document_id_idx').on(t.documentId),
+  })
+)
+

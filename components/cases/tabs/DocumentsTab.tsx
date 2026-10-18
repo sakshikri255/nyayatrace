@@ -31,28 +31,31 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
   const [documents, setDocuments] = useState<DocumentRow[]>(initialDocuments)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<{ name: string; value: number }[]>([])
+  const [ocrLanguage, setOcrLanguage] = useState('eng')
+  const [uploadProgress, setUploadProgress] = useState<{ name: string; value: number; stage: string }[]>([])
 
   useEffect(() => {
     setDocuments(initialDocuments)
   }, [initialDocuments])
 
-  function updateProgress(name: string, value: number) {
+  function updateProgress(name: string, value: number, stage: string = 'Uploading...') {
     setUploadProgress((current) =>
-      current.map((item) => item.name === name ? { ...item, value } : item)
+      current.map((item) => (item.name === name ? { ...item, value, stage } : item))
     )
   }
 
-  function sendFile(file: File): Promise<DocumentRow> {
+  function sendFile(file: File, lang: string): Promise<DocumentRow> {
     return new Promise((resolve, reject) => {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('caseId', String(caseId))
+      formData.append('language', lang)
       const request = new XMLHttpRequest()
       request.open('POST', '/api/documents')
       request.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          updateProgress(file.name, Math.round((event.loaded / event.total) * 100))
+          const pct = Math.round((event.loaded / event.total) * 100)
+          updateProgress(file.name, pct, pct === 100 ? 'Running OCR & Text Extraction...' : 'Uploading...')
         }
       }
       request.onerror = () => reject(new Error('Network error during upload.'))
@@ -68,7 +71,7 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
   async function uploadFiles(files: File[]) {
     if (files.length === 0) return
     setUploading(true)
-    setUploadProgress(files.map((file) => ({ name: file.name, value: 0 })))
+    setUploadProgress(files.map((file) => ({ name: file.name, value: 0, stage: 'Preparing...' })))
 
     for (const file of files) {
       const extension = file.name.split('.').pop()?.toLowerCase()
@@ -82,7 +85,7 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
       }
 
       try {
-        const document = await sendFile(file)
+        const document = await sendFile(file, ocrLanguage)
         setDocuments((current) => [...current, document])
         if (document.processingStatus === 'failed') {
           toast.warning(`${file.name} was saved, but text could not be extracted.`)
@@ -126,6 +129,29 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
         Upload only public records or records you are authorized to process. This app has no login or access controls; do not upload confidential or restricted files.
       </p>
 
+      {/* Language Selector Bar */}
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3">
+        <div>
+          <span className="text-xs font-semibold text-slate-800">Primary OCR &amp; Script Language</span>
+          <p className="text-[11px] text-slate-400">Select language model for scanned pages and FIR records</p>
+        </div>
+        <select
+          value={ocrLanguage}
+          onChange={(e) => setOcrLanguage(e.target.value)}
+          disabled={uploading}
+          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 focus:border-teal focus:outline-none"
+        >
+          <option value="eng">English (Standard)</option>
+          <option value="hin">Hindi (Devanagari)</option>
+          <option value="mar">Marathi (Devanagari)</option>
+          <option value="ben">Bengali (Bangla)</option>
+          <option value="tam">Tamil</option>
+          <option value="tel">Telugu</option>
+          <option value="guj">Gujarati</option>
+          <option value="eng+hin">Bilingual (English + Hindi)</option>
+        </select>
+      </div>
+
       {/* Upload zone */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
@@ -150,22 +176,25 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
         <UploadCloudIcon className="w-8 h-8 text-slate-400" />
         <div className="text-center">
           <p className="text-sm font-medium text-slate-600">
-            {uploading ? 'Uploading…' : 'Drop a file here, or click to browse'}
+            {uploading ? 'Uploading & Processing…' : 'Drop documents here, or click to browse'}
           </p>
-          <p className="text-xs text-slate-400 mt-0.5">PDF, JPEG, PNG · 20 MB maximum per file</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            PDF, JPEG, PNG · Up to 20 MB per file · Language: <strong className="text-teal font-mono uppercase">{ocrLanguage}</strong>
+          </p>
         </div>
       </div>
 
       {uploadProgress.length > 0 && (
-        <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-4" aria-live="polite">
+        <div className="space-y-3 rounded-lg border border-teal-200 bg-teal-50/40 p-4" aria-live="polite">
+          <h4 className="text-xs font-bold text-teal-900 uppercase tracking-wide">Document Ingestion Queue</h4>
           {uploadProgress.map((item) => (
-            <div key={item.name}>
-              <div className="mb-1 flex justify-between gap-3 text-xs text-slate-600">
-                <span className="truncate">{item.name}</span>
-                <span>{item.value}%</span>
+            <div key={item.name} className="space-y-1">
+              <div className="flex justify-between gap-3 text-xs text-slate-700">
+                <span className="truncate font-medium">{item.name}</span>
+                <span className="text-[11px] text-teal-800 font-semibold">{item.stage} ({item.value}%)</span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full bg-teal transition-[width]" style={{ width: `${item.value}%` }} />
+              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                <div className="h-full bg-teal transition-[width] duration-300" style={{ width: `${item.value}%` }} />
               </div>
             </div>
           ))}

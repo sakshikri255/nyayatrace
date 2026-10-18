@@ -14,6 +14,10 @@ export type CaseWithCounts = {
   court: string | null
   jurisdiction: string | null
   judge: string | null
+  remandDate: string | null
+  statutoryPeriodDays: number | null
+  chargesheetFiled: number | null
+  chargesheetDate: string | null
   createdAt: string | null
   updatedAt: string | null
   documentCount: number
@@ -30,6 +34,10 @@ export type CaseDetail = {
   court: string | null
   jurisdiction: string | null
   judge: string | null
+  remandDate: string | null
+  statutoryPeriodDays: number | null
+  chargesheetFiled: number | null
+  chargesheetDate: string | null
   createdAt: string | null
   updatedAt: string | null
 }
@@ -160,6 +168,10 @@ export function getAllCases(
       court: cases.court,
       jurisdiction: cases.jurisdiction,
       judge: cases.judge,
+      remandDate: cases.remandDate,
+      statutoryPeriodDays: cases.statutoryPeriodDays,
+      chargesheetFiled: cases.chargesheetFiled,
+      chargesheetDate: cases.chargesheetDate,
       createdAt: cases.createdAt,
       updatedAt: cases.updatedAt,
       documentCount: sql<number>`count(distinct ${documents.id})`,
