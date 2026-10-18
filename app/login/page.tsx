@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Eye, EyeOff, LogIn, AlertCircle, Copy, Check } from 'lucide-react'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
 import { loginUser, DEMO_USERS, getSession } from '@/lib/auth'
@@ -55,19 +56,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-navy flex items-center justify-center px-4 py-12">
-      {/* Subtle background glow */}
-      <div
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{
-          background:
-            'radial-gradient(ellipse 70% 50% at 50% 0%, #0d3d38 0%, transparent 60%)',
-        }}
-      />
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
+      {/* Background Image with warm judicial ambient overlay */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <Image
+          src="/images/auth-bg.jpg"
+          alt="NyayaTrace Legal Chambers"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+        {/* Balanced dark overlay so the library, books, and glowing scales of justice remain clearly visible */}
+        <div className="absolute inset-0 bg-slate-950/60 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-950/70" />
+      </div>
 
-      <div className="w-full max-w-md">
+      <div className="relative z-10 w-full max-w-md">
         {/* Card */}
-        <div className="rounded-2xl border border-border-dark bg-charcoal shadow-2xl shadow-black/40 px-8 py-10">
+        <div className="rounded-2xl border border-white/15 bg-charcoal/85 backdrop-blur-xl shadow-2xl shadow-black/80 px-8 py-10">
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <NyayaTraceLogo size="lg" variant="light" />
