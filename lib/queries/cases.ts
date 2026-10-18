@@ -339,10 +339,7 @@ export function deleteCase(id: number): boolean {
   const caseDocs = db.select().from(documents).where(eq(documents.caseId, id)).all()
   for (const doc of caseDocs) {
     if (doc.filePath) {
-      const fullPath = path.isAbsolute(doc.filePath)
-        ? doc.filePath
-        : path.join(process.cwd(), doc.filePath)
-      // turbopack-disable-next-line TP1004
+      const fullPath = path.resolve(process.cwd(), doc.filePath)
       if (fs.existsSync(fullPath)) {
         try {
           fs.unlinkSync(fullPath)
