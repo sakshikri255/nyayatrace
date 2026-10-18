@@ -1,9 +1,10 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
-import { Menu } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Menu, LogOut } from 'lucide-react'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
 import { CommandPalette } from '@/components/layout/CommandPalette'
+import { logoutUser, getSession } from '@/lib/auth'
 
 const PAGE_TITLES: Record<string, { title: string; breadcrumb: string[] }> = {
   '/overview': { title: 'Overview', breadcrumb: ['Dashboard', 'Overview'] },
@@ -24,8 +25,15 @@ function getPageInfo(pathname: string) {
 
 export function Topbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { setMobileOpen } = useMobileSidebar()
   const { title, breadcrumb } = getPageInfo(pathname)
+  const session = getSession()
+
+  function handleLogout() {
+    logoutUser()
+    router.replace('/login')
+  }
 
   return (
     <header className="flex items-center h-14 px-6 bg-offwhite border-b border-gray-200 shrink-0">
@@ -60,6 +68,24 @@ export function Topbar() {
 
       {/* Center: Command Palette */}
       <CommandPalette />
+
+      {/* Right: user + sign out */}
+      <div className="ml-3 flex items-center gap-3 shrink-0">
+        {session && (
+          <span className="hidden sm:block text-xs text-gray-500 max-w-[140px] truncate">
+            {session.name}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={handleLogout}
+          title="Sign out"
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 transition-colors"
+        >
+          <LogOut size={13} />
+          <span className="hidden sm:inline">Sign out</span>
+        </button>
+      </div>
     </header>
   )
 }

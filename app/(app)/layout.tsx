@@ -3,9 +3,11 @@ import { Topbar } from '@/components/layout/Topbar'
 import { MobileSidebarProvider } from '@/components/layout/MobileSidebarContext'
 import { NavigationProgressBar } from '@/components/layout/NavigationProgressBar'
 import { AnimatedPageWrapper } from '@/components/layout/AnimatedPageWrapper'
+import { AuthGuard } from '@/components/layout/AuthGuard'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
+    <AuthGuard>
     <MobileSidebarProvider>
       <NavigationProgressBar />
       <div className="flex h-screen w-full overflow-hidden bg-offwhite">
@@ -25,5 +27,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </MobileSidebarProvider>
+    </AuthGuard>
   )
 }

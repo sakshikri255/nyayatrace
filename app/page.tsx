@@ -110,7 +110,7 @@ function FeaturesSection() {
 
 /* ── Landing page ─────────────────────────────────────────────── */
 export default function LandingPage() {
-  redirect('/cases')
+  redirect('/login')
 
   return (
     <div className="min-h-screen bg-navy text-offwhite">
