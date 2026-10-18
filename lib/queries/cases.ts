@@ -342,6 +342,7 @@ export function deleteCase(id: number): boolean {
       const fullPath = path.isAbsolute(doc.filePath)
         ? doc.filePath
         : path.join(process.cwd(), doc.filePath)
+      // turbopack-disable-next-line TP1004
       if (fs.existsSync(fullPath)) {
         try {
           fs.unlinkSync(fullPath)
