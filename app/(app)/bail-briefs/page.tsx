@@ -55,17 +55,17 @@ export default function BailBriefsPage() {
                 key={c.id}
                 className={cn(
                   'animate-fade-up',
-                      'bg-white rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
+                      'w-full min-w-0 bg-white rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
                       c.caseType === 'parole' ? 'border-violet-200' :
                       c.caseType === 'bail'   ? 'border-teal-200'   : 'border-slate-200'
                     )}
               >
                 {/* Header row */}
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-xs font-mono font-semibold text-slate-400 tracking-wide">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 whitespace-nowrap text-xs font-mono font-semibold text-slate-400 tracking-wide">
                     {c.caseNumber}
                   </span>
-                  <div className="flex gap-1.5 flex-wrap justify-end">
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
                     <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium', typeCfg.className)}>
                       {typeCfg.label}
                     </span>
@@ -95,8 +95,8 @@ export default function BailBriefsPage() {
                   <StatutoryBailCard caseData={c} compact />
                 )}
 
-                {/* Actions row */}
-                <div className="mt-auto flex flex-wrap items-center gap-2">
+                {/* Actions footer */}
+                <footer className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                   <Link
                     href={`/bail-briefs/${c.id}`}
                     className={cn(
@@ -108,28 +108,33 @@ export default function BailBriefsPage() {
                   >
                     View Brief →
                   </Link>
-                  <Link
-                    href={`/cases/${c.id}`}
-                    className="inline-flex items-center gap-1 px-2 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
-                    title="Case Workspace"
-                  >
-                    <BriefcaseIcon className="w-3.5 h-3.5" />
-                  </Link>
-                  <Link
-                    href={`/case-progress/${c.id}`}
-                    className="inline-flex items-center gap-1 px-2 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
-                    title="Case Progress"
-                  >
-                    <TrendingUpIcon className="w-3.5 h-3.5" />
-                  </Link>
-                  <Link
-                    href={`/verification/${c.id}`}
-                    className="inline-flex items-center gap-1 px-2 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
-                    title="Verification"
-                  >
-                    <SearchIcon className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/cases/${c.id}`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+                      title="Case Workspace"
+                      aria-label="Case Workspace"
+                    >
+                      <BriefcaseIcon className="w-3.5 h-3.5" />
+                    </Link>
+                    <Link
+                      href={`/case-progress/${c.id}`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+                      title="Case Progress"
+                      aria-label="Case Progress"
+                    >
+                      <TrendingUpIcon className="w-3.5 h-3.5" />
+                    </Link>
+                    <Link
+                      href={`/verification/${c.id}`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+                      title="Verification"
+                      aria-label="Verification"
+                    >
+                      <SearchIcon className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </footer>
               </div>
             )
           })}
