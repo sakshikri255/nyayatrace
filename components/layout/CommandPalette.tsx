@@ -260,7 +260,7 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2 rounded-lg border border-border-dark bg-charcoal/80 px-3 py-1.5 text-xs text-muted hover:text-offwhite hover:border-teal/50 transition-colors"
+        className="hidden md:flex h-9 shrink-0 items-center gap-2 rounded-lg border border-border-dark bg-charcoal/80 px-3 text-xs text-muted hover:text-offwhite hover:border-teal/50 transition-colors"
       >
         <Search className="h-3.5 w-3.5 text-teal" />
         <span>Search cases, sections, text...</span>

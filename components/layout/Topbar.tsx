@@ -39,7 +39,7 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex items-center h-14 px-6 bg-offwhite border-b border-gray-200 shrink-0">
+    <header className="flex items-center justify-between gap-4 h-14 px-6 bg-offwhite border-b border-gray-200 shrink-0">
       <button
         type="button"
         aria-label="Open navigation"
@@ -49,7 +49,7 @@ export function Topbar() {
         <Menu className="h-5 w-5" />
       </button>
       {/* Left: title + breadcrumb */}
-      <div className="flex flex-col justify-center min-w-0 mr-auto">
+      <div className="flex flex-1 flex-col justify-center min-w-0">
         <div className="flex items-center gap-1.5 text-xs text-gray-400">
           {breadcrumb.map((crumb, i) => (
             <span key={crumb} className="flex items-center gap-1.5">
@@ -75,9 +75,9 @@ export function Topbar() {
       <CommandPalette />
 
       {/* Right: user + sign out */}
-      <div className="ml-3 flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         {session && (
-          <span className="hidden sm:block text-xs text-gray-500 max-w-[140px] truncate">
+          <span className="hidden sm:flex h-9 items-center text-xs text-gray-500 max-w-[140px] truncate">
             {session.name}
           </span>
         )}
@@ -85,7 +85,7 @@ export function Topbar() {
           type="button"
           onClick={handleLogout}
           title="Sign out"
-          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 transition-colors"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 transition-colors"
         >
           <LogOut size={13} />
           <span className="hidden sm:inline">Sign out</span>
