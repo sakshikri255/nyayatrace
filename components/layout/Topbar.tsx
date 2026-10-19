@@ -1,28 +1,29 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Menu, LogOut } from 'lucide-react'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
 import { CommandPalette } from '@/components/layout/CommandPalette'
 import { logoutUser, getSession } from '@/lib/auth'
 
 const PAGE_TITLES: Record<string, { title: string; breadcrumb: string[] }> = {
-  '/overview': { title: 'Overview', breadcrumb: ['Dashboard', 'Overview'] },
-  '/cases': { title: 'Cases', breadcrumb: ['Dashboard', 'Cases'] },
-  '/verification': { title: 'Fact & Evidence Verification', breadcrumb: ['Dashboard', 'Verification'] },
-  '/bail-briefs': { title: 'Bail & Parole', breadcrumb: ['Dashboard', 'Bail & Parole'] },
-  '/case-progress': { title: 'Case Progress', breadcrumb: ['Dashboard', 'Case Progress'] },
-  '/concordance': { title: 'Dual Law Concordance', breadcrumb: ['Dashboard', 'Concordance'] },
-  '/cause-list': { title: 'Court Diary / Roznamcha', breadcrumb: ['Dashboard', 'Cause List'] },
-  '/reports': { title: 'Reports', breadcrumb: ['Dashboard', 'Reports'] },
-  '/settings': { title: 'Settings', breadcrumb: ['Dashboard', 'Settings'] },
+  '/overview': { title: 'Overview', breadcrumb: ['Overview'] },
+  '/cases': { title: 'Cases', breadcrumb: ['Overview', 'Cases'] },
+  '/verification': { title: 'Fact & Evidence Verification', breadcrumb: ['Overview', 'Verification'] },
+  '/bail-briefs': { title: 'Bail & Parole', breadcrumb: ['Overview', 'Bail & Parole'] },
+  '/case-progress': { title: 'Case Progress', breadcrumb: ['Overview', 'Case Progress'] },
+  '/concordance': { title: 'Dual Law Concordance', breadcrumb: ['Overview', 'Concordance'] },
+  '/cause-list': { title: 'Court Diary / Roznamcha', breadcrumb: ['Overview', 'Cause List'] },
+  '/reports': { title: 'Reports', breadcrumb: ['Overview', 'Reports'] },
+  '/settings': { title: 'Settings', breadcrumb: ['Overview', 'Settings'] },
 }
 
 function getPageInfo(pathname: string) {
   for (const [key, val] of Object.entries(PAGE_TITLES)) {
     if (pathname === key || pathname.startsWith(key + '/')) return val
   }
-  return { title: 'NyayaTrace', breadcrumb: ['Dashboard'] }
+  return { title: 'NyayaTrace', breadcrumb: ['NyayaTrace'] }
 }
 
 export function Topbar() {
@@ -53,13 +54,15 @@ export function Topbar() {
           {breadcrumb.map((crumb, i) => (
             <span key={crumb} className="flex items-center gap-1.5">
               {i > 0 && <span>/</span>}
-              <span
-                className={
-                  i === breadcrumb.length - 1 ? 'text-gray-600 font-medium' : ''
-                }
-              >
-                {crumb}
-              </span>
+              {i === breadcrumb.length - 1 ? (
+                <span aria-current="page" className="text-gray-600 font-medium">
+                  {crumb}
+                </span>
+              ) : (
+                <Link href="/overview" className="hover:text-gray-600">
+                  {crumb}
+                </Link>
+              )}
             </span>
           ))}
         </div>
