@@ -83,6 +83,7 @@ export async function PATCH(
       'judge',
       'remandDate',
       'statutoryPeriodDays',
+      'maxPunishmentYears',
       'chargesheetFiled',
       'chargesheetDate',
       'applicableLaw',

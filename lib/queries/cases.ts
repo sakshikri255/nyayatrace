@@ -18,6 +18,7 @@ export type CaseWithCounts = {
   judge: string | null
   remandDate: string | null
   statutoryPeriodDays: number | null
+  maxPunishmentYears: number | null
   chargesheetFiled: number | null
   chargesheetDate: string | null
   applicableLaw: 'crpc' | 'bnss' | 'auto' | null
@@ -42,6 +43,7 @@ export type CaseDetail = {
   judge: string | null
   remandDate: string | null
   statutoryPeriodDays: number | null
+  maxPunishmentYears: number | null
   chargesheetFiled: number | null
   chargesheetDate: string | null
   applicableLaw: 'crpc' | 'bnss' | 'auto' | null

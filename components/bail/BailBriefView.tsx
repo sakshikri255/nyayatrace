@@ -8,6 +8,7 @@ import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { ConditionsTable } from '@/components/bail/ConditionsTable'
 import { HearingsTab } from '@/components/cases/tabs/HearingsTab'
 import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
+import { UTPReliefCard } from '@/components/bail/UTPReliefCard'
 import { ParoleTimelineCard } from '@/components/bail/ParoleTimelineCard'
 import { NextHearingWidget } from '@/components/bail/NextHearingWidget'
 import { ChangelogTab } from '@/components/bail/ChangelogTab'
@@ -215,6 +216,11 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                 ) : (
                   <StatutoryBailCard caseData={caseRecord} />
                 )}
+
+                {/* UTP Relief tracker — criminal / bail / parole cases */}
+                <UTPReliefCard
+                  caseData={caseRecord as typeof caseRecord & { maxPunishmentYears?: number | null }}
+                />
 
                 {/* Next Hearing Widget */}
                 {data.nextHearing && <NextHearingWidget hearing={data.nextHearing} />}

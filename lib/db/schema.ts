@@ -27,6 +27,7 @@ export const cases = sqliteTable(
     judge: text('judge'),
     remandDate: text('remand_date'),
     statutoryPeriodDays: integer('statutory_period_days', { mode: 'number' }).default(60),
+    maxPunishmentYears: integer('max_punishment_years', { mode: 'number' }),
     chargesheetFiled: integer('chargesheet_filed', { mode: 'number' }).default(0),
     chargesheetDate: text('chargesheet_date'),
     applicableLaw: text('applicable_law', {
@@ -232,6 +233,7 @@ export const hearings = sqliteTable(
     }).notNull(),
     description: text('description'),
     outcome: text('outcome'),
+    adjournmentReason: text('adjournment_reason'),
     judge: text('judge'),
     court: text('court'),
     sourceDocument: text('source_document'),

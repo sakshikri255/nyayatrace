@@ -13,6 +13,8 @@ import {
   FileText,
   Settings,
   ChevronLeft,
+  BookOpen,
+  CalendarDays,
 } from 'lucide-react'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
 import {
@@ -30,6 +32,8 @@ const NAV_ITEMS = [
   { label: 'Verification', href: '/verification', icon: Search },
   { label: 'Bail & Parole', href: '/bail-briefs', icon: Scale },
   { label: 'Case Progress', href: '/case-progress', icon: TrendingUp },
+  { label: 'Concordance', href: '/concordance', icon: BookOpen },
+  { label: 'Cause List', href: '/cause-list', icon: CalendarDays },
   { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]

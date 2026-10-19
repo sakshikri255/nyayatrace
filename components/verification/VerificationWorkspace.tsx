@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical } from 'lucide-react'
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
+import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate } from 'lucide-react'
+import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelGroupHandle } from 'react-resizable-panels'
 import { DocumentPanel } from './DocumentPanel'
 import { DocumentViewer } from './DocumentViewer'
 import { FindingsPanel } from './FindingsPanel'
 import { AnnotationsPanel } from './AnnotationsPanel'
+import { TemporalTimeline } from './TemporalTimeline'
 import type { DocumentRow, DocumentWithPages } from '@/lib/queries/documents'
 import type { FindingWithSources } from '@/lib/queries/findings'
 import type { CaseDetail } from '@/lib/queries/cases'
@@ -19,8 +20,21 @@ interface Props {
   initialFindings: FindingWithSources[]
 }
 
-type MobileTab = 'documents' | 'viewer' | 'findings' | 'annotations'
-type RightTab = 'findings' | 'annotations'
+type MobileTab = 'documents' | 'viewer' | 'findings' | 'annotations' | 'timeline'
+type RightTab = 'findings' | 'annotations' | 'timeline'
+
+type LayoutPreset = '50/50' | 'full-doc' | 'inspection'
+const LAYOUT_PRESETS: Record<LayoutPreset, [number, number, number]> = {
+  '50/50':      [20, 50, 30],
+  'full-doc':   [20, 65, 15],
+  'inspection': [18, 38, 44],
+}
+const PRESET_LABELS: Record<LayoutPreset, string> = {
+  '50/50':      '50 / 50',
+  'full-doc':   'Full Doc',
+  'inspection': 'Inspect',
+}
+const LAYOUT_KEY = 'nyaya_workspace_layout'
 
 export function VerificationWorkspace({ caseData, initialDocuments, initialFindings }: Props) {
   const [documents, setDocuments] = useState<DocumentRow[]>(initialDocuments)
@@ -34,6 +48,15 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
   const [mobileTab, setMobileTab] = useState<MobileTab>('documents')
   const [rightTab, setRightTab] = useState<RightTab>('findings')
   const [activePage, setActivePage] = useState<number>(1)
+  const [activePreset, setActivePreset] = useState<LayoutPreset | null>(null)
+  const panelGroupRef = useRef<ImperativePanelGroupHandle>(null)
+
+  function applyPreset(preset: LayoutPreset) {
+    const sizes = LAYOUT_PRESETS[preset]
+    panelGroupRef.current?.setLayout(sizes)
+    setActivePreset(preset)
+    try { localStorage.setItem(LAYOUT_KEY, preset) } catch { /* ignore */ }
+  }
 
   const needsReview = findings.filter((f) => f.reviewStatus === 'needs_review').length
   const verified = findings.filter((f) => f.reviewStatus === 'verified').length
@@ -90,6 +113,7 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
     { id: 'viewer', label: 'Viewer' },
     { id: 'findings', label: `Findings (${findings.length})` },
     { id: 'annotations', label: 'Notes' },
+    { id: 'timeline', label: 'Timeline' },
   ]
 
   return (
@@ -152,10 +176,29 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
       </div>
 
       {/* ── Desktop Resizable Workspace (lg screens) ──────────────────── */}
-      <div className="hidden lg:flex flex-1 overflow-hidden">
-        <PanelGroup direction="horizontal" className="h-full w-full">
-          {/* Panel 1: Documents Tree (Default 22%) */}
-          <Panel defaultSize={22} minSize={16} maxSize={35} className="flex flex-col bg-white overflow-hidden">
+      <div className="hidden lg:flex flex-1 flex-col overflow-hidden">
+        {/* Preset layout buttons */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border-b border-slate-200 shrink-0">
+          <LayoutTemplate className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="text-[11px] text-slate-400 font-medium mr-1">Layout:</span>
+          {(Object.keys(LAYOUT_PRESETS) as LayoutPreset[]).map((preset) => (
+            <button
+              key={preset}
+              onClick={() => applyPreset(preset)}
+              className={cn(
+                'rounded px-2.5 py-1 text-[11px] font-semibold transition-colors border',
+                activePreset === preset
+                  ? 'bg-teal-600 text-white border-teal-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              )}
+            >
+              {PRESET_LABELS[preset]}
+            </button>
+          ))}
+        </div>
+        <PanelGroup ref={panelGroupRef} direction="horizontal" className="flex-1 w-full">
+          {/* Panel 1: Documents Tree */}
+          <Panel defaultSize={22} minSize={14} maxSize={35} className="flex flex-col bg-white overflow-hidden">
             <DocumentPanel
               caseId={caseData.id}
               documents={documents}
@@ -171,8 +214,8 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
             <GripVertical className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
           </PanelResizeHandle>
 
-          {/* Panel 2: Document Viewer (Default 48%) */}
-          <Panel defaultSize={48} minSize={30} className="flex flex-col bg-slate-50 overflow-hidden">
+          {/* Panel 2: Document Viewer */}
+          <Panel defaultSize={48} minSize={28} className="flex flex-col bg-slate-50 overflow-hidden">
             <DocumentViewer
               document={selectedDocument}
               pages={documentPages}
@@ -190,9 +233,8 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
             <GripVertical className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
           </PanelResizeHandle>
 
-          {/* Panel 3: Findings & Evidence Annotations Tabs (Default 30%) */}
-          <Panel defaultSize={30} minSize={20} maxSize={45} className="flex flex-col bg-white overflow-hidden">
-            {/* Tab switch header */}
+          {/* Panel 3: Findings, Notes, Timeline */}
+          <Panel defaultSize={30} minSize={16} maxSize={50} className="flex flex-col bg-white overflow-hidden">
             <div className="flex border-b border-slate-200 bg-slate-50 p-1 shrink-0">
               <button
                 type="button"
@@ -218,7 +260,20 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
                 )}
               >
                 <Bookmark className="h-3.5 w-3.5" />
-                Evidence Notes
+                Notes
+              </button>
+              <button
+                type="button"
+                onClick={() => setRightTab('timeline')}
+                className={cn(
+                  'flex-1 rounded py-1.5 text-xs font-semibold transition-all flex items-center justify-center gap-1.5',
+                  rightTab === 'timeline'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                <GitBranch className="h-3.5 w-3.5" />
+                Timeline
               </button>
             </div>
 
@@ -230,12 +285,14 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
                   onSelectFinding={handleSelectFinding}
                   onFindingUpdate={handleFindingUpdate}
                 />
-              ) : (
+              ) : rightTab === 'annotations' ? (
                 <AnnotationsPanel
                   caseId={caseData.id}
                   documentId={selectedDocumentId}
                   currentPage={activePage}
                 />
+              ) : (
+                <TemporalTimeline caseId={caseData.id} />
               )}
             </div>
           </Panel>
@@ -290,6 +347,12 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
               documentId={selectedDocumentId}
               currentPage={activePage}
             />
+          </div>
+        )}
+
+        {mobileTab === 'timeline' && (
+          <div className="w-full h-full flex flex-col bg-white overflow-hidden">
+            <TemporalTimeline caseId={caseData.id} />
           </div>
         )}
       </div>
