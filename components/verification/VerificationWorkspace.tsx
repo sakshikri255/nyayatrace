@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate } from 'lucide-react'
+import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate, BriefcaseIcon, TrendingUpIcon, ScaleIcon } from 'lucide-react'
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelGroupHandle } from 'react-resizable-panels'
 import { DocumentPanel } from './DocumentPanel'
 import { DocumentViewer } from './DocumentViewer'
@@ -155,6 +155,34 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
             <span className="text-base font-bold text-emerald-600 leading-none">{verified}</span>
             <span className="text-xs text-slate-400 mt-0.5">Verified</span>
           </div>
+        </div>
+
+        {/* Cross-feature quick links */}
+        <div className="hidden md:flex items-center gap-1.5 ml-2">
+          <Link
+            href={`/cases/${caseData.id}`}
+            title="Case Workspace"
+            className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-500 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <BriefcaseIcon className="w-3 h-3" />
+            Case
+          </Link>
+          <Link
+            href={`/bail-briefs/${caseData.id}`}
+            title="Bail & Parole Brief"
+            className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-500 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <ScaleIcon className="w-3 h-3" />
+            Bail
+          </Link>
+          <Link
+            href={`/case-progress/${caseData.id}`}
+            title="Case Progress"
+            className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-500 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <TrendingUpIcon className="w-3 h-3" />
+            Progress
+          </Link>
         </div>
       </header>
 

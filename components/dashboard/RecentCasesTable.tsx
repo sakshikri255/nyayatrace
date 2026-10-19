@@ -34,9 +34,17 @@ export function RecentCasesTable({ cases }: RecentCasesTableProps) {
 
   return (
     <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-800">Recent Cases</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Last 5 updated cases</p>
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Recent Cases</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Last 5 updated cases</p>
+        </div>
+        <Link
+          href="/cases"
+          className="text-xs font-medium text-teal hover:underline"
+        >
+          View all cases →
+        </Link>
       </div>
       <table className="w-full text-sm">
         <thead>

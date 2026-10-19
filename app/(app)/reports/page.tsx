@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
+import { FileText, TrendingUpIcon, SearchIcon, ScaleIcon, BriefcaseIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { cn } from '@/lib/utils'
 
@@ -78,13 +78,41 @@ export default function ReportsPage() {
                   {c.court && <span className="truncate max-w-[12rem]">{c.court}</span>}
                 </div>
 
-                {/* Generate brief button */}
-                <div className="mt-auto pt-1">
+                {/* Actions row */}
+                <div className="mt-auto pt-2 flex flex-wrap items-center gap-2">
                   <Link
                     href={`/reports/${c.id}`}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 transition-colors"
                   >
                     Generate Brief →
+                  </Link>
+                  <Link
+                    href={`/cases/${c.id}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+                    title="Case Workspace"
+                  >
+                    <BriefcaseIcon className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href={`/verification/${c.id}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+                    title="Verification Workspace"
+                  >
+                    <SearchIcon className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href={`/case-progress/${c.id}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+                    title="Case Progress"
+                  >
+                    <TrendingUpIcon className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href={`/bail-briefs/${c.id}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+                    title="Bail & Parole Brief"
+                  >
+                    <ScaleIcon className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>

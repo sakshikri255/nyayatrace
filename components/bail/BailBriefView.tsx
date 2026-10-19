@@ -1,8 +1,9 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, type Variants } from 'framer-motion'
-import { GavelIcon, FileTextIcon, CalendarIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, PrinterIcon } from 'lucide-react'
+import { GavelIcon, FileTextIcon, CalendarIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, PrinterIcon, BriefcaseIcon, TrendingUpIcon, SearchIcon } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { ConditionsTable } from '@/components/bail/ConditionsTable'
@@ -155,7 +156,7 @@ export function BailBriefView({ data }: BailBriefViewProps) {
         <h1 className="text-xl font-bold text-slate-900 mb-3">{caseRecord.title}</h1>
 
         {/* Court + judge metadata */}
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500 mb-3">
           {caseRecord.court && (
             <span><span className="font-medium text-slate-700">Court:</span> {caseRecord.court}</span>
           )}
@@ -168,6 +169,32 @@ export function BailBriefView({ data }: BailBriefViewProps) {
           <span>
             <span className="font-medium text-slate-700">Orders:</span> {orders.length}
           </span>
+        </div>
+
+        {/* Cross-feature quick links */}
+        <div className="no-print flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+          <span className="text-[11px] font-medium text-slate-400 mr-1">Also view in:</span>
+          <Link
+            href={`/cases/${caseRecord.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <BriefcaseIcon className="w-3.5 h-3.5" />
+            Case Workspace
+          </Link>
+          <Link
+            href={`/case-progress/${caseRecord.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <TrendingUpIcon className="w-3.5 h-3.5" />
+            Case Progress
+          </Link>
+          <Link
+            href={`/verification/${caseRecord.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <SearchIcon className="w-3.5 h-3.5" />
+            Verification
+          </Link>
         </div>
       </div>
 

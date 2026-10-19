@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   LayoutDashboard,
   Briefcase,
@@ -117,19 +117,11 @@ export function Sidebar() {
                               isActive ? 'text-teal-light' : 'text-muted'
                             )}
                           />
-                          <AnimatePresence initial={false}>
-                            {!collapsed && (
-                              <motion.span
-                                initial={{ opacity: 0, width: 0 }}
-                                animate={{ opacity: 1, width: 'auto' }}
-                                exit={{ opacity: 0, width: 0 }}
-                                transition={{ duration: 0.15 }}
-                                className="overflow-hidden whitespace-nowrap"
-                              >
-                                {item.label}
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
+                          {!collapsed && (
+                            <span className="overflow-hidden whitespace-nowrap">
+                              {item.label}
+                            </span>
+                          )}
                         </Link>
                       }
                     />

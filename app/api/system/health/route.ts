@@ -7,15 +7,6 @@ import { count } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
 
-function safeCount(table: Parameters<typeof db.select>[0] extends undefined ? never : Parameters<typeof db.select>[0]): number {
-  try {
-    // @ts-expect-error – dynamic table reference
-    return db.select({ cnt: count() }).from(table).get()?.cnt ?? 0
-  } catch {
-    return 0
-  }
-}
-
 function dirSizeBytes(dir: string): number {
   if (!fs.existsSync(dir)) return 0
   let total = 0

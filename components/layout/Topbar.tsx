@@ -9,9 +9,11 @@ import { logoutUser, getSession } from '@/lib/auth'
 const PAGE_TITLES: Record<string, { title: string; breadcrumb: string[] }> = {
   '/overview': { title: 'Overview', breadcrumb: ['Dashboard', 'Overview'] },
   '/cases': { title: 'Cases', breadcrumb: ['Dashboard', 'Cases'] },
-  '/verification': { title: 'Verification', breadcrumb: ['Dashboard', 'Verification'] },
+  '/verification': { title: 'Fact & Evidence Verification', breadcrumb: ['Dashboard', 'Verification'] },
   '/bail-briefs': { title: 'Bail & Parole', breadcrumb: ['Dashboard', 'Bail & Parole'] },
   '/case-progress': { title: 'Case Progress', breadcrumb: ['Dashboard', 'Case Progress'] },
+  '/concordance': { title: 'Dual Law Concordance', breadcrumb: ['Dashboard', 'Concordance'] },
+  '/cause-list': { title: 'Court Diary / Roznamcha', breadcrumb: ['Dashboard', 'Cause List'] },
   '/reports': { title: 'Reports', breadcrumb: ['Dashboard', 'Reports'] },
   '/settings': { title: 'Settings', breadcrumb: ['Dashboard', 'Settings'] },
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import { GavelIcon, CalendarIcon, ActivityIcon } from 'lucide-react'
+import Link from 'next/link'
+import { GavelIcon, CalendarIcon, ActivityIcon, ArrowRightIcon, BriefcaseIcon, ScaleIcon, SearchIcon, FileTextIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBadge'
 import { CaseActivityChart } from '@/components/progress/CaseActivityChart'
@@ -81,6 +82,42 @@ export function CaseProgressView({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Cross-feature quick links */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href={`/cases/${caseDetail.id}`}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+        >
+          <BriefcaseIcon className="w-3.5 h-3.5" />
+          Case Workspace
+          <ArrowRightIcon className="w-3 h-3" />
+        </Link>
+        <Link
+          href={`/bail-briefs/${caseDetail.id}`}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+        >
+          <ScaleIcon className="w-3.5 h-3.5" />
+          Bail &amp; Parole Brief
+          <ArrowRightIcon className="w-3 h-3" />
+        </Link>
+        <Link
+          href={`/verification/${caseDetail.id}`}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+        >
+          <SearchIcon className="w-3.5 h-3.5" />
+          Verification Workspace
+          <ArrowRightIcon className="w-3 h-3" />
+        </Link>
+        <Link
+          href={`/reports/${caseDetail.id}`}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+        >
+          <FileTextIcon className="w-3.5 h-3.5" />
+          Case Brief / Report
+          <ArrowRightIcon className="w-3 h-3" />
+        </Link>
+      </div>
+
       {/* Case header */}
       <div className="bg-white border border-slate-200 rounded-lg px-5 py-4 flex flex-col gap-2">
         <div className="flex items-center gap-2 flex-wrap">

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeftIcon } from 'lucide-react'
+import { ArrowLeftIcon, TrendingUpIcon, ScaleIcon, SearchIcon, FileTextIcon } from 'lucide-react'
 import { getCaseById } from '@/lib/queries/cases'
 import { getDocumentsByCaseId } from '@/lib/queries/documents'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
@@ -42,14 +42,46 @@ export default function CaseDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
-      {/* Back nav */}
-      <Link
-        href="/cases"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal transition-colors mb-6"
-      >
-        <ArrowLeftIcon className="w-4 h-4" />
-        All Cases
-      </Link>
+      {/* Back nav + cross-feature shortcuts */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <Link
+          href="/cases"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal transition-colors"
+        >
+          <ArrowLeftIcon className="w-4 h-4" />
+          All Cases
+        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/case-progress/${caseData.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <TrendingUpIcon className="w-3.5 h-3.5" />
+            Progress
+          </Link>
+          <Link
+            href={`/bail-briefs/${caseData.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <ScaleIcon className="w-3.5 h-3.5" />
+            Bail &amp; Parole
+          </Link>
+          <Link
+            href={`/verification/${caseData.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <SearchIcon className="w-3.5 h-3.5" />
+            Verification
+          </Link>
+          <Link
+            href={`/reports/${caseData.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          >
+            <FileTextIcon className="w-3.5 h-3.5" />
+            Report
+          </Link>
+        </div>
+      </div>
 
       {/* Case header */}
       <div className="rounded-xl border border-slate-200 bg-white px-6 py-5 mb-6 shadow-sm">

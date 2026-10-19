@@ -72,7 +72,7 @@ function fmt(dateStr: string, opts: Intl.DateTimeFormatOptions) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', opts)
 }
 
-function HearingCard({ hearing, isToday }: { hearing: HearingEntry; isToday: boolean }) {
+function HearingCard({ hearing }: { hearing: HearingEntry; isToday?: boolean }) {
   const typeColors = CASE_TYPE_COLORS[hearing.caseType] ?? CASE_TYPE_COLORS.unspecified
   const eventColor = EVENT_TYPE_COLORS[hearing.eventType] ?? EVENT_TYPE_COLORS.adjournment
 

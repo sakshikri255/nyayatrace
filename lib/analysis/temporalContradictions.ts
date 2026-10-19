@@ -94,7 +94,8 @@ const TIME_PATTERNS: Array<{ regex: RegExp; parse: (m: RegExpMatchArray) => stri
   {
     regex: /\bat\s+(?:about\s+)?(\d{1,2}):(\d{2})\s*(am|pm|hrs|hours?)?\b/gi,
     parse: (m) => {
-      let h = parseInt(m[1]), min = parseInt(m[2])
+      let h = parseInt(m[1])
+      const min = parseInt(m[2])
       const ampm = (m[3] ?? '').toLowerCase()
       if (ampm === 'pm' && h < 12) h += 12
       if (ampm === 'am' && h === 12) h = 0

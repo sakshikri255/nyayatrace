@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRightIcon, FileSearchIcon, AlertTriangleIcon } from 'lucide-react'
+import { ArrowRightIcon, FileSearchIcon, AlertTriangleIcon, BriefcaseIcon, ScaleIcon, TrendingUpIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
 import { CaseStatusBadge } from '@/components/cases/CaseStatusBadge'
@@ -21,18 +21,27 @@ export default function VerificationIndexPage() {
     <div className="flex flex-col h-full">
       <div className="max-w-6xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
         {/* Heading */}
-        <div className="flex items-start gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal/10 flex items-center justify-center">
             <FileSearchIcon className="w-5 h-5 text-teal" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-              Fact &amp; Evidence Verification
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Select a case to open the three-panel verification workspace and review document findings.
-            </p>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 leading-tight">
+                Fact &amp; Evidence Verification
+              </h1>
+              <p className="text-sm text-slate-500 mt-1">
+                Select a case to open the three-panel verification workspace and review document findings.
+              </p>
+            </div>
           </div>
+          <Link
+            href="/cases"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors shrink-0"
+          >
+            <BriefcaseIcon className="w-3.5 h-3.5" />
+            View All Cases
+          </Link>
         </div>
 
         {/* Case grid */}
@@ -119,14 +128,30 @@ function CaseCard({
         </div>
       </div>
 
-      {/* CTA */}
-      <Link
-        href={`/verification/${id}`}
-        className="mt-auto flex items-center justify-between gap-2 rounded-lg bg-teal/5 hover:bg-teal/10 border border-teal/20 hover:border-teal/40 px-4 py-2.5 text-sm font-semibold text-teal transition-all group-hover:translate-x-0.5"
-      >
-        Open Workspace
-        <ArrowRightIcon className="w-4 h-4 shrink-0" />
-      </Link>
+      {/* Actions */}
+      <div className="mt-auto flex flex-wrap items-center gap-2">
+        <Link
+          href={`/verification/${id}`}
+          className="flex-1 flex items-center justify-between gap-2 rounded-lg bg-teal/5 hover:bg-teal/10 border border-teal/20 hover:border-teal/40 px-4 py-2.5 text-sm font-semibold text-teal transition-all group-hover:translate-x-0.5"
+        >
+          Open Workspace
+          <ArrowRightIcon className="w-4 h-4 shrink-0" />
+        </Link>
+        <Link
+          href={`/bail-briefs/${id}`}
+          className="inline-flex items-center gap-1 px-2 py-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+          title="Bail & Parole"
+        >
+          <ScaleIcon className="w-3.5 h-3.5" />
+        </Link>
+        <Link
+          href={`/case-progress/${id}`}
+          className="inline-flex items-center gap-1 px-2 py-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+          title="Case Progress"
+        >
+          <TrendingUpIcon className="w-3.5 h-3.5" />
+        </Link>
+      </div>
     </div>
   )
 }

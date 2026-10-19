@@ -60,7 +60,6 @@ export function calculateUTPRelief(input: UTPReliefInput): UTPReliefResult {
   }
 
   const law = resolveApplicableLaw(input.applicableLaw, input.remandDate)
-  const isFirstTimeOffender = law === 'bnss' // BNSS 479 applies to first-time offenders
 
   const section = law === 'bnss' ? 'Sec 479 BNSS' : 'Sec 436A CrPC'
   const fraction = law === 'bnss' ? 1 / 3 : 1 / 2

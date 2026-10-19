@@ -12,6 +12,8 @@ import {
   BookOpen,
   ArrowRight,
   X,
+  CalendarDays,
+  FileSearch,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -100,10 +102,10 @@ export function CommandPalette() {
         },
         {
           id: 'act-verification',
-          title: 'Evidence Verification Workspace',
+          title: 'Fact & Evidence Verification',
           subtitle: 'Inspect cross-document contradictions and source passages',
           category: 'Actions',
-          icon: Search,
+          icon: FileSearch,
           onSelect: () => {
             setOpen(false)
             router.push('/verification')
@@ -118,6 +120,39 @@ export function CommandPalette() {
           onSelect: () => {
             setOpen(false)
             router.push('/case-progress')
+          },
+        },
+        {
+          id: 'act-cause-list',
+          title: 'Court Diary / Cause List',
+          subtitle: 'Weekly board view of all scheduled hearings across cases',
+          category: 'Actions',
+          icon: CalendarDays,
+          onSelect: () => {
+            setOpen(false)
+            router.push('/cause-list')
+          },
+        },
+        {
+          id: 'act-concordance',
+          title: 'Dual Law Concordance Matrix',
+          subtitle: 'IPC ↔ BNS and CrPC ↔ BNSS section converter',
+          category: 'Actions',
+          icon: BookOpen,
+          onSelect: () => {
+            setOpen(false)
+            router.push('/concordance')
+          },
+        },
+        {
+          id: 'act-reports',
+          title: 'Case Reports & Briefs',
+          subtitle: 'Generate and review source-linked case briefs',
+          category: 'Actions',
+          icon: FileText,
+          onSelect: () => {
+            setOpen(false)
+            router.push('/reports')
           },
         },
       ])
@@ -166,7 +201,7 @@ export function CommandPalette() {
               icon: BookOpen,
               onSelect: () => {
                 setOpen(false)
-                router.push(`/bail-briefs`)
+                router.push(`/concordance`)
               },
               badge: s.bailable,
             })

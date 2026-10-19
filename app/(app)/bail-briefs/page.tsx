@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BriefcaseIcon, TrendingUpIcon, SearchIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
@@ -94,18 +95,41 @@ export default function BailBriefsPage() {
                   <StatutoryBailCard caseData={c} compact />
                 )}
 
-                {/* View brief link */}
-                <Link
-                  href={`/bail-briefs/${c.id}`}
-                  className={cn(
-                    'mt-auto inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors',
-                    c.caseType === 'parole' ? 'bg-violet-600 text-white hover:bg-violet-700' :
-                    c.caseType === 'bail'   ? 'bg-teal-600 text-white hover:bg-teal-700'     :
-                                             'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  )}
-                >
-                  View Brief →
-                </Link>
+                {/* Actions row */}
+                <div className="mt-auto flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/bail-briefs/${c.id}`}
+                    className={cn(
+                      'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors',
+                      c.caseType === 'parole' ? 'bg-violet-600 text-white hover:bg-violet-700' :
+                      c.caseType === 'bail'   ? 'bg-teal-600 text-white hover:bg-teal-700'     :
+                                               'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    )}
+                  >
+                    View Brief →
+                  </Link>
+                  <Link
+                    href={`/cases/${c.id}`}
+                    className="inline-flex items-center gap-1 px-2 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+                    title="Case Workspace"
+                  >
+                    <BriefcaseIcon className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href={`/case-progress/${c.id}`}
+                    className="inline-flex items-center gap-1 px-2 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+                    title="Case Progress"
+                  >
+                    <TrendingUpIcon className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href={`/verification/${c.id}`}
+                    className="inline-flex items-center gap-1 px-2 py-2 rounded-md border border-slate-200 text-xs font-medium text-slate-500 hover:border-teal/40 hover:text-teal transition-colors"
+                    title="Verification"
+                  >
+                    <SearchIcon className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             )
           })}

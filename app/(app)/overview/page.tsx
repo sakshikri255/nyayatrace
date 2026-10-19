@@ -1,4 +1,4 @@
-import { PlusCircle, Upload, Search, ShieldAlert } from 'lucide-react'
+import { PlusCircle, Search, ShieldAlert, CalendarDays, Scale } from 'lucide-react'
 import Link from 'next/link'
 
 import { getDashboardStats, getRecentCases, getAllCases } from '@/lib/queries/cases'
@@ -93,6 +93,7 @@ export default function OverviewPage() {
             description="All cases in the system"
             accent="default"
             delay={0}
+            href="/cases"
           />
           <KPICard
             label="Documents Processed"
@@ -101,6 +102,7 @@ export default function OverviewPage() {
             description="Processing status: complete"
             accent="teal"
             delay={1}
+            href="/cases"
           />
           <KPICard
             label="Awaiting Review"
@@ -109,6 +111,7 @@ export default function OverviewPage() {
             description="Findings needing review"
             accent="amber"
             delay={2}
+            href="/verification"
           />
           <KPICard
             label="Verified Findings"
@@ -117,6 +120,7 @@ export default function OverviewPage() {
             description="Confirmed discrepancies"
             accent="green"
             delay={3}
+            href="/verification"
           />
         </div>
 
@@ -140,18 +144,25 @@ export default function OverviewPage() {
                 Create New Case
               </Link>
               <Link
-                href="/cases"
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
-              >
-                <Upload size={16} strokeWidth={1.75} />
-                Upload Documents
-              </Link>
-              <Link
-                href="/cases"
+                href="/verification"
                 className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
               >
                 <Search size={16} strokeWidth={1.75} />
-                Search Records
+                Verify Evidence
+              </Link>
+              <Link
+                href="/bail-briefs"
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
+              >
+                <Scale size={16} strokeWidth={1.75} />
+                Bail &amp; Parole Briefs
+              </Link>
+              <Link
+                href="/cause-list"
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
+              >
+                <CalendarDays size={16} strokeWidth={1.75} />
+                Court Diary
               </Link>
             </div>
           </div>

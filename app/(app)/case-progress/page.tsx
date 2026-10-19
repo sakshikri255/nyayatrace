@@ -3,6 +3,7 @@ import { CalendarIcon, ArrowRightIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { getHearingsByCaseId } from '@/lib/queries/hearings'
 import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBadge'
+import { CaseCardQuickLinks } from '@/components/progress/CaseCardQuickLinks'
 
 export const runtime = 'nodejs'
 
@@ -90,10 +91,13 @@ export default function CaseProgressPage() {
                   )}
                 </div>
 
-                {/* CTA */}
-                <div className="flex items-center gap-1 text-xs font-medium text-teal-600 group-hover:gap-2 transition-all mt-auto">
-                  View Progress
-                  <ArrowRightIcon className="w-3.5 h-3.5" />
+                {/* CTA strip */}
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex items-center gap-1 text-xs font-medium text-teal-600 group-hover:gap-2 transition-all">
+                    View Progress
+                    <ArrowRightIcon className="w-3.5 h-3.5" />
+                  </div>
+                  <CaseCardQuickLinks caseId={c.id} />
                 </div>
               </Link>
             )
