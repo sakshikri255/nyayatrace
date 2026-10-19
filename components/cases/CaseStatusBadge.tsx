@@ -64,6 +64,12 @@ export function CaseStatusBadge({ status, className }: CaseStatusBadgeProps) {
         className
       )}
     >
+      {status === 'active' && (
+        <span
+          aria-hidden="true"
+          className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600"
+        />
+      )}
       {config.label}
     </span>
   )
