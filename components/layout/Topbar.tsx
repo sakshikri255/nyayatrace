@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Menu, LogOut } from 'lucide-react'
@@ -31,7 +32,11 @@ export function Topbar() {
   const router = useRouter()
   const { setMobileOpen } = useMobileSidebar()
   const { title, breadcrumb } = getPageInfo(pathname)
-  const session = getSession()
+  const [session, setSession] = useState<ReturnType<typeof getSession>>(null)
+
+  useEffect(() => {
+    setSession(getSession())
+  }, [])
 
   function handleLogout() {
     logoutUser()
