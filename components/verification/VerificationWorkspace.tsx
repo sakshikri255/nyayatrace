@@ -119,7 +119,7 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-4">
+      <header className="flex flex-shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-slate-200 bg-white px-4 py-3">
         <Link
           href="/verification"
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal transition-colors shrink-0"
@@ -128,13 +128,13 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
           <span className="hidden sm:inline">Cases</span>
         </Link>
         <div className="w-px h-5 bg-slate-200 shrink-0" />
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex min-w-0 flex-[1_1_20rem] items-center gap-2">
           <FileSearchIcon className="w-4 h-4 text-teal shrink-0" />
-          <div className="min-w-0">
-            <span className="font-mono text-xs font-semibold text-teal mr-2">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate font-mono text-xs font-semibold text-teal">
               {caseData.caseNumber}
             </span>
-            <span className="text-sm font-semibold text-slate-800 truncate">
+            <span className="block truncate text-sm font-semibold text-slate-800">
               {caseData.title}
             </span>
           </div>
