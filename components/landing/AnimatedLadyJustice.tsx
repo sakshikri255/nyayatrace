@@ -23,7 +23,7 @@ export function AnimatedLadyJustice() {
   const [isHovered, setIsHovered] = useState(false)
 
   // Timing: 4.2 second full cycle
-  const cycleDuration = 4.2
+  const cycleDuration = 2.2
 
   return (
     <div
@@ -53,7 +53,7 @@ export function AnimatedLadyJustice() {
               }
         }
         transition={{
-          duration: 6,
+          duration: 4,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
