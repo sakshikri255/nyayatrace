@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { AlertTriangle, Check, CircleAlert, FileText, LoaderCircle, Printer, RefreshCw, Save, GitCompare } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Check, CircleAlert, FileText, Languages, LoaderCircle, Printer, RefreshCw, Save, GitCompare } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -12,6 +12,7 @@ import type { CaseDetail } from '@/lib/queries/cases'
 import type { FindingWithSources } from '@/lib/queries/findings'
 import type { DocumentRow } from '@/lib/queries/documents'
 import type { CaseSynopsis, EvidenceReference } from '@/lib/analysis/synopsis'
+import { INDIA_LANGUAGES } from '@/lib/constants/languages'
 
 interface AnalysisRun {
   id: number
@@ -99,11 +100,20 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
   const [aiProviders, setAiProviders] = useState({ gemini: false, openai: false })
   const [aiProvider, setAiProvider] = useState<'gemini' | 'openai'>('gemini')
   const [useAi, setUseAi] = useState(false)
+  const [selectedLanguage, setSelectedLanguage] = useState('en')
   const [savingNotes, setSavingNotes] = useState(false)
   const [notesDraft, setNotesDraft] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [showDiff, setShowDiff] = useState(false)
   const [selectedSource, setSelectedSource] = useState<(EvidenceReference & { relatedFinding?: string }) | null>(null)
+
+  // ── Display language (translate already-saved synopsis on the fly) ──
+  const [displayLanguage, setDisplayLanguage] = useState('en')
+  const [translating, setTranslating] = useState(false)
+  // Map from original passage text → translated text
+  const [translations, setTranslations] = useState<Map<string, string>>(new Map())
+  // Track which run+language pair was last translated to avoid duplicate calls
+  const lastTranslationKey = useRef<string>('')
   const documentStateKey = documents
     .map((document) => `${document.id}:${document.processingStatus}:${document.processedAt ?? ''}`)
     .join('|')
@@ -142,13 +152,85 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
     setSelectedSource({ ...source, relatedFinding })
   }
 
+  /** Returns the translated passage for a given original text, or the original if not translated. */
+  function t(text: string): string {
+    return translations.get(text) ?? text
+  }
+
+  /**
+   * Collect all unique passage strings from every translatable section, call
+   * /api/translate, then store the results in the translations map.
+   */
+  const translateSynopsis = useCallback(async (synopsis: CaseSynopsis, langCode: string) => {
+    const langLabel = INDIA_LANGUAGES.find((l) => l.code === langCode)?.label ?? langCode
+    const key = `${selectedRunId ?? ''}:${langCode}`
+    if (lastTranslationKey.current === key) return
+    if (langCode === 'en') {
+      setTranslations(new Map())
+      lastTranslationKey.current = key
+      return
+    }
+
+    setTranslating(true)
+    try {
+      // Gather all unique passages from every translatable section
+      const uniqueTexts = new Set<string>()
+      for (const item of synopsis.facts) uniqueTexts.add(item.passage)
+      for (const item of synopsis.chronology) uniqueTexts.add(item.passage)
+      for (const item of synopsis.importantStatements) uniqueTexts.add(item.passage)
+      for (const item of synopsis.ordersAndProceduralHistory) uniqueTexts.add(item.passage)
+      for (const item of synopsis.missingOrUnclear) uniqueTexts.add(item)
+      for (const inconsistency of synopsis.potentialInconsistencies) {
+        if (inconsistency.explanation) uniqueTexts.add(inconsistency.explanation)
+      }
+
+      const texts = Array.from(uniqueTexts).filter(Boolean)
+      if (texts.length === 0) return
+
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts, targetLanguage: langLabel }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error ?? 'Translation failed.')
+
+      const map = new Map<string, string>()
+      texts.forEach((original, index) => {
+        const translated = (data.translations as string[])[index]
+        if (translated && translated !== original) map.set(original, translated)
+      })
+      setTranslations(map)
+      lastTranslationKey.current = key
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Translation failed.')
+    } finally {
+      setTranslating(false)
+    }
+  }, [selectedRunId])
+
+  /** Called when the user changes the display language dropdown. */
+  async function handleDisplayLanguageChange(langCode: string) {
+    setDisplayLanguage(langCode)
+    if (langCode === 'en') {
+      setTranslations(new Map())
+      lastTranslationKey.current = `${selectedRunId ?? ''}:en`
+      return
+    }
+    if (synopsis) await translateSynopsis(synopsis, langCode)
+  }
+
   async function analyseDocuments() {
     setAnalysing(true)
     try {
       const response = await fetch(`/api/cases/${caseData.id}/analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ useAi, aiProvider }),
+        body: JSON.stringify({
+          useAi,
+          aiProvider,
+          language: INDIA_LANGUAGES.find((l) => l.code === selectedLanguage)?.label ?? 'English',
+        }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'Analysis could not be started.')
@@ -230,6 +312,29 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
             {analysing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {analysing ? 'Extracting and saving…' : useAi ? `Analyse with ${aiProvider === 'gemini' ? 'Gemini' : 'OpenAI'}` : selectedRun ? 'Analyse again locally' : 'Analyse locally'}
           </Button>
+        </div>
+      </div>
+
+      {/* ── Language selector — always visible, pick before analysis ── */}
+      <div className="analysis-controls rounded-md border border-teal-200 bg-teal-50 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-xs font-medium text-teal-900">
+            Synopsis language
+            <select
+              value={selectedLanguage}
+              onChange={(event) => setSelectedLanguage(event.target.value)}
+              className="rounded border border-teal-300 bg-white px-2 py-1.5 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal"
+            >
+              {INDIA_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>{lang.label}</option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs text-teal-700">
+            {selectedLanguage === 'en'
+              ? 'AI summary will be generated in English (default).'
+              : `AI summary will be generated in ${INDIA_LANGUAGES.find((l) => l.code === selectedLanguage)?.label ?? 'the selected language'}.`}
+          </p>
         </div>
       </div>
 
@@ -404,7 +509,42 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
           })()}
 
           <header className="py-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">NyayaTrace · Local extraction analysis</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">NyayaTrace · Local extraction analysis</p>
+                {synopsis.language && synopsis.language !== 'English' && (
+                  <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-800">
+                    {synopsis.language}
+                  </span>
+                )}
+              </div>
+
+              {/* ── Global display-language selector ── */}
+              <div className="analysis-controls flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5">
+                {translating
+                  ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-teal-600" />
+                  : <Languages className="h-3.5 w-3.5 text-slate-500" />
+                }
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                  Display language
+                  <select
+                    value={displayLanguage}
+                    onChange={(event) => handleDisplayLanguageChange(event.target.value)}
+                    disabled={translating}
+                    className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700 disabled:opacity-60"
+                  >
+                    {INDIA_LANGUAGES.map((lang) => (
+                      <option key={lang.code} value={lang.code}>{lang.label}</option>
+                    ))}
+                  </select>
+                </label>
+                {displayLanguage !== 'en' && !translating && (
+                  <span className="text-[11px] text-teal-700 font-medium">
+                    Sections 3–4, 6–8, 9 translated
+                  </span>
+                )}
+              </div>
+            </div>
             <h2 className="mt-2 text-xl font-semibold text-slate-900">{synopsis.caseOverview.title}</h2>
             <p className="mt-1 text-sm text-slate-500">Reference: {synopsis.caseOverview.reference}</p>
           </header>
@@ -462,7 +602,11 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
           </Section>
 
           <Section title="3. Facts and Important Statements">
-            <EvidenceList items={synopsis.facts} emptyText="Not found in the uploaded documents." onOpen={openSource} />
+            <EvidenceList
+              items={synopsis.facts.map((item) => ({ ...item, passage: t(item.passage) }))}
+              emptyText="Not found in the uploaded documents."
+              onOpen={openSource}
+            />
           </Section>
 
           <Section title="4. Chronology of Events">
@@ -470,7 +614,7 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[540px] text-left text-sm">
                   <thead><tr className="border-b border-slate-200 text-xs text-slate-500"><th className="py-2 pr-4">Date as written</th><th className="py-2 pr-4">Extracted event</th><th className="py-2 pr-4">Source</th><th className="py-2">Date handling</th></tr></thead>
-                  <tbody>{synopsis.chronology.map((event, index) => <tr key={`${event.documentId}-${event.pageNumber}-${index}`} className="border-b border-slate-100 align-top"><td className="py-3 pr-4 font-medium text-slate-800">{event.date}</td><td className="py-3 pr-4 text-slate-600">{event.passage}</td><td className="py-3 pr-4"><SourceLink source={event} onOpen={openSource} /></td><td className="py-3 text-xs text-slate-500">{event.dateNote}</td></tr>)}</tbody>
+                  <tbody>{synopsis.chronology.map((event, index) => <tr key={`${event.documentId}-${event.pageNumber}-${index}`} className="border-b border-slate-100 align-top"><td className="py-3 pr-4 font-medium text-slate-800">{event.date}</td><td className="py-3 pr-4 text-slate-600">{t(event.passage)}</td><td className="py-3 pr-4"><SourceLink source={event} onOpen={openSource} /></td><td className="py-3 text-xs text-slate-500">{event.dateNote}</td></tr>)}</tbody>
                 </table>
               </div>
             )}
@@ -501,7 +645,11 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
           </Section>
 
           <Section title="6. Important Statements and Evidence">
-            <EvidenceList items={synopsis.importantStatements} emptyText="Not found in the uploaded documents." onOpen={openSource} />
+            <EvidenceList
+              items={synopsis.importantStatements.map((item) => ({ ...item, passage: t(item.passage) }))}
+              emptyText="Not found in the uploaded documents."
+              onOpen={openSource}
+            />
           </Section>
 
           <Section title="7. Potential Inconsistencies">
@@ -511,7 +659,7 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
                   <thead><tr className="border-b border-slate-200 text-xs text-slate-500"><th className="py-2 pr-4">Field</th><th className="py-2 pr-4">Values found</th><th className="py-2 pr-4">Evidence</th><th className="py-2">Review</th></tr></thead>
                   <tbody>{synopsis.potentialInconsistencies.map((issue, index) => {
                     const finding = selectedRun.findings.find((item) => item.analysisRunId === selectedRun.id && item.extractedValue === issue.values[0]) ?? selectedRun.findings[index]
-                    return <tr key={`${issue.field}-${index}`} className="border-b border-slate-100 align-top"><td className="py-3 pr-4 font-medium text-slate-800">{issue.field}<p className={`mt-1 text-[11px] font-normal ${issue.origin === 'ai' ? 'text-teal-700' : 'text-slate-500'}`}>{issue.origin === 'ai' ? 'AI suggested · requires human review' : 'Local labeled comparison'}</p>{issue.explanation && <p className="mt-2 max-w-xs text-xs font-normal leading-5 text-slate-600">{issue.explanation}</p>}</td><td className="py-3 pr-4 text-slate-700">{issue.values.join(' · ')}</td><td className="py-3 pr-4"><div className="flex flex-col gap-1">{issue.sources.map((source, sourceIndex) => <SourceLink key={`${source.documentId}-${source.pageNumber}-${sourceIndex}`} source={source} onOpen={(reference) => openSource(reference, finding?.description)} />)}</div></td><td className="py-3"><div className="flex flex-col gap-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700"><AlertTriangle className="h-3.5 w-3.5" />{finding?.reviewStatus === 'verified' ? 'Verified' : finding?.reviewStatus === 'not_a_discrepancy' ? 'Not a Discrepancy' : 'Needs Review'}</span>{finding && <div className="analysis-controls flex flex-wrap gap-1"><button onClick={() => reviewFinding(finding.id, 'verified')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Verify</button><button onClick={() => reviewFinding(finding.id, 'needs_review')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Needs review</button><button onClick={() => reviewFinding(finding.id, 'not_a_discrepancy')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Not a discrepancy</button></div>}</div></td></tr>
+                    return <tr key={`${issue.field}-${index}`} className="border-b border-slate-100 align-top"><td className="py-3 pr-4 font-medium text-slate-800">{issue.field}<p className={`mt-1 text-[11px] font-normal ${issue.origin === 'ai' ? 'text-teal-700' : 'text-slate-500'}`}>{issue.origin === 'ai' ? 'AI suggested · requires human review' : 'Local labeled comparison'}</p>{issue.explanation && <p className="mt-2 max-w-xs text-xs font-normal leading-5 text-slate-600">{t(issue.explanation)}</p>}</td><td className="py-3 pr-4 text-slate-700">{issue.values.join(' · ')}</td><td className="py-3 pr-4"><div className="flex flex-col gap-1">{issue.sources.map((source, sourceIndex) => <SourceLink key={`${source.documentId}-${source.pageNumber}-${sourceIndex}`} source={source} onOpen={(reference) => openSource(reference, finding?.description)} />)}</div></td><td className="py-3"><div className="flex flex-col gap-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700"><AlertTriangle className="h-3.5 w-3.5" />{finding?.reviewStatus === 'verified' ? 'Verified' : finding?.reviewStatus === 'not_a_discrepancy' ? 'Not a Discrepancy' : 'Needs Review'}</span>{finding && <div className="analysis-controls flex flex-wrap gap-1"><button onClick={() => reviewFinding(finding.id, 'verified')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Verify</button><button onClick={() => reviewFinding(finding.id, 'needs_review')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Needs review</button><button onClick={() => reviewFinding(finding.id, 'not_a_discrepancy')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Not a discrepancy</button></div>}</div></td></tr>
                   })}</tbody>
                 </table>
               </div>
@@ -519,11 +667,15 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
           </Section>
 
           <Section title="8. Missing or Unclear Information">
-            {synopsis.missingOrUnclear.length === 0 ? <p className="text-sm text-slate-500">No unreadable pages were reported. Other missing details could not be determined from the uploaded text.</p> : <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">{synopsis.missingOrUnclear.map((item) => <li key={item}>{item}</li>)}</ul>}
+            {synopsis.missingOrUnclear.length === 0 ? <p className="text-sm text-slate-500">No unreadable pages were reported. Other missing details could not be determined from the uploaded text.</p> : <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">{synopsis.missingOrUnclear.map((item) => <li key={item}>{t(item)}</li>)}</ul>}
           </Section>
 
           <Section title="9. Orders and Procedural History">
-            <EvidenceList items={synopsis.ordersAndProceduralHistory} emptyText="Not found in the uploaded documents." onOpen={openSource} />
+            <EvidenceList
+              items={synopsis.ordersAndProceduralHistory.map((item) => ({ ...item, passage: t(item.passage) }))}
+              emptyText="Not found in the uploaded documents."
+              onOpen={openSource}
+            />
           </Section>
 
           <Section title="10. Review Notes">
