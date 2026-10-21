@@ -16,10 +16,10 @@ export function CasesGrid({
 }: CasesGridProps) {
   if (cases.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-slate-200">
-        <FolderOpenIcon className="w-10 h-10 text-slate-300 mb-3" />
-        <p className="text-sm font-semibold text-slate-600">No cases match these filters</p>
-        <p className="text-xs text-slate-400 mt-1">
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <FolderOpenIcon className="w-10 h-10 text-[var(--section-subheading)] mb-3 opacity-40" />
+        <p className="text-sm font-semibold text-[var(--section-heading)]">No cases match these filters</p>
+        <p className="text-xs text-[var(--section-subheading)] mt-1">
           Try clearing your search query or selecting a different status/type filter.
         </p>
       </div>
@@ -27,7 +27,7 @@ export function CasesGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/[0.08]">
       {cases.map((c, i) => (
         <CaseCard
           key={c.id}

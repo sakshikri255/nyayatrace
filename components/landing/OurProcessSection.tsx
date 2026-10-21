@@ -120,12 +120,12 @@ export function OurProcessSection() {
           <div className="grid grid-cols-2 gap-1.5 py-0.5">
             <div className="rounded border border-white/10 bg-midnight-900/90 p-1.5">
               <span className="text-gold-light font-medium block text-[8px]">Witness Stmt</span>
-              <span className="text-slate-400 block text-[8px] mt-0.5">"10 PM at scene"</span>
+              <span className="text-slate-400 block text-[8px] mt-0.5">&ldquo;10 PM at scene&rdquo;</span>
               <span className="text-[7px] font-mono text-slate-500 mt-0.5 block">p.8 · Para 3</span>
             </div>
             <div className="rounded border border-amber-500/30 bg-amber-500/5 p-1.5">
               <span className="text-amber-300 font-medium block text-[8px]">Duty Log</span>
-              <span className="text-slate-300 block text-[8px] mt-0.5">"On patrol duty"</span>
+              <span className="text-slate-300 block text-[8px] mt-0.5">&ldquo;On patrol duty&rdquo;</span>
               <span className="text-[7px] font-mono text-amber-400/80 mt-0.5 block">p.14 · Line 6</span>
             </div>
           </div>

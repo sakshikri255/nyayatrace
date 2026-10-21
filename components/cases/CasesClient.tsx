@@ -8,10 +8,6 @@ import {
   SearchIcon,
   LayoutGridIcon,
   TableIcon,
-  FileTextIcon,
-  AlertTriangleIcon,
-  ShieldAlertIcon,
-  BriefcaseIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CasesTable } from './CasesTable'
@@ -86,6 +82,35 @@ const EMPTY_FORM: NewCaseForm = {
 }
 
 type ViewMode = 'grid' | 'table'
+
+function PillButton({
+  active,
+  onClick,
+  children,
+  accentActive,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+  accentActive?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-full px-3 py-1 text-xs font-semibold transition-colors border cursor-pointer',
+        active
+          ? accentActive
+            ? 'bg-teal text-white border-teal'
+            : 'bg-[var(--section-heading)] text-[var(--section-card-bg)] border-[var(--section-heading)]'
+          : 'bg-transparent text-[var(--section-subheading)] border-[var(--section-card-border)] hover:border-teal/40 hover:text-teal'
+      )}
+    >
+      {children}
+    </button>
+  )
+}
 
 export function CasesClient({
   initialCases,
@@ -228,34 +253,15 @@ export function CasesClient({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Cases &amp; Records</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--section-heading)]">Cases &amp; Records</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal/10 text-teal border border-teal/20">
               {cases.length} cases registered
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
-            <span>
-              {scopeFilter === 'my' && session
-                ? `Showing matters assigned to ${session.role?.toLowerCase().includes('judge') ? 'Bench of ' + session.name : 'Advocate ' + session.name}.`
-                : 'Showing all chamber and judicial court records.'}
-            </span>
-            {scopeFilter === 'my' ? (
-              <button
-                type="button"
-                onClick={() => setScopeFilter('all')}
-                className="text-teal hover:underline font-semibold text-xs ml-1"
-              >
-                Show all chamber records ({cases.length})
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setScopeFilter('my')}
-                className="text-teal hover:underline font-semibold text-xs ml-1"
-              >
-                Filter to my matters ({session ? (session.role?.toLowerCase().includes('judge') ? 'Judge Bench' : 'Adv. ' + session.name) : 'My Matters'})
-              </button>
-            )}
+          <p className="text-xs text-[var(--section-subheading)] mt-1">
+            {scopeFilter === 'my' && session
+              ? `Showing matters assigned to ${session.role?.toLowerCase().includes('judge') ? 'Bench of ' + session.name : 'Advocate ' + session.name}.`
+              : 'Showing all chamber and judicial court records.'}
           </p>
         </div>
 
@@ -272,209 +278,130 @@ export function CasesClient({
         </div>
       </div>
 
-      {/* ── 2. Analytics Intelligence Strip ────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05 }}
-          whileHover={{ y: -3, transition: { duration: 0.18 } }}
-          className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Active Cases
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal/10 text-teal">
-              <BriefcaseIcon className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-slate-900">{metrics.activeCount}</span>
-            <span className="text-xs text-slate-400">of {cases.length} total</span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.1 }}
-          whileHover={{ y: -3, transition: { duration: 0.18 } }}
-          className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Custody Alerts
+      {/* ── 2. Floating Metrics Strip ──────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-8 px-6 py-4 border-b border-[var(--section-card-border)]">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-3xl font-bold text-teal tabular-nums">{metrics.activeCount}</span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Active Cases</span>
+        </div>
+        <div className="w-px h-10 bg-[var(--section-card-border)]" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-3xl font-bold text-rose-500 tabular-nums flex items-center gap-1.5">
+            {metrics.urgentBailCount}
+            {metrics.urgentBailCount > 0 && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
               </span>
-              {metrics.urgentBailCount > 0 && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                </span>
-              )}
-            </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600">
-              <ShieldAlertIcon className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-rose-600">{metrics.urgentBailCount}</span>
-            <span className="text-xs text-slate-400">default bail risks</span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.15 }}
-          whileHover={{ y: -3, transition: { duration: 0.18 } }}
-          className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Indexed Documents
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
-              <FileTextIcon className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-slate-900">{metrics.totalDocs}</span>
-            <span className="text-xs text-slate-400">pages OCR analyzed</span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.2 }}
-          whileHover={{ y: -3, transition: { duration: 0.18 } }}
-          className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Contradictions Flagged
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
-              <AlertTriangleIcon className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-600">{metrics.totalFindings}</span>
-            <span className="text-xs text-slate-400">discrepancy findings</span>
-          </div>
-        </motion.div>
+            )}
+          </span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Custody Alerts</span>
+        </div>
+        <div className="w-px h-10 bg-[var(--section-card-border)]" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-3xl font-bold text-[var(--section-heading)] tabular-nums">{metrics.totalDocs}</span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Indexed Docs</span>
+        </div>
+        <div className="w-px h-10 bg-[var(--section-card-border)]" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-3xl font-bold text-amber-500 tabular-nums">{metrics.totalFindings}</span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Findings Flagged</span>
+        </div>
       </div>
 
-      {/* ── 3. View Switcher Tabs & Filter Toolbar ─────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs">
-        {/* View Mode Pills with sliding active indicator */}
-        <div className="flex items-center bg-slate-100/90 p-1 rounded-xl text-xs font-medium">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={cn(
-              'relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer z-10',
-              viewMode === 'grid'
-                ? 'text-slate-900 font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            )}
-          >
-            {viewMode === 'grid' && (
-              <motion.div
-                layoutId="casesViewPill"
-                className="absolute inset-0 bg-white rounded-lg shadow-xs -z-10"
-                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-              />
-            )}
-            <LayoutGridIcon className="w-3.5 h-3.5" />
-            <span>Cards</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode('table')}
-            className={cn(
-              'relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer z-10',
-              viewMode === 'table'
-                ? 'text-slate-900 font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            )}
-          >
-            {viewMode === 'table' && (
-              <motion.div
-                layoutId="casesViewPill"
-                className="absolute inset-0 bg-white rounded-lg shadow-xs -z-10"
-                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-              />
-            )}
-            <TableIcon className="w-3.5 h-3.5" />
-            <span>Table</span>
-          </button>
+      {/* ── 3. Search + Pill Filters ───────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        {/* Search bar */}
+        <div className="relative max-w-lg">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--section-subheading)] pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search title, case number, court…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-[var(--section-card-bg)] border border-[var(--section-card-border)] text-sm text-[var(--section-heading)] placeholder:text-[var(--section-subheading)] focus:outline-none focus:border-teal/60 focus:ring-1 focus:ring-teal/30 transition-colors"
+          />
         </div>
 
-        {/* Filter & Search Bar */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-44 sm:min-w-60">
-            <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            <Input
-              placeholder="Search title, case number, court…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 text-xs bg-slate-50/50 border-slate-200"
-            />
+        {/* Filter pills row */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Status pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {STATUS_OPTIONS.filter(o => o.value !== 'unspecified').map((opt) => (
+              <PillButton
+                key={opt.value}
+                active={statusFilter === opt.value}
+                accentActive={opt.value === 'all'}
+                onClick={() => setStatusFilter(opt.value)}
+              >
+                {opt.label}
+              </PillButton>
+            ))}
           </div>
 
-          <Select value={statusFilter} onValueChange={(v) => v != null && setStatusFilter(v)}>
-            <SelectTrigger size="sm" className="w-32 h-8 text-xs bg-slate-50/50 border-slate-200">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="w-px h-5 bg-[var(--section-card-border)]" />
 
-          <Select value={typeFilter} onValueChange={(v) => v != null && setTypeFilter(v)}>
-            <SelectTrigger size="sm" className="w-32 h-8 text-xs bg-slate-50/50 border-slate-200">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {TYPE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Type pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {TYPE_OPTIONS.filter(o => o.value !== 'unspecified').map((opt) => (
+              <PillButton
+                key={opt.value}
+                active={typeFilter === opt.value}
+                accentActive={opt.value === 'all'}
+                onClick={() => setTypeFilter(opt.value)}
+              >
+                {opt.label}
+              </PillButton>
+            ))}
+          </div>
 
-          {/* Assigned Advocate & Bench Scope */}
-          <Select value={scopeFilter} onValueChange={(v) => v != null && setScopeFilter(v)}>
-            <SelectTrigger size="sm" className="w-48 h-8 text-xs bg-slate-50/50 border-slate-200">
-              <SelectValue placeholder="Assigned Persona" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="my" className="text-xs font-semibold text-teal-800">
-                {session?.role?.toLowerCase().includes('judge')
-                  ? `My Bench (Hon'ble P. R. Deshmukh)`
-                  : `My Cases (Adv. ${session?.name || 'Aditi Sharma'})`}
-              </SelectItem>
-              <SelectItem value="all" className="text-xs">
-                All Chamber &amp; Bench Records ({cases.length})
-              </SelectItem>
-              <SelectItem value="Aditi Sharma" className="text-xs">
-                Adv. Aditi Sharma (Senior Advocate)
-              </SelectItem>
-              <SelectItem value="Rohan Mehta" className="text-xs">
-                Adv. Rohan Mehta (Junior Associate)
-              </SelectItem>
-              <SelectItem value="Deshmukh" className="text-xs">
-                Hon&apos;ble P. R. Deshmukh (Sessions Judge)
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="w-px h-5 bg-[var(--section-card-border)]" />
+
+          {/* Scope pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <PillButton active={scopeFilter === 'my'} onClick={() => setScopeFilter('my')}>
+              {session?.role?.toLowerCase().includes('judge') ? `My Bench` : `My Cases`}
+            </PillButton>
+            <PillButton active={scopeFilter === 'all'} onClick={() => setScopeFilter('all')}>
+              All ({cases.length})
+            </PillButton>
+            <PillButton active={scopeFilter === 'Aditi Sharma'} onClick={() => setScopeFilter('Aditi Sharma')}>
+              Adv. Aditi
+            </PillButton>
+            <PillButton active={scopeFilter === 'Rohan Mehta'} onClick={() => setScopeFilter('Rohan Mehta')}>
+              Adv. Rohan
+            </PillButton>
+            <PillButton active={scopeFilter === 'Deshmukh'} onClick={() => setScopeFilter('Deshmukh')}>
+              Judge Deshmukh
+            </PillButton>
+          </div>
+
+          <div className="ml-auto flex items-center gap-1 rounded-lg border border-[var(--section-card-border)] p-0.5">
+            <button
+              onClick={() => setViewMode('grid')}
+              title="Card view"
+              className={cn(
+                'p-1.5 rounded-md transition-colors cursor-pointer',
+                viewMode === 'grid'
+                  ? 'bg-[var(--section-heading)] text-[var(--section-card-bg)]'
+                  : 'text-[var(--section-subheading)] hover:text-[var(--section-heading)]'
+              )}
+            >
+              <LayoutGridIcon className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              title="Table view"
+              className={cn(
+                'p-1.5 rounded-md transition-colors cursor-pointer',
+                viewMode === 'table'
+                  ? 'bg-[var(--section-heading)] text-[var(--section-card-bg)]'
+                  : 'text-[var(--section-subheading)] hover:text-[var(--section-heading)]'
+              )}
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -507,7 +434,7 @@ export function CasesClient({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="rounded-2xl border border-slate-200/90 bg-white overflow-hidden shadow-xs"
+            className="rounded-xl border border-[var(--section-card-border)] bg-[var(--section-card-bg)] overflow-hidden"
           >
             <CasesTable
               cases={filtered}

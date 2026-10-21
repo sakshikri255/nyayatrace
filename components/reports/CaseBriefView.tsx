@@ -156,10 +156,10 @@ function label(map: Record<string, string>, key: string): string {
 function SectionHeader({ number, title, count }: { number: number; title: string; count?: number }) {
   return (
     <div className="flex items-baseline gap-2 mb-3">
-      <span className="text-xs font-mono font-bold text-slate-400 select-none">{String(number).padStart(2, '0')}</span>
-      <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">{title}</h2>
+      <span className="text-xs font-mono font-bold text-[var(--section-subheading)] select-none">{String(number).padStart(2, '0')}</span>
+      <h2 className="text-sm font-semibold text-[var(--section-heading)] uppercase tracking-wide">{title}</h2>
       {count !== undefined && (
-        <span className="text-xs text-slate-400">({count})</span>
+        <span className="text-xs text-[var(--section-subheading)]">({count})</span>
       )}
     </div>
   )
@@ -277,18 +277,18 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
   }
 
   return (
-    <div className="min-h-full bg-slate-50">
+    <div className="min-h-full bg-[var(--page-bg)]">
       {/* Header bar — hidden when printing */}
-      <div className="no-print sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
-        <h1 className="text-sm font-semibold text-slate-800">Case Brief</h1>
+      <div className="no-print sticky top-0 z-10 bg-[var(--section-card-bg)] border-b border-[var(--section-card-border)] px-6 py-3 flex items-center justify-between">
+        <h1 className="text-sm font-semibold text-[var(--section-heading)]">Case Brief</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
             className={cn(
               'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors',
               copied
-                ? 'border-emerald-300 text-emerald-700 bg-emerald-50'
-                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'border-emerald-400/40 text-emerald-600 bg-emerald-500/10'
+                : 'border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal'
             )}
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -296,26 +296,26 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
           </button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] text-xs font-medium hover:border-teal/40 hover:text-teal transition-colors"
           >
             <Printer className="w-3.5 h-3.5" />
             Print
           </button>
           <button
             onClick={() => exportCourtDocx(data)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-teal-200 text-teal-800 bg-teal-50 hover:bg-teal-100 text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-teal text-white hover:bg-teal-light text-xs font-semibold transition-colors"
             title="Download formatted court petition document"
           >
-            <FileDown className="w-3.5 h-3.5 text-teal" />
+            <FileDown className="w-3.5 h-3.5" />
             Court Word Brief (.doc)
           </button>
         </div>
       </div>
 
       {/* Source and legal limitation */}
-      <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-start gap-2">
-        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-800 leading-relaxed">
+      <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex items-start gap-2">
+        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
           This brief is assembled from records stored in this case workspace. Verify every detail against its source document; it does not constitute legal advice.
         </p>
       </div>
@@ -324,10 +324,10 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
       <div className="print-content px-6 py-6 max-w-4xl mx-auto space-y-6">
 
         {/* ── Section 1: Case Identity ── */}
-        <section className="bg-white rounded-lg border border-slate-200 p-5">
+        <section className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
           <SectionHeader number={1} title="Case Identity" />
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="font-mono text-sm font-bold text-slate-700">{data.case.caseNumber}</span>
+            <span className="font-mono text-sm font-bold text-[var(--section-heading)]">{data.case.caseNumber}</span>
             <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', caseTypeCfg.className)}>
               {caseTypeCfg.label}
             </span>
@@ -335,41 +335,44 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
               {statusCfg.label}
             </span>
           </div>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">{data.case.title}</h2>
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
+          <h2 className="text-lg font-bold text-[var(--section-heading)] mb-3">{data.case.title}</h2>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--section-subheading)]">
             {data.case.court && (
-              <span><span className="font-medium text-slate-700">Court:</span> {data.case.court}</span>
+              <span><span className="font-medium text-[var(--section-heading)]">Court:</span> {data.case.court}</span>
             )}
             {data.case.judge && (
-              <span><span className="font-medium text-slate-700">Judge:</span> {data.case.judge}</span>
+              <span><span className="font-medium text-[var(--section-heading)]">Judge:</span> {data.case.judge}</span>
             )}
-            <span><span className="font-medium text-slate-700">Generated:</span> {fmtDate(data.generatedAt)}</span>
+            <span><span className="font-medium text-[var(--section-heading)]">Generated:</span> {fmtDate(data.generatedAt)}</span>
           </div>
         </section>
 
         {/* ── Section 2: Executive Summary ── */}
-        <section className="bg-white rounded-lg border border-slate-200 p-5">
+        <section className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
           <SectionHeader number={2} title="Executive Summary" />
-          <p className="text-sm text-slate-700 leading-relaxed mb-4">
+          <p className="text-sm text-[var(--table-row-text)] leading-relaxed mb-6">
             {data.case.description ?? 'No description provided.'}
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="bg-slate-50 rounded-md p-3 text-center">
-              <p className="text-2xl font-bold text-slate-800">{data.documents.count}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Documents</p>
+          {/* Floating metrics — no bordered boxes */}
+          <div className="flex items-center gap-10 pt-4 border-t border-[var(--section-card-border)]">
+            <div>
+              <p className="text-3xl font-bold text-[var(--section-heading)]">{data.documents.count}</p>
+              <p className="text-xs text-[var(--section-subheading)] mt-0.5 uppercase tracking-wide">Documents</p>
             </div>
-            <div className="bg-slate-50 rounded-md p-3 text-center">
-              <p className="text-2xl font-bold text-slate-800">{data.findings.total}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Findings</p>
+            <div className="w-px h-10 bg-[var(--section-card-border)]" />
+            <div>
+              <p className="text-3xl font-bold text-[var(--section-heading)]">{data.findings.total}</p>
+              <p className="text-xs text-[var(--section-subheading)] mt-0.5 uppercase tracking-wide">Findings</p>
               {data.findings.verified > 0 && (
-                <p className="text-xs text-emerald-600 mt-0.5">{data.findings.verified} verified</p>
+                <p className="text-[11px] text-emerald-500 mt-0.5">{data.findings.verified} verified</p>
               )}
             </div>
-            <div className="bg-slate-50 rounded-md p-3 text-center">
-              <p className="text-2xl font-bold text-slate-800">{data.hearings.total}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Hearings</p>
+            <div className="w-px h-10 bg-[var(--section-card-border)]" />
+            <div>
+              <p className="text-3xl font-bold text-[var(--section-heading)]">{data.hearings.total}</p>
+              <p className="text-xs text-[var(--section-subheading)] mt-0.5 uppercase tracking-wide">Hearings</p>
               {data.hearings.firstDate && data.hearings.lastDate && (
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-[11px] text-[var(--section-subheading)] mt-0.5">
                   {fmtDate(data.hearings.firstDate)} – {fmtDate(data.hearings.lastDate)}
                 </p>
               )}
@@ -378,19 +381,19 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
         </section>
 
         {/* ── Section 3: Key Findings ── */}
-        <section className="bg-white rounded-lg border border-slate-200 p-5">
+        <section className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
           <SectionHeader number={3} title="Key Findings" count={data.findings.total} />
           {data.findings.list.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">No document findings recorded.</p>
+            <p className="text-sm text-[var(--section-subheading)] italic">No document findings recorded.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left">
-                    <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Type</th>
-                    <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
-                    <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">Severity</th>
-                    <th className="py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Status</th>
+                  <tr className="border-b border-[var(--section-card-border)] text-left">
+                    <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-36">Type</th>
+                    <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide">Description</th>
+                    <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-24">Severity</th>
+                    <th className="py-2 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-36">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -398,16 +401,16 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
                     const revCfg = reviewConfig[f.reviewStatus] ?? reviewConfig.needs_review
                     const sevCfg = severityConfig[f.severity] ?? severityConfig.low
                     return (
-                      <tr key={i} className="border-b border-slate-100 align-top">
+                      <tr key={i} className="border-b border-[var(--section-card-border)] align-top">
                         <td className="py-2.5 pr-4">
-                          <span className="text-xs font-medium text-slate-700">
+                          <span className="text-xs font-medium text-[var(--table-row-text)]">
                             {label(findingTypeLabels, f.findingType)}
                           </span>
                         </td>
                         <td className="py-2.5 pr-4 max-w-xs">
-                          <p className="text-sm text-slate-700">{f.description}</p>
+                          <p className="text-sm text-[var(--table-row-text)]">{f.description}</p>
                           {f.extractedValue && (
-                            <p className="text-xs text-slate-400 mt-0.5">
+                            <p className="text-xs text-[var(--section-subheading)] mt-0.5">
                               Extracted: <span className="font-mono">&ldquo;{f.extractedValue}&rdquo;</span>
                             </p>
                           )}
@@ -430,34 +433,34 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
         </section>
 
         {/* ── Section 4: Hearing Summary ── */}
-        <section className="bg-white rounded-lg border border-slate-200 p-5">
+        <section className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
           <SectionHeader number={4} title="Hearing Summary" count={data.hearings.total} />
           {data.hearings.list.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">No hearings recorded for this case.</p>
+            <p className="text-sm text-[var(--section-subheading)] italic">No hearings recorded for this case.</p>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 text-left">
-                      <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-32">Date</th>
-                      <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Event</th>
-                      <th className="py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Outcome / Notes</th>
+                    <tr className="border-b border-[var(--section-card-border)] text-left">
+                      <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-32">Date</th>
+                      <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-36">Event</th>
+                      <th className="py-2 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide">Outcome / Notes</th>
                     </tr>
                   </thead>
                   <tbody>
                     {displayedHearings.map((h, i) => (
-                      <tr key={i} className="border-b border-slate-100 align-top">
+                      <tr key={i} className="border-b border-[var(--section-card-border)] align-top">
                         <td className="py-2.5 pr-4">
-                          <span className="text-sm font-medium text-slate-700">{fmtDate(h.hearingDate)}</span>
+                          <span className="text-sm font-medium text-[var(--table-row-text)]">{fmtDate(h.hearingDate)}</span>
                         </td>
                         <td className="py-2.5 pr-4">
-                          <span className="text-xs font-medium text-slate-600">
+                          <span className="text-xs font-medium text-[var(--section-subheading)]">
                             {label(eventTypeLabels, h.eventType)}
                           </span>
                         </td>
                         <td className="py-2.5">
-                          <p className="text-sm text-slate-600">{h.outcome ?? h.description ?? '—'}</p>
+                          <p className="text-sm text-[var(--table-row-text)]">{h.outcome ?? h.description ?? '—'}</p>
                         </td>
                       </tr>
                     ))}
@@ -465,7 +468,7 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
                 </table>
               </div>
               {extraHearings > 0 && (
-                <p className="text-xs text-slate-400 mt-2 italic">
+                <p className="text-xs text-[var(--section-subheading)] mt-2 italic">
                   … and {extraHearings} more hearing{extraHearings > 1 ? 's' : ''}
                 </p>
               )}
@@ -474,39 +477,39 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
         </section>
 
         {/* ── Section 5: Judicial Orders & Conditions ── */}
-        <section className="bg-white rounded-lg border border-slate-200 p-5">
+        <section className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
           <SectionHeader number={5} title="Judicial Orders & Conditions" />
 
           {/* Orders table */}
           {data.orders.list.length === 0 ? (
-            <p className="text-sm text-slate-400 italic mb-4">No judicial orders recorded.</p>
+            <p className="text-sm text-[var(--section-subheading)] italic mb-4">No judicial orders recorded.</p>
           ) : (
             <div className="overflow-x-auto mb-4">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left">
-                    <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-32">Date</th>
-                    <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Type</th>
-                    <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Summary</th>
-                    <th className="py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Issued By</th>
+                  <tr className="border-b border-[var(--section-card-border)] text-left">
+                    <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-32">Date</th>
+                    <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-36">Type</th>
+                    <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide">Summary</th>
+                    <th className="py-2 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-36">Issued By</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.orders.list.map((o, i) => (
-                    <tr key={i} className="border-b border-slate-100 align-top">
+                    <tr key={i} className="border-b border-[var(--section-card-border)] align-top">
                       <td className="py-2.5 pr-4">
-                        <span className="text-sm font-medium text-slate-700">{fmtDate(o.orderDate)}</span>
+                        <span className="text-sm font-medium text-[var(--table-row-text)]">{fmtDate(o.orderDate)}</span>
                       </td>
                       <td className="py-2.5 pr-4">
-                        <span className="text-xs font-medium text-slate-600">
+                        <span className="text-xs font-medium text-[var(--section-subheading)]">
                           {label(orderTypeLabels, o.orderType)}
                         </span>
                       </td>
                       <td className="py-2.5 pr-4">
-                        <p className="text-sm text-slate-600">{o.summary ?? '—'}</p>
+                        <p className="text-sm text-[var(--table-row-text)]">{o.summary ?? '—'}</p>
                       </td>
                       <td className="py-2.5">
-                        <span className="text-sm text-slate-500">{o.issuedBy ?? '—'}</span>
+                        <span className="text-sm text-[var(--section-subheading)]">{o.issuedBy ?? '—'}</span>
                       </td>
                     </tr>
                   ))}
@@ -518,31 +521,31 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
           {/* Conditions table */}
           {data.conditions.total > 0 && (
             <>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+              <p className="text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide mb-2">
                 Bail / Parole Conditions ({data.conditions.total})
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 text-left">
-                      <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Condition</th>
-                      <th className="py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Type</th>
-                      <th className="py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Status</th>
+                    <tr className="border-b border-[var(--section-card-border)] text-left">
+                      <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide">Condition</th>
+                      <th className="py-2 pr-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-36">Type</th>
+                      <th className="py-2 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-28">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.conditions.list.map((c, i) => (
-                      <tr key={i} className="border-b border-slate-100 align-top">
+                      <tr key={i} className="border-b border-[var(--section-card-border)] align-top">
                         <td className="py-2.5 pr-4">
-                          <p className="text-sm text-slate-700">{c.conditionText}</p>
+                          <p className="text-sm text-[var(--table-row-text)]">{c.conditionText}</p>
                         </td>
                         <td className="py-2.5 pr-4">
-                          <span className="text-xs text-slate-600">
+                          <span className="text-xs text-[var(--section-subheading)]">
                             {c.conditionType.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())}
                           </span>
                         </td>
                         <td className="py-2.5">
-                          <span className="text-xs font-medium text-slate-600 capitalize">{c.status}</span>
+                          <span className="text-xs font-medium text-[var(--section-subheading)] capitalize">{c.status}</span>
                         </td>
                       </tr>
                     ))}
@@ -554,20 +557,20 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
         </section>
 
         {/* ── Section 6: Source Documents ── */}
-        <section className="bg-white rounded-lg border border-slate-200 p-5">
+        <section className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
           <SectionHeader number={6} title="Source Documents" count={data.documents.count} />
           {data.documents.list.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">No documents on record.</p>
+            <p className="text-sm text-[var(--section-subheading)] italic">No documents on record.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-0 divide-y divide-[var(--section-card-border)]">
               {data.documents.list.map((d, i) => {
                 const stCfg = docStatusConfig[d.status] ?? docStatusConfig.pending
                 return (
-                  <li key={i} className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
-                    <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                  <li key={i} className="flex items-center gap-3 py-2.5">
+                    <FileText className="w-4 h-4 text-[var(--section-subheading)] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-700 truncate">{d.name}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-sm font-medium text-[var(--section-heading)] truncate">{d.name}</p>
+                      <p className="text-xs text-[var(--section-subheading)]">
                         {d.type.toUpperCase()} · {d.pages} page{d.pages !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -579,13 +582,13 @@ export function CaseBriefView({ data }: CaseBriefViewProps) {
               })}
             </ul>
           )}
-          <p className="text-xs text-slate-400 italic mt-3">
+          <p className="text-xs text-[var(--section-subheading)] italic mt-3">
             Extracted content may contain OCR or parsing errors. Verify it against the linked source document.
           </p>
         </section>
 
         {/* Footer note */}
-        <p className="text-xs text-slate-400 text-center pb-4">
+        <p className="text-xs text-[var(--section-subheading)] text-center pb-4">
           Brief generated on {fmtDate(data.generatedAt)} from records stored in this case workspace. Not legal advice.
         </p>
       </div>

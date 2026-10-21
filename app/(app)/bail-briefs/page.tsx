@@ -1,143 +1,121 @@
 import Link from 'next/link'
-import { BriefcaseIcon, TrendingUpIcon, SearchIcon } from 'lucide-react'
+import { ScaleIcon, BriefcaseIcon, TrendingUpIcon, SearchIcon, ArrowRightIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
-import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
-import { ParoleTimelineCard } from '@/components/bail/ParoleTimelineCard'
-import { cn } from '@/lib/utils'
+import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBadge'
 
 export const dynamic = 'force-dynamic'
 
-const caseTypeConfig: Record<string, { label: string; highlight: boolean; className: string }> = {
-  bail:     { label: 'Bail',     highlight: true,  className: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-800/40'       },
-  parole:   { label: 'Parole',   highlight: true,  className: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800/40' },
-  criminal: { label: 'Criminal', highlight: false, className: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40'       },
-  civil:    { label: 'Civil',    highlight: false, className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800/40'       },
-}
-
-const statusConfig: Record<string, { label: string; className: string }> = {
-  active:  { label: 'Active',  className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' },
-  pending: { label: 'Pending', className: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'     },
-  closed:  { label: 'Closed',  className: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'     },
-  stayed:  { label: 'Stayed',  className: 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400'   },
-}
-
 export default function BailBriefsPage() {
   const allCases = getAllCases()
+  const bailParoleCases = allCases.filter((c) => c.caseType === 'bail' || c.caseType === 'parole')
+  const otherCases = allCases.filter((c) => c.caseType !== 'bail' && c.caseType !== 'parole')
 
   return (
-    <div className="px-6 py-6 max-w-7xl mx-auto flex flex-col gap-5">
+    <div className="px-6 py-8 max-w-5xl mx-auto flex flex-col gap-6">
+
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--section-heading)]">Bail &amp; Parole Case Briefs</h1>
-        <p className="text-sm text-[var(--section-subheading)] mt-1">
-          Structured summaries assembled from judicial orders, hearings, and case records.
-        </p>
+      <div className="flex items-start gap-3">
+        <ScaleIcon className="w-6 h-6 text-teal mt-0.5 shrink-0" />
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--section-heading)] leading-tight">
+            Bail &amp; Parole Case Briefs
+          </h1>
+          <p className="text-sm text-[var(--section-subheading)] mt-1">
+            Structured summaries assembled from judicial orders, hearings, and case records.
+          </p>
+        </div>
       </div>
 
-      {/* Non-dismissable disclaimer — no close button */}
+      {/* Non-dismissable disclaimer */}
       <BailDisclaimer />
 
-      {/* Case grid */}
+      {/* Floating metrics strip */}
+      {allCases.length > 0 && (
+        <div className="flex flex-wrap items-center gap-8 px-4 py-4 border-b border-[var(--section-card-border)]">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-3xl font-bold text-teal tabular-nums">{allCases.length}</span>
+            <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Total Cases</span>
+          </div>
+          <div className="w-px h-10 bg-[var(--section-card-border)]" />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-3xl font-bold text-[var(--section-heading)] tabular-nums">{bailParoleCases.length}</span>
+            <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Bail / Parole</span>
+          </div>
+          <div className="w-px h-10 bg-[var(--section-card-border)]" />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-3xl font-bold text-[var(--section-heading)] tabular-nums">{otherCases.length}</span>
+            <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Other Cases</span>
+          </div>
+        </div>
+      )}
+
+      {/* Case list */}
       {allCases.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
+          <ScaleIcon className="w-10 h-10 text-[var(--section-subheading)] mb-3 opacity-40" />
           <p className="text-sm font-medium text-[var(--section-heading)]">No cases available.</p>
-          <Link href="/cases?new=1" className="mt-4 rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white">Create a case</Link>
+          <Link href="/cases?new=1" className="mt-4 text-sm font-medium text-teal underline">
+            Create a case
+          </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-grid">
-          {allCases.map((c) => {
-            const typeCfg = caseTypeConfig[c.caseType] ?? { label: 'Not specified', highlight: false, className: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700' }
-            const statusCfg = statusConfig[c.status] ?? { label: 'Not specified', className: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' }
-
-            return (
-              <div
-                key={c.id}
-                className={cn(
-                  'animate-fade-up',
-                  'w-full min-w-0 bg-[var(--section-card-bg)] rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
-                  c.caseType === 'parole' ? 'border-violet-200 dark:border-violet-800/40' :
-                  c.caseType === 'bail'   ? 'border-teal-200 dark:border-teal-800/40'     : 'border-[var(--section-card-border)]'
-                )}
-              >
-                {/* Header row */}
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="min-w-0 whitespace-nowrap text-xs font-mono font-semibold text-[var(--section-subheading)] tracking-wide">
+        <div className="divide-y divide-[var(--section-card-border)]">
+          {allCases.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center gap-4 px-2 py-3 hover:bg-teal/[0.02] transition-colors group"
+            >
+              {/* Left: case number + title */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                  <span className="font-mono text-xs font-bold text-teal tracking-tight">
                     {c.caseNumber}
                   </span>
-                  <div className="flex flex-wrap items-center justify-end gap-1.5">
-                    <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium', typeCfg.className)}>
-                      {typeCfg.label}
-                    </span>
-                    <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', statusCfg.className)}>
-                      {statusCfg.label}
-                    </span>
-                  </div>
+                  <CaseTypeBadge caseType={c.caseType} />
+                  <CaseStatusBadge status={c.status} />
                 </div>
-
-                {/* Title */}
-                <h2 className={cn('text-sm font-semibold leading-snug',
-                  c.caseType === 'parole' ? 'text-violet-700 dark:text-violet-300' :
-                  c.caseType === 'bail'   ? 'text-teal-700 dark:text-teal-300'     : 'text-[var(--section-heading)]'
-                )}>
+                <p className="text-sm font-semibold text-[var(--section-heading)] line-clamp-1">
                   {c.title}
-                </h2>
-
-                {/* Counts */}
-                <div className="flex gap-4 text-xs text-[var(--section-subheading)]">
-                  <span>{c.documentCount} document{c.documentCount !== 1 ? 's' : ''}</span>
-                </div>
-
-                {/* Statutory Default Bail / Parole Tracker */}
-                {c.caseType === 'parole' ? (
-                  <ParoleTimelineCard caseData={c} compact />
-                ) : (
-                  <StatutoryBailCard caseData={c} compact />
-                )}
-
-                {/* Actions footer */}
-                <footer className="mt-auto flex items-center justify-between gap-3 border-t border-[var(--section-card-border)] pt-3">
-                  <Link
-                    href={`/bail-briefs/${c.id}`}
-                    className={cn(
-                      'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors',
-                      c.caseType === 'parole' ? 'bg-violet-600 text-white hover:bg-violet-700' :
-                      c.caseType === 'bail'   ? 'bg-teal-600 text-white hover:bg-teal-700'     :
-                                               'bg-[var(--muted)] text-[var(--section-heading)] hover:bg-[var(--accent)]'
-                    )}
-                  >
-                    View Brief →
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/cases/${c.id}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
-                      title="Case Workspace"
-                      aria-label="Case Workspace"
-                    >
-                      <BriefcaseIcon className="w-3.5 h-3.5" />
-                    </Link>
-                    <Link
-                      href={`/case-progress/${c.id}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
-                      title="Case Progress"
-                      aria-label="Case Progress"
-                    >
-                      <TrendingUpIcon className="w-3.5 h-3.5" />
-                    </Link>
-                    <Link
-                      href={`/verification/${c.id}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
-                      title="Verification"
-                      aria-label="Verification"
-                    >
-                      <SearchIcon className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </footer>
+                </p>
+                <p className="text-xs text-[var(--section-subheading)] mt-0.5">
+                  {c.documentCount} document{c.documentCount !== 1 ? 's' : ''}
+                </p>
               </div>
-            )
-          })}
+
+              {/* Right: action buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href={`/cases/${c.id}`}
+                  className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
+                  title="Case Workspace"
+                >
+                  <BriefcaseIcon className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href={`/case-progress/${c.id}`}
+                  className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
+                  title="Case Progress"
+                >
+                  <TrendingUpIcon className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href={`/verification/${c.id}`}
+                  className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
+                  title="Verification"
+                >
+                  <SearchIcon className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href={`/bail-briefs/${c.id}`}
+                  className="inline-flex items-center gap-1.5 px-3 h-8 rounded bg-teal text-white text-xs font-semibold hover:bg-teal/90 transition-colors"
+                >
+                  View Brief
+                  <ArrowRightIcon className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

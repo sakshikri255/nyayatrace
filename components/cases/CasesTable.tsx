@@ -105,21 +105,21 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
                     const bail = calculateStatutoryBail(c)
                     if (bail.status === 'accrued') {
                       return (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-600" />
-                          </span>
-                          Default Bail Accrued
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-500 border border-rose-500/20">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
                         </span>
-                      )
-                    }
-                    if (bail.status === 'urgent') {
-                      return (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          {bail.daysRemaining}d to Default Bail
-                        </span>
+                        Default Bail Accrued
+                      </span>
+                    )
+                  }
+                  if (bail.status === 'urgent') {
+                    return (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500 border border-amber-500/20">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        {bail.daysRemaining}d to Default Bail
+                      </span>
                       )
                     }
                     return null
@@ -139,7 +139,7 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
               <td className="py-3 px-4 text-center">
                 <span
                   className={`inline-flex items-center gap-1 ${
-                    c.findingCount > 0 ? 'text-amber-600' : 'text-slate-400'
+                    c.findingCount > 0 ? 'text-amber-500' : 'text-[var(--section-subheading)]'
                   }`}
                 >
                   <AlertTriangleIcon className="w-3.5 h-3.5" />
@@ -162,7 +162,7 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
                   <Link
                     href={`/cases/${c.id}?tab=chronology`}
                     title="View Chronology & Checkpoints for this case"
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-teal transition-colors px-2 py-1 rounded border border-slate-200 hover:border-teal/40 hover:bg-teal/5"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--section-subheading)] hover:text-teal transition-colors px-2 py-1 rounded border border-[var(--section-card-border)] hover:border-teal/40 hover:bg-teal/5"
                   >
                     <ClockIcon className="w-3 h-3 text-teal" />
                     <span>Chronology</span>

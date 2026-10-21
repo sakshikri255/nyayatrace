@@ -17,20 +17,24 @@ function FindingBreakdown({ caseId }: { caseId: number }) {
 export default function VerificationIndexPage() {
   const cases = getAllCases()
 
+  // Compute aggregate metrics
+  const allBreakdowns = cases.map((c) => FindingBreakdown({ caseId: c.id }))
+  const totalFindings = allBreakdowns.reduce((sum, b) => sum + b.total, 0)
+  const totalNeedsReview = allBreakdowns.reduce((sum, b) => sum + b.needsReview, 0)
+
   return (
     <div className="flex flex-col h-full">
-      <div className="max-w-6xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
-        {/* Heading */}
+      <div className="max-w-5xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
+
+        {/* ── Header: icon + text, no background box ──────────────────── */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal/10 flex items-center justify-center">
-            <FileSearchIcon className="w-5 h-5 text-teal" />
-          </div>
+          <div className="flex items-start gap-3">
+            <FileSearchIcon className="w-6 h-6 text-teal mt-0.5 shrink-0" />
             <div>
               <h1 className="text-2xl font-bold text-[var(--section-heading)] leading-tight">
                 Fact &amp; Evidence Verification
               </h1>
-              <p className="text-sm text-[var(--section-subheading)] mt-2">
+              <p className="text-sm text-[var(--section-subheading)] mt-1">
                 Select a case to open the three-panel verification workspace and review document findings.
               </p>
             </div>
@@ -44,20 +48,40 @@ export default function VerificationIndexPage() {
           </Link>
         </div>
 
-        {/* Case grid */}
+        {/* ── Floating metrics strip ───────────────────────────────────── */}
+        {cases.length > 0 && (
+          <div className="flex flex-wrap items-center gap-8 px-4 py-4 border-b border-[var(--section-card-border)]">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-3xl font-bold text-teal tabular-nums">{cases.length}</span>
+              <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Total Cases</span>
+            </div>
+            <div className="w-px h-10 bg-[var(--section-card-border)]" />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-3xl font-bold text-amber-500 tabular-nums">{totalNeedsReview}</span>
+              <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Findings to Review</span>
+            </div>
+            <div className="w-px h-10 bg-[var(--section-card-border)]" />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-3xl font-bold text-[var(--section-heading)] tabular-nums">{totalFindings}</span>
+              <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Total Findings</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Case list ──────────────────────────────────────────────── */}
         {cases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-[var(--section-card-border)] rounded-xl text-center">
-            <AlertTriangleIcon className="w-8 h-8 text-[var(--section-subheading)] mb-3" />
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <AlertTriangleIcon className="w-8 h-8 text-[var(--section-subheading)] mb-3 opacity-40" />
             <p className="text-sm font-medium text-[var(--section-heading)]">No cases created yet.</p>
             <p className="text-xs text-[var(--section-subheading)] mt-1">Create a case to upload authorized records and review their sources.</p>
             <Link href="/cases?new=1" className="mt-4 text-sm font-medium text-teal underline">Create a case</Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-grid">
-            {cases.map((c) => {
-              const { total, needsReview, verified } = FindingBreakdown({ caseId: c.id })
+          <div className="divide-y divide-[var(--section-card-border)]">
+            {cases.map((c, idx) => {
+              const { total, needsReview, verified } = allBreakdowns[idx]
               return (
-                <CaseCard
+                <CaseRow
                   key={c.id}
                   id={c.id}
                   caseNumber={c.caseNumber}
@@ -76,7 +100,7 @@ export default function VerificationIndexPage() {
   )
 }
 
-interface CaseCardProps {
+interface CaseRowProps {
   id: number
   caseNumber: string
   title: string
@@ -86,7 +110,7 @@ interface CaseCardProps {
   verified: number
 }
 
-function CaseCard({
+function CaseRow({
   id,
   caseNumber,
   title,
@@ -94,57 +118,55 @@ function CaseCard({
   totalFindings,
   needsReview,
   verified,
-}: CaseCardProps) {
+}: CaseRowProps) {
   return (
-    <div className="animate-fade-up group bg-[var(--section-card-bg)] border border-[var(--section-card-border)] rounded-xl p-6 flex flex-col gap-3 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-teal/50 hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)]">
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="font-mono text-xs font-semibold text-teal tracking-tight truncate">
-            {caseNumber}
-          </span>
-          <h2 className="text-sm font-semibold text-[var(--section-heading)] leading-snug line-clamp-2">
-            {title}
-          </h2>
-        </div>
+    <div className="flex items-center gap-4 px-2 py-3 hover:bg-teal/[0.02] transition-colors group">
+      {/* Left: case number + title */}
+      <div className="min-w-0 flex-1">
+        <span className="font-mono text-xs font-bold text-teal tracking-tight">{caseNumber}</span>
+        <p className="text-sm font-semibold text-[var(--section-heading)] line-clamp-1 mt-0.5">{title}</p>
+      </div>
+
+      {/* Center: finding counts inline */}
+      <div className="hidden sm:flex items-center gap-3 shrink-0">
         <CaseStatusBadge status={status} />
+        <span className="text-xs text-[var(--section-subheading)]">
+          <span className="font-semibold text-[var(--section-heading)]">{totalFindings}</span> findings
+        </span>
+        {needsReview > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-500">
+            {needsReview} pending
+          </span>
+        )}
+        {verified > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-500">
+            {verified} verified
+          </span>
+        )}
       </div>
 
-      {/* Finding stats */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--section-card-border)] pt-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--muted)] px-2.5 py-1 text-xs font-medium text-[var(--section-heading)]">
-          <span className="font-bold">{totalFindings}</span> Findings
-        </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/30 dark:border-amber-800/40 dark:text-amber-400">
-          <span className="font-bold">{needsReview}</span> Pending
-        </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-400">
-          <span className="font-bold">{verified}</span> Verified
-        </span>
-      </div>
-
-      {/* Actions */}
-      <div className="mt-auto flex items-center gap-2">
-        <Link
-          href={`/verification/${id}`}
-          className="inline-flex h-10 min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border border-teal/20 bg-teal/5 px-3 text-sm font-semibold text-teal transition-colors hover:border-teal/40 hover:bg-teal/10"
-        >
-          Open Workspace
-          <ArrowRightIcon className="w-4 h-4 shrink-0" />
-        </Link>
+      {/* Right: action links */}
+      <div className="flex items-center gap-2 shrink-0">
         <Link
           href={`/bail-briefs/${id}`}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--section-card-border)] text-xs font-medium text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+          className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
           title="Bail & Parole"
         >
           <ScaleIcon className="w-3.5 h-3.5" />
         </Link>
         <Link
           href={`/case-progress/${id}`}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--section-card-border)] text-xs font-medium text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+          className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
           title="Case Progress"
         >
           <TrendingUpIcon className="w-3.5 h-3.5" />
+        </Link>
+        <Link
+          href={`/verification/${id}`}
+          className="inline-flex items-center gap-1.5 px-3 h-8 rounded bg-teal text-white text-xs font-semibold hover:bg-teal/90 transition-colors"
+        >
+          Open Workspace
+          <ArrowRightIcon className="w-3.5 h-3.5" />
         </Link>
       </div>
     </div>

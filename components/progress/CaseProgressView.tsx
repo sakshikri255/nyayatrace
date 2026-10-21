@@ -43,15 +43,6 @@ const statusLabels: Record<string, string> = {
   stayed: 'Stayed',
 }
 
-function StatItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-slate-500">{label}</span>
-      <span className="text-sm font-semibold text-slate-800">{value}</span>
-    </div>
-  )
-}
-
 export function CaseProgressView({
   caseDetail,
   hearings,
@@ -76,17 +67,13 @@ export function CaseProgressView({
       ? `${formatDate(firstHearing.hearingDate)} – ${formatDate(lastHearing.hearingDate)}`
       : 'No hearings'
 
-  const lastEvent = lastHearing
-    ? `${formatDate(lastHearing.hearingDate)} — ${lastHearing.eventType.replace(/_/g, ' ')}`
-    : '—'
-
   return (
     <div className="flex flex-col gap-6">
       {/* Cross-feature quick links */}
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href={`/cases/${caseDetail.id}`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
         >
           <BriefcaseIcon className="w-3.5 h-3.5" />
           Case Workspace
@@ -94,7 +81,7 @@ export function CaseProgressView({
         </Link>
         <Link
           href={`/bail-briefs/${caseDetail.id}`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
         >
           <ScaleIcon className="w-3.5 h-3.5" />
           Bail &amp; Parole Brief
@@ -102,7 +89,7 @@ export function CaseProgressView({
         </Link>
         <Link
           href={`/verification/${caseDetail.id}`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
         >
           <SearchIcon className="w-3.5 h-3.5" />
           Verification Workspace
@@ -110,7 +97,7 @@ export function CaseProgressView({
         </Link>
         <Link
           href={`/reports/${caseDetail.id}`}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
         >
           <FileTextIcon className="w-3.5 h-3.5" />
           Case Brief / Report
@@ -118,30 +105,47 @@ export function CaseProgressView({
         </Link>
       </div>
 
-      {/* Case header */}
-      <div className="bg-white border border-slate-200 rounded-lg px-5 py-4 flex flex-col gap-2">
+      {/* Case header — clean text section, no white box */}
+      <div className="flex flex-col gap-2 pb-4 border-b border-[var(--section-card-border)]">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-mono font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+          <span className="font-mono text-xs font-bold text-teal tracking-tight">
             {caseDetail.caseNumber}
           </span>
           <CaseStatusBadge status={caseDetail.status} />
           <CaseTypeBadge caseType={caseDetail.caseType} />
         </div>
-        <h1 className="text-xl font-bold text-slate-900">{caseDetail.title}</h1>
+        <h1 className="text-xl font-bold text-[var(--section-heading)]">{caseDetail.title}</h1>
         {caseDetail.court && (
-          <p className="text-sm text-slate-500">{caseDetail.court}</p>
+          <p className="text-sm text-[var(--section-subheading)]">{caseDetail.court}</p>
         )}
         {caseDetail.judge && (
-          <p className="text-xs text-slate-400">Presiding Judge: {caseDetail.judge}</p>
+          <p className="text-xs text-[var(--section-subheading)]">Presiding Judge: {caseDetail.judge}</p>
         )}
       </div>
 
-      {/* Status strip */}
-      <div className="bg-white border border-slate-200 rounded-lg px-5 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatItem label="Current Status" value={statusLabels[caseDetail.status] ?? caseDetail.status} />
-        <StatItem label="Total Hearings" value={String(hearings.length)} />
-        <StatItem label="Hearing Period" value={dateRange} />
-        <StatItem label="Last Event" value={lastEvent} />
+      {/* Status strip — floating text metrics with dividers */}
+      <div className="flex flex-wrap items-center gap-8 px-2 py-2">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-2xl font-bold text-teal tabular-nums">
+            {statusLabels[caseDetail.status] ?? caseDetail.status}
+          </span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Current Status</span>
+        </div>
+        <div className="w-px h-8 bg-[var(--section-card-border)]" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-2xl font-bold text-[var(--section-heading)] tabular-nums">{hearings.length}</span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Total Hearings</span>
+        </div>
+        <div className="w-px h-8 bg-[var(--section-card-border)]" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-2xl font-bold text-[var(--section-heading)] tabular-nums">{orders.length}</span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Judicial Orders</span>
+        </div>
+        <div className="w-px h-8 bg-[var(--section-card-border)]" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-semibold text-[var(--section-heading)]">{dateRange}</span>
+          <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Hearing Period</span>
+        </div>
       </div>
 
       {/* Chart + quick stats */}
@@ -155,42 +159,42 @@ export function CaseProgressView({
           />
         </div>
 
-        {/* Right: case status card (40%) */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg p-5 flex flex-col gap-5">
+        {/* Right: case summary card */}
+        <div className="lg:col-span-2 bg-[var(--section-card-bg)] border border-[var(--section-card-border)] rounded-lg p-5 flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <ActivityIcon className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-semibold text-gray-800">Case Summary</h3>
+            <ActivityIcon className="w-4 h-4 text-[var(--section-subheading)]" />
+            <h3 className="text-sm font-semibold text-[var(--section-heading)]">Case Summary</h3>
           </div>
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Case type</span>
+              <span className="text-xs text-[var(--section-subheading)]">Case type</span>
               <CaseTypeBadge caseType={caseDetail.caseType} />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Status</span>
+              <span className="text-xs text-[var(--section-subheading)]">Status</span>
               <CaseStatusBadge status={caseDetail.status} />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Hearings</span>
-              <span className="text-sm font-semibold text-slate-800">{hearings.length}</span>
+              <span className="text-xs text-[var(--section-subheading)]">Hearings</span>
+              <span className="text-sm font-semibold text-[var(--section-heading)]">{hearings.length}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Judicial orders</span>
-              <span className="text-sm font-semibold text-slate-800">{orders.length}</span>
+              <span className="text-xs text-[var(--section-subheading)]">Judicial orders</span>
+              <span className="text-sm font-semibold text-[var(--section-heading)]">{orders.length}</span>
             </div>
             {firstHearing && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">First hearing</span>
-                <span className="text-xs font-medium text-slate-700">
+                <span className="text-xs text-[var(--section-subheading)]">First hearing</span>
+                <span className="text-xs font-medium text-[var(--section-heading)]">
                   {formatDate(firstHearing.hearingDate)}
                 </span>
               </div>
             )}
             {lastHearing && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Last hearing</span>
-                <span className="text-xs font-medium text-slate-700">
+                <span className="text-xs text-[var(--section-subheading)]">Last hearing</span>
+                <span className="text-xs font-medium text-[var(--section-heading)]">
                   {formatDate(lastHearing.hearingDate)}
                 </span>
               </div>
@@ -198,8 +202,8 @@ export function CaseProgressView({
           </div>
 
           {caseDetail.description && (
-            <div className="pt-3 border-t border-slate-100">
-              <p className="text-xs text-slate-500 leading-relaxed">{caseDetail.description}</p>
+            <div className="pt-3 border-t border-[var(--section-card-border)]">
+              <p className="text-xs text-[var(--section-subheading)] leading-relaxed">{caseDetail.description}</p>
             </div>
           )}
         </div>
@@ -208,8 +212,8 @@ export function CaseProgressView({
       {/* Hearing timeline */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <CalendarIcon className="w-4 h-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+          <CalendarIcon className="w-4 h-4 text-[var(--section-subheading)]" />
+          <h2 className="text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide">
             Hearing Timeline ({hearings.length})
           </h2>
         </div>
@@ -219,31 +223,31 @@ export function CaseProgressView({
       {/* Judicial orders */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <GavelIcon className="w-4 h-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+          <GavelIcon className="w-4 h-4 text-[var(--section-subheading)]" />
+          <h2 className="text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide">
             Judicial Orders ({orders.length})
           </h2>
         </div>
 
         {orders.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-lg py-10 text-center">
-            <p className="text-sm text-slate-400">No judicial orders on record.</p>
+          <div className="bg-[var(--section-card-bg)] border border-[var(--section-card-border)] rounded-lg py-10 text-center">
+            <p className="text-sm text-[var(--section-subheading)]">No judicial orders on record.</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+          <div className="rounded-lg border border-[var(--section-card-border)] bg-[var(--section-card-bg)] overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left border-b border-slate-200 bg-slate-50">
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-32">
+                <tr className="text-left border-b border-[var(--section-card-border)] bg-[var(--muted)]">
+                  <th className="py-3 px-4 text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide w-32">
                     Date
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-40">
+                  <th className="py-3 px-4 text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide w-40">
                     Type
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  <th className="py-3 px-4 text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide">
                     Summary
                   </th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">
+                  <th className="py-3 px-4 text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide w-36">
                     Issued By
                   </th>
                 </tr>
@@ -253,25 +257,25 @@ export function CaseProgressView({
                   <tr
                     key={o.id}
                     className={cn(
-                      'border-b border-slate-100 hover:bg-slate-50 transition-colors',
-                      i % 2 === 1 && 'bg-slate-50/40'
+                      'border-b border-[var(--section-card-border)] hover:bg-[var(--table-row-hover)] transition-colors',
+                      i % 2 === 1 && 'bg-[var(--muted)]/40'
                     )}
                   >
                     <td className="py-3 px-4">
-                      <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">
+                      <span className="text-sm font-semibold text-[var(--section-heading)] whitespace-nowrap">
                         {formatDate(o.orderDate)}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium bg-teal-50 text-teal-700 border-teal-200">
+                      <span className="inline-flex items-center rounded-full border border-teal/20 bg-teal/10 px-2 py-0.5 text-xs font-medium text-teal">
                         {orderTypeLabels[o.orderType] ?? o.orderType}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <p className="text-sm text-slate-600">{o.summary ?? '—'}</p>
+                      <p className="text-sm text-[var(--section-subheading)]">{o.summary ?? '—'}</p>
                     </td>
                     <td className="py-3 px-4">
-                      <p className="text-sm text-slate-500">{o.issuedBy ?? '—'}</p>
+                      <p className="text-sm text-[var(--section-subheading)]">{o.issuedBy ?? '—'}</p>
                     </td>
                   </tr>
                 ))}
