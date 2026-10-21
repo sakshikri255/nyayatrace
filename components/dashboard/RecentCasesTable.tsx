@@ -55,7 +55,7 @@ export function RecentCasesTable({ cases, theme = 'light' }: RecentCasesTablePro
         }`}
       >
         <div>
-          <h3 className={isDark ? 'font-serif text-sm font-medium text-slate-100' : 'text-sm font-semibold text-gray-800'}>
+          <h3 className={isDark ? 'text-sm font-semibold text-slate-100' : 'text-sm font-semibold text-gray-800'}>
             Recent Cases
           </h3>
           <p className={isDark ? 'text-xs text-slate-400 font-light mt-0.5' : 'text-xs text-gray-400 mt-0.5'}>

@@ -64,7 +64,7 @@ export function KPICard({
         </span>
       </div>
       <div>
-        <p className={`text-3xl font-bold leading-none ${isDark ? "font-serif text-slate-100" : "text-gray-900"}`}>
+        <p className={`text-3xl font-bold leading-none ${isDark ? "text-slate-100" : "text-gray-900"}`}>
           {value}
         </p>
         {description && (

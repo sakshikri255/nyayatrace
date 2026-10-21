@@ -87,12 +87,12 @@ export function TrustedServicesSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold font-serif">
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold">
               PRECISION CAPABILITIES
             </span>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-4xl font-normal text-slate-100 tracking-tight leading-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-4xl font-semibold text-slate-100 tracking-tight leading-tight mb-4">
             Tools for Better Case Preparation
           </h2>
 
@@ -128,7 +128,7 @@ export function TrustedServicesSection() {
                   </div>
 
                   {/* Card Title */}
-                  <h3 className="font-serif text-lg font-medium text-slate-100 mb-2.5 group-hover:text-gold-champagne transition-colors">
+                  <h3 className="text-lg font-semibold text-slate-100 mb-2.5 group-hover:text-gold-champagne transition-colors">
                     {card.title}
                   </h3>
 

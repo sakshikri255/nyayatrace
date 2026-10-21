@@ -26,7 +26,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-midnight-950 border border-white/20 text-white text-xs px-3 py-2 rounded-lg shadow-xl">
-      <p className="font-serif font-medium text-gold mb-0.5">{label}</p>
+      <p className="font-semibold text-gold mb-0.5">{label}</p>
       <p className="text-slate-300">
         {payload[0].value} hearing{payload[0].value === 1 ? '' : 's'}
       </p>
@@ -47,7 +47,7 @@ export function ActivityLineChart({ data, theme = 'light' }: ActivityLineChartPr
       }
     >
       <div className="mb-4">
-        <h3 className={isDark ? 'font-serif text-sm font-medium text-slate-100' : 'text-sm font-semibold text-gray-800'}>
+        <h3 className={isDark ? 'text-sm font-semibold text-slate-100' : 'text-sm font-semibold text-gray-800'}>
           Case Activity
         </h3>
         <p className={isDark ? 'text-xs text-slate-400 font-light mt-0.5' : 'text-xs text-gray-400 mt-0.5'}>

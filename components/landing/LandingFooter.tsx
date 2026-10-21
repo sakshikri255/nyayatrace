@@ -23,12 +23,12 @@ export function LandingFooter() {
           
           <div className="inline-flex items-center gap-2 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold font-serif">
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold">
               EMPOWER YOUR PRACTICE
             </span>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-4xl font-medium text-slate-100 tracking-tight leading-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-4xl font-bold text-slate-100 tracking-tight leading-tight mb-4">
             Spend Less Time Searching.{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne">
               More Time Understanding.
@@ -81,7 +81,7 @@ export function LandingFooter() {
 
           {/* Quick Workspace Modules */}
           <div>
-            <p className="font-serif text-xs font-semibold uppercase tracking-wider text-gold mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gold mb-3">
               Workspace Modules
             </p>
             <ul className="space-y-2 text-xs text-slate-400">
@@ -115,7 +115,7 @@ export function LandingFooter() {
 
           {/* Standards & Governance */}
           <div>
-            <p className="font-serif text-xs font-semibold uppercase tracking-wider text-gold mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gold mb-3">
               Ethics &amp; Control
             </p>
             <ul className="space-y-2 text-xs text-slate-400">

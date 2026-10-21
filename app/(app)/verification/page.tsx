@@ -27,17 +27,17 @@ export default function VerificationIndexPage() {
             <FileSearchIcon className="w-5 h-5 text-teal" />
           </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 leading-tight">
+              <h1 className="text-2xl font-bold text-[var(--section-heading)] leading-tight">
                 Fact &amp; Evidence Verification
               </h1>
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-sm text-[var(--section-subheading)] mt-2">
                 Select a case to open the three-panel verification workspace and review document findings.
               </p>
             </div>
           </div>
           <Link
             href="/cases"
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-3 py-2 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors shrink-0"
           >
             <BriefcaseIcon className="w-3.5 h-3.5" />
             View All Cases
@@ -46,11 +46,11 @@ export default function VerificationIndexPage() {
 
         {/* Case grid */}
         {cases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-slate-200 rounded-xl text-center">
-            <AlertTriangleIcon className="w-8 h-8 text-slate-300 mb-3" />
-            <p className="text-sm font-medium text-slate-700">No cases created yet.</p>
-            <p className="text-xs text-slate-500 mt-1">Create a case to upload authorized records and review their sources.</p>
-            <Link href="/cases?new=1" className="mt-4 text-sm font-medium text-teal-700 underline">Create a case</Link>
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-[var(--section-card-border)] rounded-xl text-center">
+            <AlertTriangleIcon className="w-8 h-8 text-[var(--section-subheading)] mb-3" />
+            <p className="text-sm font-medium text-[var(--section-heading)]">No cases created yet.</p>
+            <p className="text-xs text-[var(--section-subheading)] mt-1">Create a case to upload authorized records and review their sources.</p>
+            <Link href="/cases?new=1" className="mt-4 text-sm font-medium text-teal underline">Create a case</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-grid">
@@ -96,14 +96,14 @@ function CaseCard({
   verified,
 }: CaseCardProps) {
   return (
-    <div className="animate-fade-up group bg-white border border-slate-200 rounded-xl p-6 flex flex-col gap-3 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-teal/50 hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)]">
+    <div className="animate-fade-up group bg-[var(--section-card-bg)] border border-[var(--section-card-border)] rounded-xl p-6 flex flex-col gap-3 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-teal/50 hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)]">
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-1 min-w-0">
           <span className="font-mono text-xs font-semibold text-teal tracking-tight truncate">
             {caseNumber}
           </span>
-          <h2 className="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">
+          <h2 className="text-sm font-semibold text-[var(--section-heading)] leading-snug line-clamp-2">
             {title}
           </h2>
         </div>
@@ -111,14 +111,14 @@ function CaseCard({
       </div>
 
       {/* Finding stats */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--section-card-border)] pt-3">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--muted)] px-2.5 py-1 text-xs font-medium text-[var(--section-heading)]">
           <span className="font-bold">{totalFindings}</span> Findings
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/30 dark:border-amber-800/40 dark:text-amber-400">
           <span className="font-bold">{needsReview}</span> Pending
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-400">
           <span className="font-bold">{verified}</span> Verified
         </span>
       </div>
@@ -134,14 +134,14 @@ function CaseCard({
         </Link>
         <Link
           href={`/bail-briefs/${id}`}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-xs font-medium text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--section-card-border)] text-xs font-medium text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
           title="Bail & Parole"
         >
           <ScaleIcon className="w-3.5 h-3.5" />
         </Link>
         <Link
           href={`/case-progress/${id}`}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-xs font-medium text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--section-card-border)] text-xs font-medium text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
           title="Case Progress"
         >
           <TrendingUpIcon className="w-3.5 h-3.5" />

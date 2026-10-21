@@ -182,12 +182,12 @@ export function OurProcessSection() {
         <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-20">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold font-serif">
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold">
               STRUCTURED WORKFLOW
             </span>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-4xl font-normal text-slate-100 tracking-tight leading-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-4xl font-semibold text-slate-100 tracking-tight leading-tight mb-4">
             Our Process
           </h2>
 
@@ -233,13 +233,13 @@ export function OurProcessSection() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gold/30 bg-gradient-to-b from-midnight-800 to-midnight-900 text-gold shadow-md group-hover:scale-105 group-hover:border-gold transition-transform">
                       <Icon className="w-5 h-5 text-gold-light" />
                     </div>
-                    <span className="font-serif text-lg font-bold text-gold/40 group-hover:text-gold/80 transition-colors">
+                    <span className="text-lg font-bold text-gold/40 group-hover:text-gold/80 transition-colors">
                       {stage.number}
                     </span>
                   </div>
 
                   {/* Stage Title */}
-                  <h3 className="font-serif text-base font-medium text-slate-100 mb-2">
+                  <h3 className="text-base font-semibold text-slate-100 mb-2">
                     {stage.title}
                   </h3>
 
@@ -266,10 +266,10 @@ export function OurProcessSection() {
           className="mt-16 lg:mt-20 rounded-2xl border border-white/10 bg-midnight-950/90 p-6 sm:p-8 backdrop-blur-md shadow-2xl"
         >
           <div className="text-center mb-8">
-            <span className="text-[11px] font-serif tracking-widest uppercase text-gold">
+            <span className="text-[11px] font-semibold tracking-widest uppercase text-gold">
               METHODOLOGY COMPARISON
             </span>
-            <h4 className="font-serif text-xl sm:text-2xl font-normal text-slate-100 mt-1">
+            <h4 className="text-xl sm:text-2xl font-semibold text-slate-100 mt-1">
               Elevating the Legal Research Standard
             </h4>
           </div>
@@ -281,7 +281,7 @@ export function OurProcessSection() {
               <div>
                 <div className="flex items-center gap-2 mb-3 text-rose-400">
                   <XCircle className="w-4 h-4 shrink-0" />
-                  <span className="font-serif text-sm font-semibold tracking-wide uppercase">
+                  <span className="text-sm font-semibold tracking-wide uppercase">
                     Traditional Workflow
                   </span>
                 </div>
@@ -314,7 +314,7 @@ export function OurProcessSection() {
               <div>
                 <div className="flex items-center gap-2 mb-3 text-teal-light">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span className="font-serif text-sm font-semibold tracking-wide uppercase">
+                  <span className="text-sm font-semibold tracking-wide uppercase">
                     NyayaTrace-Assisted Workflow
                   </span>
                 </div>

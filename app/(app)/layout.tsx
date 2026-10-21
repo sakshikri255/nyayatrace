@@ -118,7 +118,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <AuthGuard>
     <MobileSidebarProvider>
       <NavigationProgressBar />
-      <div className="flex h-screen w-full overflow-hidden bg-offwhite">
+      <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
         {/* Sidebar — desktop fixed, mobile overlay */}
         <Sidebar />
 
@@ -128,7 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Topbar />
             <UrgencyTicker items={urgentItems} />
           </div>
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-background text-foreground">
             <AnimatedPageWrapper>
               {children}
             </AnimatedPageWrapper>

@@ -59,11 +59,11 @@ export function WorkspaceDashboardSection({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold font-serif">
+              <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold">
                 YOUR LEGAL WORKSPACE
               </span>
             </div>
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-3xl font-medium text-slate-100 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-3xl font-semibold text-slate-100 tracking-tight">
               Case Dashboard &amp; Activity
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 font-light mt-1">
@@ -89,7 +89,7 @@ export function WorkspaceDashboardSection({
                   <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-rose-500" />
                 </span>
                 <div>
-                  <h3 className="font-serif text-sm font-semibold text-rose-200 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-rose-200 flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-rose-400 inline" />
                     Statutory Default Bail Watchlist ({statutoryBailCases.length} Active Cases)
                   </h3>
@@ -117,7 +117,7 @@ export function WorkspaceDashboardSection({
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/10 text-gold border border-gold/25">
               <PlusCircle size={28} />
             </div>
-            <h3 className="font-serif text-xl font-medium text-slate-100">
+            <h3 className="text-xl font-semibold text-slate-100">
               No cases created yet
             </h3>
             <p className="mt-2 text-sm text-slate-400 font-light leading-relaxed">
@@ -188,7 +188,7 @@ export function WorkspaceDashboardSection({
               {/* Quick Actions Card (1/3 width) */}
               <div className="rounded-2xl border border-white/10 bg-midnight-950/80 p-5 sm:p-6 shadow-lg flex flex-col justify-between">
                 <div>
-                  <h3 className="font-serif text-sm font-medium text-slate-100 mb-1">
+                  <h3 className="text-sm font-semibold text-slate-100 mb-1">
                     Quick Actions
                   </h3>
                   <p className="text-xs text-slate-400 font-light mb-5">

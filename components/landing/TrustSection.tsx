@@ -59,12 +59,12 @@ export function TrustSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 mb-3">
             <Shield className="w-4 h-4 text-gold" />
-            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold font-serif">
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold">
               INTEGRITY &amp; GOVERNANCE
             </span>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-4xl font-normal text-slate-100 tracking-tight leading-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-4xl font-semibold text-slate-100 tracking-tight leading-tight mb-4">
             Trust and Responsibility
           </h2>
 
@@ -116,7 +116,7 @@ export function TrustSection() {
                     {item.principle}
                   </span>
 
-                  <h3 className="font-serif text-lg font-medium text-slate-100 mb-3">
+                  <h3 className="text-lg font-semibold text-slate-100 mb-3">
                     {item.title}
                   </h3>
 

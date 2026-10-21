@@ -138,13 +138,13 @@ export function IntroductionSection() {
             {/* Small Label */}
             <div className="flex items-center gap-2 mb-4">
               <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold font-serif">
+              <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gold">
                 OUR APPROACH
               </span>
             </div>
 
             {/* Heading */}
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-slate-100 tracking-tight leading-[1.25] mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-100 tracking-tight leading-[1.25] mb-5">
               Legal Preparation,{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne">
                 Made More Structured.

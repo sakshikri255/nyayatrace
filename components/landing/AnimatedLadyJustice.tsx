@@ -473,7 +473,7 @@ export function AnimatedLadyJustice() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-light opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-teal" />
               </span>
-              <span className="font-serif text-[11px] tracking-wider uppercase text-gold-champagne/90">
+              <span className="text-[11px] font-semibold tracking-wider uppercase text-gold-champagne/90">
                 Impartial Justice
               </span>
             </div>
@@ -485,7 +485,7 @@ export function AnimatedLadyJustice() {
 
         {/* ── Elegant Pedestal Inscription Footer ── */}
         <div className="mt-2.5 px-3 py-1.5 flex items-center justify-between text-xs text-muted/80">
-          <span className="font-serif tracking-widest text-[11px] text-gold/90 uppercase">
+          <span className="tracking-widest text-[11px] font-semibold text-gold/90 uppercase">
             Justitia Regnorum Fundamentum
           </span>
           <span className="text-[10px] text-teal-light/80 font-medium">

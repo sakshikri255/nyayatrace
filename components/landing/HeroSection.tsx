@@ -61,7 +61,7 @@ export function HeroSection() {
               className="flex items-center gap-3 mb-5"
             >
               <div className="h-px w-8 bg-gradient-to-r from-transparent to-gold" />
-              <span className="text-[11px] font-semibold tracking-[0.22em] uppercase text-gold font-serif">
+              <span className="text-[11px] font-semibold tracking-[0.22em] uppercase text-gold">
                 LEGAL INTELLIGENCE FOR CASE PREPARATION
               </span>
             </motion.div>
@@ -71,7 +71,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: 'easeOut', delay: 0.08 }}
-              className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-slate-100 leading-[1.18] mb-6"
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-100 leading-[1.18] mb-6"
             >
               Complex Case Files.{' '}
               <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne">
