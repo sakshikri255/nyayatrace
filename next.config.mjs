@@ -23,17 +23,6 @@ const nextConfig = {
       'sonner',
     ],
   },
-
-  webpack(config, { isServer }) {
-    if (isServer) {
-      config.externals.push({
-        '@napi-rs/canvas': 'commonjs @napi-rs/canvas',
-        'tesseract.js': 'commonjs tesseract.js',
-        'better-sqlite3': 'commonjs better-sqlite3',
-      });
-    }
-    return config;
-  },
 };
 
 export default nextConfig;

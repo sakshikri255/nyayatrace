@@ -5,9 +5,28 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Menu, LogOut } from 'lucide-react'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
-import { CommandPalette } from '@/components/layout/CommandPalette'
+import dynamic from 'next/dynamic'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { logoutUser, getSession } from '@/lib/auth'
+
+const CommandPalette = dynamic(
+  () => import('@/components/layout/CommandPalette').then((m) => m.CommandPalette),
+  {
+    ssr: false,
+    loading: () => (
+      <button
+        type="button"
+        className="hidden md:flex h-9 shrink-0 items-center gap-2 rounded-lg border border-border-dark bg-charcoal/80 px-3 text-xs text-muted"
+      >
+        <span className="text-teal text-[11px]">⌘</span>
+        <span>Search cases, sections, text...</span>
+        <kbd className="ml-2 rounded border border-border-dark bg-navy/80 px-1.5 py-0.5 text-[10px] font-mono text-muted">
+          ⌘K
+        </kbd>
+      </button>
+    ),
+  }
+)
 
 const PAGE_TITLES: Record<string, { title: string; breadcrumb: string[] }> = {
   '/overview': { title: 'Overview', breadcrumb: ['Overview'] },

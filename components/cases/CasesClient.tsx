@@ -254,129 +254,131 @@ export function CasesClient({
 
       {/* New Case Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-2xl p-6">
-          <DialogHeader>
-            <DialogTitle className="text-lg">Create a case</DialogTitle>
-          </DialogHeader>
-          <motion.form
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.15 }}
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-3 mt-2"
-          >
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-slate-600">
-                Title <span className="text-rose-500">*</span>
-              </label>
-              <Input
-                name="title"
-                placeholder="Case title"
-                value={form.title}
-                onChange={handleFormChange}
-                className="h-8 text-sm"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+        {dialogOpen && (
+          <DialogContent className="sm:max-w-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg">Create a case</DialogTitle>
+            </DialogHeader>
+            <motion.form
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.15 }}
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-3 mt-2"
+            >
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-600">Case number (optional)</label>
+                <label className="text-xs font-medium text-slate-600">
+                  Title <span className="text-rose-500">*</span>
+                </label>
                 <Input
-                  name="caseNumber"
-                  placeholder="Generated if left blank"
-                  value={form.caseNumber}
+                  name="title"
+                  placeholder="Case title"
+                  value={form.title}
                   onChange={handleFormChange}
-                  className="h-8 text-sm font-mono"
+                  className="h-8 text-sm"
+                  required
                 />
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-600">Case type (optional)</label>
-                <Select
-                  value={form.caseType || 'unspecified'}
-                  onValueChange={(v) => v != null && setForm((p) => ({ ...p, caseType: v === 'unspecified' ? '' : v }))}
-                >
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue placeholder="Not specified" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unspecified">Not specified</SelectItem>
-                    <SelectItem value="criminal">Criminal</SelectItem>
-                    <SelectItem value="civil">Civil</SelectItem>
-                    <SelectItem value="bail">Bail</SelectItem>
-                    <SelectItem value="parole">Parole</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-600">Procedural status (optional)</label>
-                <Select
-                  value={form.status}
-                  onValueChange={(v) => v != null && setForm((p) => ({ ...p, status: v }))}
-                >
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue placeholder="Not specified" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unspecified">Not specified</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                    <SelectItem value="stayed">Stayed</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-600">Case number (optional)</label>
+                  <Input
+                    name="caseNumber"
+                    placeholder="Generated if left blank"
+                    value={form.caseNumber}
+                    onChange={handleFormChange}
+                    className="h-8 text-sm font-mono"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-600">Case type (optional)</label>
+                  <Select
+                    value={form.caseType || 'unspecified'}
+                    onValueChange={(v) => v != null && setForm((p) => ({ ...p, caseType: v === 'unspecified' ? '' : v }))}
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue placeholder="Not specified" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unspecified">Not specified</SelectItem>
+                      <SelectItem value="criminal">Criminal</SelectItem>
+                      <SelectItem value="civil">Civil</SelectItem>
+                      <SelectItem value="bail">Bail</SelectItem>
+                      <SelectItem value="parole">Parole</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-600">Procedural status (optional)</label>
+                  <Select
+                    value={form.status}
+                    onValueChange={(v) => v != null && setForm((p) => ({ ...p, status: v }))}
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue placeholder="Not specified" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unspecified">Not specified</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="stayed">Stayed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-600">Court (optional)</label>
+                  <Input
+                    name="court"
+                    placeholder="Court name"
+                    value={form.court}
+                    onChange={handleFormChange}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-600">Court (optional)</label>
+                <label className="text-xs font-medium text-slate-600">
+                  Description
+                </label>
+                <Textarea
+                  name="description"
+                  placeholder="Brief description of the case…"
+                  value={form.description}
+                  onChange={handleFormChange}
+                  className="text-sm resize-none"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-slate-600">Jurisdiction (optional)</label>
                 <Input
-                  name="court"
-                  placeholder="Court name"
-                  value={form.court}
+                  name="jurisdiction"
+                  placeholder="State, region, or jurisdiction"
+                  value={form.jurisdiction}
                   onChange={handleFormChange}
                   className="h-8 text-sm"
                 />
               </div>
-            </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-slate-600">
-                Description
-              </label>
-              <Textarea
-                name="description"
-                placeholder="Brief description of the case…"
-                value={form.description}
-                onChange={handleFormChange}
-                className="text-sm resize-none"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-slate-600">Jurisdiction (optional)</label>
-              <Input
-                name="jurisdiction"
-                placeholder="State, region, or jurisdiction"
-                value={form.jurisdiction}
-                onChange={handleFormChange}
-                className="h-8 text-sm"
-              />
-            </div>
-
-            <DialogFooter className="mt-2">
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="bg-teal hover:bg-teal-light text-white border-0 w-full sm:w-auto"
-              >
-                {submitting ? 'Creating…' : 'Create Case'}
-              </Button>
-            </DialogFooter>
-          </motion.form>
-        </DialogContent>
+              <DialogFooter className="mt-2">
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="bg-teal hover:bg-teal-light text-white border-0 w-full sm:w-auto"
+                >
+                  {submitting ? 'Creating…' : 'Create Case'}
+                </Button>
+              </DialogFooter>
+            </motion.form>
+          </DialogContent>
+        )}
       </Dialog>
     </div>
   )
