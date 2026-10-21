@@ -137,12 +137,9 @@ export function LandingFooter() {
         </div>
 
         {/* Bottom Copyright & Disclaimer */}
-        <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="pt-6 border-t border-white/5 flex items-center justify-center gap-4 text-xs text-slate-500">
           <p>
             © {new Date().getFullYear()} NyayaTrace. Assistive legal intelligence for judicial professionals.
-          </p>
-          <p className="text-[11px] font-mono text-slate-600">
-            Next.js 14 · SQLite · Framer Motion · Tailwind CSS
           </p>
         </div>
       </div>
