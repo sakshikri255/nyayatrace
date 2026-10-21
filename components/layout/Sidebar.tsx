@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -45,8 +45,24 @@ const sidebarVariants = {
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [hasUrgentBail, setHasUrgentBail] = useState(false)
   const pathname = usePathname()
   const { mobileOpen, setMobileOpen } = useMobileSidebar()
+
+  const checkAlerts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/overview/alerts')
+      if (!res.ok) return
+      const data = await res.json() as { total: number }
+      setHasUrgentBail(data.total > 0)
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    checkAlerts()
+    const timer = setInterval(checkAlerts, 5 * 60_000)
+    return () => clearInterval(timer)
+  }, [checkAlerts])
 
   return (
     <TooltipProvider delay={0}>
@@ -110,13 +126,18 @@ export function Sidebar() {
                               : 'text-muted hover:text-offwhite hover:bg-charcoal/60'
                           )}
                         >
-                          <Icon
-                            size={18}
-                            className={cn(
-                              'shrink-0 transition-colors',
-                              isActive ? 'text-teal-light' : 'text-muted'
+                          <div className="relative shrink-0">
+                            <Icon
+                              size={18}
+                              className={cn(
+                                'transition-colors',
+                                isActive ? 'text-teal-light' : 'text-muted'
+                              )}
+                            />
+                            {item.href === '/bail-briefs' && hasUrgentBail && (
+                              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                             )}
-                          />
+                          </div>
                           {!collapsed && (
                             <span className="overflow-hidden whitespace-nowrap">
                               {item.label}

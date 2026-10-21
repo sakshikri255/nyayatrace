@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate, BriefcaseIcon, TrendingUpIcon, ScaleIcon } from 'lucide-react'
+import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate, BriefcaseIcon, TrendingUpIcon, ScaleIcon, Bot } from 'lucide-react'
+import { CaseChatDrawer } from './CaseChatDrawer'
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelGroupHandle } from 'react-resizable-panels'
 import { DocumentPanel } from './DocumentPanel'
 import { DocumentViewer } from './DocumentViewer'
@@ -39,6 +40,7 @@ const LAYOUT_KEY = 'nyaya_workspace_layout'
 export function VerificationWorkspace({ caseData, initialDocuments, initialFindings }: Props) {
   const [documents, setDocuments] = useState<DocumentRow[]>(initialDocuments)
   const [findings, setFindings] = useState<FindingWithSources[]>(initialFindings)
+  const [chatOpen, setChatOpen] = useState(false)
   const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(
     initialDocuments[0]?.id ?? null
   )
@@ -157,6 +159,16 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
           </div>
         </div>
 
+        {/* Ask AI button */}
+        <button
+          type="button"
+          onClick={() => setChatOpen(true)}
+          className="hidden md:inline-flex items-center gap-1.5 rounded-md border border-teal/30 bg-teal/5 px-2.5 py-1.5 text-xs font-medium text-teal hover:bg-teal/10 transition-colors shrink-0"
+        >
+          <Bot className="w-3.5 h-3.5" />
+          Ask AI
+        </button>
+
         {/* Cross-feature quick links */}
         <div className="hidden md:flex items-center gap-1.5 ml-2">
           <Link
@@ -185,6 +197,14 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
           </Link>
         </div>
       </header>
+
+      {/* AI Chat Drawer */}
+      <CaseChatDrawer
+        caseId={caseData.id}
+        caseTitle={caseData.title}
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+      />
 
       {/* ── Mobile Tab Strip (Small screens only) ───────────────────────── */}
       <div className="flex-shrink-0 flex lg:hidden border-b border-slate-200 bg-white">

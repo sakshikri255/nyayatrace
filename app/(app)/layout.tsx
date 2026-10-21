@@ -5,6 +5,8 @@ import { NavigationProgressBar } from '@/components/layout/NavigationProgressBar
 import { AnimatedPageWrapper } from '@/components/layout/AnimatedPageWrapper'
 import { AuthGuard } from '@/components/layout/AuthGuard'
 import { UrgencyTicker, type UrgencyItem } from '@/components/layout/UrgencyTicker'
+import { OfflineBanner } from '@/components/layout/OfflineBanner'
+import { InstallPrompt } from '@/components/layout/InstallPrompt'
 import { db } from '@/lib/db'
 import { cases, hearings } from '@/lib/db/schema'
 import { and, gte, lte, eq } from 'drizzle-orm'
@@ -136,6 +138,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </MobileSidebarProvider>
+      <OfflineBanner />
+      <InstallPrompt />
     </AuthGuard>
   )
 }
