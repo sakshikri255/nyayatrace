@@ -105,11 +105,6 @@ export function LandingFooter() {
                   Procedural Chronology
                 </Link>
               </li>
-              <li>
-                <Link href="/cause-list" className="hover:text-gold-light transition-colors">
-                  Cause List Diary
-                </Link>
-              </li>
             </ul>
           </div>
 

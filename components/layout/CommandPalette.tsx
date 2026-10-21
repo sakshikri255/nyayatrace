@@ -12,7 +12,6 @@ import {
   BookOpen,
   ArrowRight,
   X,
-  CalendarDays,
   FileSearch,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -120,17 +119,6 @@ export function CommandPalette() {
           onSelect: () => {
             setOpen(false)
             router.push('/case-progress')
-          },
-        },
-        {
-          id: 'act-cause-list',
-          title: 'Court Diary / Cause List',
-          subtitle: 'Weekly board view of all scheduled hearings across cases',
-          category: 'Actions',
-          icon: CalendarDays,
-          onSelect: () => {
-            setOpen(false)
-            router.push('/cause-list')
           },
         },
         {
