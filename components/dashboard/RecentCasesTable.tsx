@@ -7,6 +7,7 @@ import { CaseStatusBadge } from '@/components/cases/CaseStatusBadge'
 
 interface RecentCasesTableProps {
   cases: RecentCase[]
+  theme?: 'light' | 'dark'
 }
 
 function relativeDate(dateStr: string | null): string {
@@ -23,70 +24,113 @@ function relativeDate(dateStr: string | null): string {
   return `${Math.floor(diffDays / 365)}y ago`
 }
 
-export function RecentCasesTable({ cases }: RecentCasesTableProps) {
+export function RecentCasesTable({ cases, theme = 'light' }: RecentCasesTableProps) {
+  const isDark = theme === 'dark'
+
   if (cases.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 text-center text-sm text-gray-400">
-        No cases found.
+      <div
+        className={
+          isDark
+            ? 'rounded-2xl border border-white/10 bg-midnight-950/80 p-8 text-center text-sm text-slate-400 font-light'
+            : 'bg-white border border-gray-200 shadow-sm rounded-lg p-6 text-center text-sm text-gray-400'
+        }
+      >
+        No recent cases found in your workspace.
       </div>
     )
   }
 
   return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div
+      className={
+        isDark
+          ? 'rounded-2xl border border-white/10 bg-midnight-950/80 shadow-lg overflow-hidden'
+          : 'bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden'
+      }
+    >
+      <div
+        className={`px-5 py-4 flex items-center justify-between ${
+          isDark ? 'border-b border-white/10' : 'border-b border-gray-100'
+        }`}
+      >
         <div>
-          <h3 className="text-sm font-semibold text-gray-800">Recent Cases</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Last 5 updated cases</p>
+          <h3 className={isDark ? 'text-sm font-semibold text-slate-100' : 'text-sm font-semibold text-gray-800'}>
+            Recent Cases
+          </h3>
+          <p className={isDark ? 'text-xs text-slate-400 font-light mt-0.5' : 'text-xs text-gray-400 mt-0.5'}>
+            Last 5 updated cases in active workspace
+          </p>
         </div>
         <Link
           href="/cases"
-          className="text-xs font-medium text-teal hover:underline"
+          className={`text-xs font-medium transition-colors ${
+            isDark ? 'text-gold-light hover:text-gold hover:underline' : 'text-teal hover:underline'
+          }`}
         >
           View all cases →
         </Link>
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-100 bg-gray-50">
-            <th className="text-left text-xs font-medium text-gray-500 px-5 py-2.5">Case ID</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-5 py-2.5">Title</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-5 py-2.5">Status</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-5 py-2.5">Docs</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-5 py-2.5">Last Activity</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cases.map((c, i) => (
-            <motion.tr
-              key={c.id}
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.06, duration: 0.25, ease: 'easeOut' }}
-              className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr
+              className={`border-b text-left text-xs font-medium ${
+                isDark
+                  ? 'border-white/10 bg-white/[0.02] text-slate-400'
+                  : 'border-gray-100 bg-gray-50 text-gray-500'
+              }`}
             >
-              <td className="px-5 py-3">
-                <span className="font-mono text-xs text-teal">{c.caseNumber}</span>
-              </td>
-              <td className="px-5 py-3 max-w-[260px]">
-                <Link
-                  href={`/cases/${c.id}`}
-                  className="text-gray-800 font-medium hover:text-teal transition-colors line-clamp-1"
-                >
-                  {c.title}
-                </Link>
-              </td>
-              <td className="px-5 py-3">
-                <CaseStatusBadge status={c.status} />
-              </td>
-              <td className="px-5 py-3 text-gray-500">{c.documentCount}</td>
-              <td className="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">
-                {relativeDate(c.lastActivity)}
-              </td>
-            </motion.tr>
-          ))}
-        </tbody>
-      </table>
+              <th className="px-5 py-3 font-medium">Case ID</th>
+              <th className="px-5 py-3 font-medium">Title</th>
+              <th className="px-5 py-3 font-medium">Status</th>
+              <th className="px-5 py-3 font-medium">Docs</th>
+              <th className="px-5 py-3 font-medium">Last Activity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cases.map((c, i) => (
+              <motion.tr
+                key={c.id}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05, duration: 0.25, ease: 'easeOut' }}
+                className={`border-b transition-colors ${
+                  isDark
+                    ? 'border-white/5 hover:bg-white/[0.03]'
+                    : 'border-gray-50 hover:bg-gray-50'
+                }`}
+              >
+                <td className="px-5 py-3">
+                  <span className={`font-mono text-xs ${isDark ? 'text-teal-light' : 'text-teal'}`}>
+                    {c.caseNumber}
+                  </span>
+                </td>
+                <td className="px-5 py-3 max-w-[280px]">
+                  <Link
+                    href={`/cases/${c.id}`}
+                    className={`font-medium transition-colors line-clamp-1 ${
+                      isDark ? 'text-slate-200 hover:text-gold-light' : 'text-gray-800 hover:text-teal'
+                    }`}
+                  >
+                    {c.title}
+                  </Link>
+                </td>
+                <td className="px-5 py-3">
+                  <CaseStatusBadge status={c.status} />
+                </td>
+                <td className={`px-5 py-3 ${isDark ? 'text-slate-400 font-mono text-xs' : 'text-gray-500'}`}>
+                  {c.documentCount}
+                </td>
+                <td className={`px-5 py-3 text-xs whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>
+                  {relativeDate(c.lastActivity)}
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
+export default RecentCasesTable

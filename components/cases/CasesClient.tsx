@@ -167,8 +167,8 @@ export function CasesClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Cases</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-xl font-bold text-[var(--section-heading)]">Cases</h1>
+          <p className="text-sm text-[var(--section-subheading)] mt-0.5">
             {cases.length} total · {filtered.length} shown
           </p>
         </div>
@@ -220,7 +220,7 @@ export function CasesClient({
 
       {/* Table */}
       {filtered.length > 0 ? (
-        <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+        <div className="rounded-lg border border-[var(--section-card-border)] bg-[var(--section-card-bg)] overflow-hidden">
           <CasesTable
             cases={filtered}
             onDeleteCase={(id) => {
@@ -230,12 +230,12 @@ export function CasesClient({
           />
         </div>
       ) : cases.length === 0 ? (
-        <div className="flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+        <div className="flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-6 py-12 text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-teal/10 text-teal">
             <PlusIcon className="h-5 w-5" />
           </div>
-          <h2 className="text-lg font-semibold text-slate-900">No cases created yet.</h2>
-          <p className="mt-2 max-w-md text-sm text-slate-500">
+          <h2 className="text-lg font-semibold text-[var(--section-heading)]">No cases created yet.</h2>
+          <p className="mt-2 max-w-md text-sm text-[var(--section-subheading)]">
             Create a case to upload documents and generate a source-linked case synopsis.
           </p>
           <Button
@@ -247,7 +247,7 @@ export function CasesClient({
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500">
+        <div className="rounded-lg border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-6 py-12 text-center text-sm text-[var(--section-subheading)]">
           No cases match these filters.
         </div>
       )}

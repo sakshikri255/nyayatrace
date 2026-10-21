@@ -12,13 +12,21 @@ interface KPICardProps {
   accent?: 'teal' | 'amber' | 'green' | 'default'
   delay?: number
   href?: string
+  theme?: 'light' | 'dark'
 }
 
-const accentStyles: Record<NonNullable<KPICardProps['accent']>, { bg: string; text: string }> = {
+const lightAccentStyles: Record<NonNullable<KPICardProps['accent']>, { bg: string; text: string }> = {
   teal:    { bg: 'bg-teal-50',   text: 'text-teal-700' },
   amber:   { bg: 'bg-amber-50',  text: 'text-amber-700' },
   green:   { bg: 'bg-green-50',  text: 'text-green-700' },
   default: { bg: 'bg-gray-100',  text: 'text-gray-600' },
+}
+
+const darkAccentStyles: Record<NonNullable<KPICardProps['accent']>, { bg: string; text: string; border: string }> = {
+  teal:    { bg: 'bg-teal/15',        text: 'text-teal-light',     border: 'border-teal/30' },
+  amber:   { bg: 'bg-amber-500/15',   text: 'text-amber-300',      border: 'border-amber-500/30' },
+  green:   { bg: 'bg-emerald-500/15', text: 'text-emerald-300',    border: 'border-emerald-500/30' },
+  default: { bg: 'bg-gold/15',        text: 'text-gold-champagne', border: 'border-gold/30' },
 }
 
 const icons = {
@@ -36,32 +44,47 @@ export function KPICard({
   accent = 'default',
   delay = 0,
   href,
+  theme = 'light',
 }: KPICardProps) {
-  const { bg, text } = accentStyles[accent]
   const Icon = icons[icon]
+  const isDark = theme === 'dark'
+
+  const iconClasses = isDark
+    ? `${darkAccentStyles[accent].bg} ${darkAccentStyles[accent].text} ${darkAccentStyles[accent].border} border`
+    : `${lightAccentStyles[accent].bg} ${lightAccentStyles[accent].text}`
 
   const inner = (
     <>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500">{label}</span>
-        <span className={`inline-flex items-center justify-center w-9 h-9 rounded-md ${bg} ${text}`}>
+        <span className={isDark ? "text-xs font-medium text-slate-400" : "text-sm font-medium text-gray-500"}>
+          {label}
+        </span>
+        <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${iconClasses}`}>
           <Icon size={18} strokeWidth={1.75} />
         </span>
       </div>
       <div>
-        <p className="text-3xl font-bold text-gray-900 leading-none">{value}</p>
+        <p className={`text-3xl font-bold leading-none ${isDark ? "text-slate-100" : "text-gray-900"}`}>
+          {value}
+        </p>
         {description && (
-          <p className="mt-1.5 text-xs text-gray-400">{description}</p>
+          <p className={`mt-1.5 text-xs ${isDark ? "text-slate-400 font-light" : "text-gray-400"}`}>
+            {description}
+          </p>
         )}
       </div>
       {href && (
-        <div className="flex items-center gap-1 text-[11px] font-medium text-teal-600 mt-auto">
+        <div className={`flex items-center gap-1 text-[11px] font-medium mt-auto ${isDark ? "text-gold-light hover:text-gold" : "text-teal-600"}`}>
           View details
           <ArrowRightIcon className="w-3 h-3" />
         </div>
       )}
     </>
   )
+
+  const cardClasses = isDark
+    ? "rounded-2xl border border-white/10 bg-midnight-950/80 shadow-lg p-5 flex flex-col gap-3 hover:border-gold/40 hover:bg-midnight-900/90 transition-all duration-200"
+    : "bg-white border border-gray-200 shadow-sm rounded-lg p-5 flex flex-col gap-3 hover:border-teal/40 hover:shadow-md transition-all"
 
   if (href) {
     return (
@@ -70,10 +93,7 @@ export function KPICard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: delay * 0.08, duration: 0.3, ease: 'easeOut' }}
       >
-        <Link
-          href={href}
-          className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 flex flex-col gap-3 hover:border-teal/40 hover:shadow-md transition-all block"
-        >
+        <Link href={href} className={`${cardClasses} block`}>
           {inner}
         </Link>
       </motion.div>
@@ -85,9 +105,10 @@ export function KPICard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay * 0.08, duration: 0.3, ease: 'easeOut' }}
-      className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 flex flex-col gap-3"
+      className={cardClasses}
     >
       {inner}
     </motion.div>
   )
 }
+export default KPICard

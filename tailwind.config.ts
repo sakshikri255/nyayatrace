@@ -9,6 +9,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        serif: ["Cinzel", "Playfair Display", "Cormorant Garamond", "Georgia", "Cambria", "Times New Roman", "serif"],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
@@ -16,9 +19,26 @@ const config: Config = {
         navy: "#0F172A",
         charcoal: "#1E293B",
         offwhite: "#F8FAFC",
+        gold: {
+          DEFAULT: "#C5A880",
+          light: "#E5C378",
+          muted: "#9E835E",
+          dark: "#7A6139",
+          champagne: "#E8D8B8",
+        },
+        midnight: {
+          DEFAULT: "#070A0F",
+          950: "#05070B",
+          900: "#070A0F",
+          850: "#0B0F17",
+          800: "#101622",
+          700: "#161E2E",
+          600: "#1E293B",
+        },
         teal: {
           DEFAULT: "#0D9488",
           light: "#14B8A6",
+          dark: "#0F766E",
         },
         muted: "#94A3B8",
         "border-dark": "#334155",

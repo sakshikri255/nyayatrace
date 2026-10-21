@@ -9,17 +9,17 @@ import { cn } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 const caseTypeConfig: Record<string, { label: string; highlight: boolean; className: string }> = {
-  bail:     { label: 'Bail',     highlight: true,  className: 'bg-teal-50 text-teal-700 border-teal-200'       },
-  parole:   { label: 'Parole',   highlight: true,  className: 'bg-violet-50 text-violet-700 border-violet-200' },
-  criminal: { label: 'Criminal', highlight: false, className: 'bg-rose-50 text-rose-700 border-rose-200'       },
-  civil:    { label: 'Civil',    highlight: false, className: 'bg-blue-50 text-blue-700 border-blue-200'       },
+  bail:     { label: 'Bail',     highlight: true,  className: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-800/40'       },
+  parole:   { label: 'Parole',   highlight: true,  className: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800/40' },
+  criminal: { label: 'Criminal', highlight: false, className: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40'       },
+  civil:    { label: 'Civil',    highlight: false, className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800/40'       },
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  active:  { label: 'Active',  className: 'bg-emerald-100 text-emerald-700' },
-  pending: { label: 'Pending', className: 'bg-amber-100 text-amber-700'     },
-  closed:  { label: 'Closed',  className: 'bg-slate-100 text-slate-600'     },
-  stayed:  { label: 'Stayed',  className: 'bg-purple-100 text-purple-700'   },
+  active:  { label: 'Active',  className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' },
+  pending: { label: 'Pending', className: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'     },
+  closed:  { label: 'Closed',  className: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'     },
+  stayed:  { label: 'Stayed',  className: 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400'   },
 }
 
 export default function BailBriefsPage() {
@@ -29,8 +29,8 @@ export default function BailBriefsPage() {
     <div className="px-6 py-6 max-w-7xl mx-auto flex flex-col gap-5">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Bail &amp; Parole Case Briefs</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-[var(--section-heading)]">Bail &amp; Parole Case Briefs</h1>
+        <p className="text-sm text-[var(--section-subheading)] mt-1">
           Structured summaries assembled from judicial orders, hearings, and case records.
         </p>
       </div>
@@ -41,28 +41,28 @@ export default function BailBriefsPage() {
       {/* Case grid */}
       {allCases.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-sm font-medium text-slate-700">No cases available.</p>
+          <p className="text-sm font-medium text-[var(--section-heading)]">No cases available.</p>
           <Link href="/cases?new=1" className="mt-4 rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white">Create a case</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-grid">
           {allCases.map((c) => {
-            const typeCfg = caseTypeConfig[c.caseType] ?? { label: 'Not specified', highlight: false, className: 'bg-slate-50 text-slate-600 border-slate-200' }
-            const statusCfg = statusConfig[c.status] ?? { label: 'Not specified', className: 'bg-slate-100 text-slate-600' }
+            const typeCfg = caseTypeConfig[c.caseType] ?? { label: 'Not specified', highlight: false, className: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700' }
+            const statusCfg = statusConfig[c.status] ?? { label: 'Not specified', className: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' }
 
             return (
               <div
                 key={c.id}
                 className={cn(
                   'animate-fade-up',
-                      'w-full min-w-0 bg-white rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
-                      c.caseType === 'parole' ? 'border-violet-200' :
-                      c.caseType === 'bail'   ? 'border-teal-200'   : 'border-slate-200'
-                    )}
+                  'w-full min-w-0 bg-[var(--section-card-bg)] rounded-lg border p-5 flex flex-col gap-3 transition-shadow hover:shadow-sm',
+                  c.caseType === 'parole' ? 'border-violet-200 dark:border-violet-800/40' :
+                  c.caseType === 'bail'   ? 'border-teal-200 dark:border-teal-800/40'     : 'border-[var(--section-card-border)]'
+                )}
               >
                 {/* Header row */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="min-w-0 whitespace-nowrap text-xs font-mono font-semibold text-slate-400 tracking-wide">
+                  <span className="min-w-0 whitespace-nowrap text-xs font-mono font-semibold text-[var(--section-subheading)] tracking-wide">
                     {c.caseNumber}
                   </span>
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
@@ -77,14 +77,14 @@ export default function BailBriefsPage() {
 
                 {/* Title */}
                 <h2 className={cn('text-sm font-semibold leading-snug',
-                  c.caseType === 'parole' ? 'text-violet-900' :
-                  c.caseType === 'bail'   ? 'text-teal-900'   : 'text-slate-800'
+                  c.caseType === 'parole' ? 'text-violet-700 dark:text-violet-300' :
+                  c.caseType === 'bail'   ? 'text-teal-700 dark:text-teal-300'     : 'text-[var(--section-heading)]'
                 )}>
                   {c.title}
                 </h2>
 
                 {/* Counts */}
-                <div className="flex gap-4 text-xs text-slate-400">
+                <div className="flex gap-4 text-xs text-[var(--section-subheading)]">
                   <span>{c.documentCount} document{c.documentCount !== 1 ? 's' : ''}</span>
                 </div>
 
@@ -96,14 +96,14 @@ export default function BailBriefsPage() {
                 )}
 
                 {/* Actions footer */}
-                <footer className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                <footer className="mt-auto flex items-center justify-between gap-3 border-t border-[var(--section-card-border)] pt-3">
                   <Link
                     href={`/bail-briefs/${c.id}`}
                     className={cn(
                       'inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors',
                       c.caseType === 'parole' ? 'bg-violet-600 text-white hover:bg-violet-700' :
                       c.caseType === 'bail'   ? 'bg-teal-600 text-white hover:bg-teal-700'     :
-                                               'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                               'bg-[var(--muted)] text-[var(--section-heading)] hover:bg-[var(--accent)]'
                     )}
                   >
                     View Brief →
@@ -111,7 +111,7 @@ export default function BailBriefsPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/cases/${c.id}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
                       title="Case Workspace"
                       aria-label="Case Workspace"
                     >
@@ -119,7 +119,7 @@ export default function BailBriefsPage() {
                     </Link>
                     <Link
                       href={`/case-progress/${c.id}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
                       title="Case Progress"
                       aria-label="Case Progress"
                     >
@@ -127,7 +127,7 @@ export default function BailBriefsPage() {
                     </Link>
                     <Link
                       href={`/verification/${c.id}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] transition-colors hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
                       title="Verification"
                       aria-label="Verification"
                     >
