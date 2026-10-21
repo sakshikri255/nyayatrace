@@ -8,6 +8,14 @@ const sqlite = new Database(dbPath)
 sqlite.pragma('journal_mode = WAL')
 sqlite.pragma('foreign_keys = ON')
 
+// ── Column migrations (safe to re-run — ALTER TABLE ADD COLUMN fails silently if already exists) ─
+const columnMigrations: [string, string][] = [
+  ['advocate', "ALTER TABLE cases ADD COLUMN advocate TEXT DEFAULT 'Aditi Sharma'"],
+]
+for (const [, stmt] of columnMigrations) {
+  try { sqlite.exec(stmt) } catch { /* column already exists */ }
+}
+
 // ── FTS5 sync triggers (safe to re-run — CREATE TRIGGER IF NOT EXISTS) ──────
 // These must be set up at runtime because the migrate script splits on ';'
 // which breaks BEGIN...END trigger bodies.
