@@ -99,6 +99,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const body = await request.json().catch(() => null)
   const useAi = body?.useAi === true
   const aiProvider = body?.aiProvider === 'openai' ? 'openai' : 'gemini'
+  const language: string = typeof body?.language === 'string' && body.language.trim() ? body.language.trim() : 'English'
   const providerConfigured = aiProvider === 'gemini'
     ? Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)
     : Boolean(process.env.OPENAI_API_KEY)
@@ -160,8 +161,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       engine: !useAi
         ? 'local-extract-v1'
         : aiProvider === 'gemini'
-          ? `gemini:${process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash'}`
-          : `openai:${process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini'}`,
+          ? `gemini:${process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash'}[lang:${language}]`
+          : `openai:${process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini'}[lang:${language}]`,
       createdAt: new Date().toISOString(),
     }).returning().get()
   } catch (cause) {
@@ -187,9 +188,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const synopsis = buildCaseSynopsis(caseRecord, loadedDocuments)
     if (useAi) {
+      synopsis.language = language
       synopsis.aiAnalysis = aiProvider === 'gemini'
-        ? await generateGeminiAnalysis(loadedDocuments)
-        : await generateAIAnalysis(loadedDocuments)
+        ? await generateGeminiAnalysis(loadedDocuments, language)
+        : await generateAIAnalysis(loadedDocuments, language)
+      // When a non-English language is chosen, promote the AI's translated
+      // executiveSummary into the main executiveSynopsis field so the primary
+      // synopsis text is actually rendered in the chosen language.
+      if (language !== 'English' && synopsis.aiAnalysis.executiveSummary) {
+        synopsis.executiveSynopsis = synopsis.aiAnalysis.executiveSummary
+      }
       const localInconsistencies = synopsis.potentialInconsistencies
       const localKeys = new Set(localInconsistencies.map((issue) =>
         `${issue.field.toLowerCase()}|${issue.values.map((value) => value.toLowerCase()).sort().join('|')}`

@@ -27,6 +27,7 @@ export interface CaseSynopsis {
     jurisdiction: string | null
     userNotes: string | null
   }
+  language?: string
   executiveSynopsis: string
   aiAnalysis?: AIAnalysis
   facts: EvidenceReference[]
@@ -226,6 +227,7 @@ export function buildCaseSynopsis(
       jurisdiction: caseRecord.jurisdiction,
       userNotes: caseRecord.description,
     },
+    language: 'English',
     executiveSynopsis,
     facts,
     chronology,
