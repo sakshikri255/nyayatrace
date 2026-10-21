@@ -11,7 +11,9 @@ interface GeminiResponse {
   error?: { code?: number; message?: string; status?: string }
 }
 
-const ANALYSIS_INSTRUCTIONS = `Analyze only the supplied extracted legal-document pages. Do not infer guilt, legal eligibility, procedural status, legal sections, court outcomes, or facts not present. Treat allegations and statements as reported content, not established findings. Return JSON with executiveSummary, executiveSources, documentSummaries, and potentialInconsistencies. Every factual statement in the executive summary and each document summary must be supported by an exact verbatim quote in its sources array. A potentialInconsistencies item must contain field, values, a neutral explanation, and at least two exact source quotes from different documentIds; include one only when the discrepancy is supported by those passages. Each source object must contain documentId, pageNumber, and quote copied exactly from supplied text. Each documentSummaries item must contain documentId, apparentType, summary, and sources. Use concise neutral language. If no discrepancies are supported, return an empty potentialInconsistencies array. Do not invent facts or citations.`
+function buildAnalysisInstructions(language: string): string {
+  return `Analyze only the supplied extracted legal-document pages. Do not infer guilt, legal eligibility, procedural status, legal sections, court outcomes, or facts not present. Treat allegations and statements as reported content, not established findings. Return JSON with executiveSummary, executiveSources, documentSummaries, and potentialInconsistencies. Every factual statement in the executive summary and each document summary must be supported by an exact verbatim quote in its sources array. A potentialInconsistencies item must contain field, values, a neutral explanation, and at least two exact source quotes from different documentIds; include one only when the discrepancy is supported by those passages. Each source object must contain documentId, pageNumber, and quote copied exactly from supplied text. Each documentSummaries item must contain documentId, apparentType, summary, and sources. Use concise neutral language. If no discrepancies are supported, return an empty potentialInconsistencies array. Do not invent facts or citations. Write all natural-language output fields (executiveSummary, summary, apparentType, explanation) in ${language}. Keep documentId, pageNumber, field, values, and quote values unchanged — those must remain in their original form.`
+}
 
 /** Models to try in order if the configured model fails with 404 */
 const FALLBACK_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-pro-latest']
@@ -96,7 +98,7 @@ async function callGeminiAPI(
   )
 }
 
-export async function generateGeminiAnalysis(documents: DocumentWithPages[]): Promise<AIAnalysis> {
+export async function generateGeminiAnalysis(documents: DocumentWithPages[], language = 'English'): Promise<AIAnalysis> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey) {
     throw new Error('Gemini is not configured. Set GEMINI_API_KEY on the server and restart NyayaTrace.')
@@ -128,7 +130,7 @@ export async function generateGeminiAnalysis(documents: DocumentWithPages[]): Pr
       {
         role: 'user',
         parts: [
-          { text: ANALYSIS_INSTRUCTIONS },
+          { text: buildAnalysisInstructions(language) },
           { text: JSON.stringify(pages) },
         ],
       },

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -16,8 +17,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "NyayaTrace",
-  description: "Case records, document extraction, and source-linked analysis",
+  title: "NyayaTrace | Legal Intelligence & Case Preparation",
+  description: "Complex Case Files. Clearer Legal Understanding. Case records, document extraction, and source-linked analysis.",
 };
 
 export default function RootLayout({
@@ -34,8 +35,15 @@ export default function RootLayout({
           "antialiased font-sans"
         )}
       >
-        {children}
-        <Toaster richColors position="bottom-right" />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster richColors position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

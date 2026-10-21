@@ -18,7 +18,7 @@ export default function VerificationLoading() {
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3"
+              className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col gap-3"
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-2">

@@ -1,10 +1,110 @@
 'use client'
 
-import { useState } from 'react'
-import { BookOpen, Search, Sparkles } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { BookOpen, Search, Sparkles, BarChart2 } from 'lucide-react'
 import { LEGAL_SECTIONS_DB, searchLegalSections, detectLegalSections, type LegalSectionMapping } from '@/lib/legal/sections'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import type { ExtractedSectionFrequency } from '@/app/api/cases/[id]/legal-sections/extracted/route'
+
+function LegalSectionAnalyticsCard({ caseId }: { caseId: number }) {
+  const [data, setData] = useState<ExtractedSectionFrequency[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  async function load() {
+    if (loaded) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/cases/${caseId}/legal-sections/extracted`)
+      if (res.ok) {
+        const json = await res.json() as { results: ExtractedSectionFrequency[] }
+        setData(json.results)
+        setLoaded(true)
+      }
+    } catch { /* ignore */ } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [caseId])
+
+  const top10 = (data ?? []).slice(0, 10)
+
+  if (!loaded && !loading) return null
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 py-3 text-xs text-slate-400">
+        <BarChart2 className="w-4 h-4 animate-pulse" />
+        Scanning document text for legal section references…
+      </div>
+    )
+  }
+  if (!data || data.length === 0) return null
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mb-4">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
+        <BarChart2 className="w-4 h-4 text-teal" />
+        <span className="text-sm font-semibold text-slate-800">Detected Sections</span>
+        <span className="ml-auto text-xs text-slate-400">{data.length} unique references found</span>
+      </div>
+      <div className="px-4 py-3">
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={top10} layout="vertical" margin={{ left: 8, right: 16, top: 0, bottom: 0 }}>
+            <XAxis type="number" tick={{ fontSize: 10 }} />
+            <YAxis
+              type="category"
+              dataKey="section"
+              tick={{ fontSize: 10 }}
+              width={50}
+              tickFormatter={(v: string) => v}
+            />
+            <Tooltip
+              formatter={(val) => [val, '']}
+              labelFormatter={(label) => `Section ${String(label)}`}
+              contentStyle={{ fontSize: 11 }}
+            />
+            <Bar dataKey="count" radius={[0, 3, 3, 0]}>
+              {top10.map((entry) => (
+                <Cell
+                  key={entry.section}
+                  fill={
+                    entry.bailable === 'Non-Bailable' ? '#f87171' :
+                    entry.bailable === 'Bailable' ? '#34d399' :
+                    '#94a3b8'
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {top10.map((item) => (
+            <Link
+              key={`${item.section}-${item.law}`}
+              href={item.concordanceHref}
+              className={cn(
+                'inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border transition-colors hover:opacity-80',
+                item.bailable === 'Non-Bailable'
+                  ? 'bg-rose-50 border-rose-200 text-rose-700'
+                  : item.bailable === 'Bailable'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-slate-50 border-slate-200 text-slate-600'
+              )}
+              title={item.offense ?? `Section ${item.section}`}
+            >
+              {item.section} {item.law && <span className="text-slate-500">({item.law})</span>}
+              <span className="text-slate-400 ml-0.5">×{item.count}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface LegalSectionsTabProps {
   caseData: {
@@ -57,6 +157,9 @@ export function LegalSectionsTab({ caseData, documentTextSnippet = '' }: LegalSe
 
   return (
     <div className="space-y-6">
+      {/* Detected Sections Analytics */}
+      <LegalSectionAnalyticsCard caseId={caseData.id} />
+
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>

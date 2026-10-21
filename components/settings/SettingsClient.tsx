@@ -54,12 +54,12 @@ function SectionCard({ icon: Icon, title, children, className }: {
   className?: string
 }) {
   return (
-    <div className={cn('bg-white rounded-xl border border-slate-200 overflow-hidden', className)}>
-      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-slate-100">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+    <div className={cn('bg-[var(--section-card-bg)] rounded-xl border border-[var(--section-card-border)] overflow-hidden', className)}>
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[var(--section-card-border)]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--muted)] text-[var(--section-subheading)]">
           <Icon className="h-4 w-4" />
         </div>
-        <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
+        <h2 className="text-sm font-semibold text-[var(--section-heading)]">{title}</h2>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -95,8 +95,8 @@ export function SettingsClient() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Settings &amp; System Health</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-xl font-bold text-[var(--section-heading)]">Settings &amp; System Health</h1>
+          <p className="text-sm text-[var(--section-subheading)] mt-0.5">
             Database statistics, OCR engine status, and AI provider diagnostics
           </p>
         </div>
@@ -115,7 +115,7 @@ export function SettingsClient() {
       {loading ? (
         <div className="grid grid-cols-1 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
+            <div key={i} className="h-40 rounded-xl border border-[var(--section-card-border)] bg-[var(--muted)] animate-pulse" />
           ))}
         </div>
       ) : (
@@ -126,15 +126,15 @@ export function SettingsClient() {
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {/* DB file size */}
-                  <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs">
-                    <span className="text-slate-400 block text-[10px] uppercase font-semibold mb-1">SQLite File</span>
-                    <span className="text-base font-bold text-slate-800">{formatBytes(d.database.sizeBytes)}</span>
-                  </div>
-                  {/* Uploads size */}
-                  <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs">
-                    <span className="text-slate-400 block text-[10px] uppercase font-semibold mb-1">Uploads Dir</span>
-                    <span className="text-base font-bold text-slate-800">{formatBytes(d.uploads.sizeBytes)}</span>
-                  </div>
+                  <div className="rounded-lg bg-[var(--muted)] border border-[var(--section-card-border)] p-3 text-xs">
+                     <span className="text-[var(--section-subheading)] block text-[10px] uppercase font-semibold mb-1">SQLite File</span>
+                     <span className="text-base font-bold text-[var(--section-heading)]">{formatBytes(d.database.sizeBytes)}</span>
+                   </div>
+                   {/* Uploads size */}
+                   <div className="rounded-lg bg-[var(--muted)] border border-[var(--section-card-border)] p-3 text-xs">
+                     <span className="text-[var(--section-subheading)] block text-[10px] uppercase font-semibold mb-1">Uploads Dir</span>
+                     <span className="text-base font-bold text-[var(--section-heading)]">{formatBytes(d.uploads.sizeBytes)}</span>
+                   </div>
                   {/* Orphan files */}
                   <div className={cn(
                     'rounded-lg border p-3 text-xs',
@@ -142,10 +142,10 @@ export function SettingsClient() {
                       ? 'bg-amber-50 border-amber-200'
                       : 'bg-slate-50 border-slate-200'
                   )}>
-                    <span className="text-slate-400 block text-[10px] uppercase font-semibold mb-1">Orphan Files</span>
+                    <span className="text-[var(--section-subheading)] block text-[10px] uppercase font-semibold mb-1">Orphan Files</span>
                     <div className="flex items-center gap-1.5">
                       {d.uploads.orphanFileCount > 0 && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
-                      <span className={cn('text-base font-bold', d.uploads.orphanFileCount > 0 ? 'text-amber-700' : 'text-slate-800')}>
+                      <span className={cn('text-base font-bold', d.uploads.orphanFileCount > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-[var(--section-heading)]')}>
                         {d.uploads.orphanFileCount}
                       </span>
                     </div>
@@ -154,12 +154,12 @@ export function SettingsClient() {
 
                 {/* Table counts */}
                 <div>
-                  <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-2">Record Counts</p>
+                  <p className="text-[11px] text-[var(--section-subheading)] font-semibold uppercase tracking-wide mb-2">Record Counts</p>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {Object.entries(d.database.tables).map(([table, cnt]) => (
-                      <div key={table} className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-xs text-center">
-                        <span className="text-slate-400 block text-[10px] capitalize font-medium mb-0.5">{table}</span>
-                        <span className="font-bold text-slate-800">{cnt.toLocaleString()}</span>
+                      <div key={table} className="rounded-lg bg-[var(--muted)] border border-[var(--section-card-border)] p-2 text-xs text-center">
+                        <span className="text-[var(--section-subheading)] block text-[10px] capitalize font-medium mb-0.5">{table}</span>
+                        <span className="font-bold text-[var(--section-heading)]">{cnt.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -167,8 +167,8 @@ export function SettingsClient() {
 
                 {/* Storage bar */}
                 <div>
-                  <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1.5">Storage Breakdown</p>
-                  <div className="h-3 w-full rounded-full overflow-hidden flex bg-slate-100 border border-slate-200">
+                  <p className="text-[11px] text-[var(--section-subheading)] font-semibold uppercase tracking-wide mb-1.5">Storage Breakdown</p>
+                  <div className="h-3 w-full rounded-full overflow-hidden flex bg-[var(--muted)] border border-[var(--section-card-border)]">
                     {d.database.sizeBytes + d.uploads.sizeBytes > 0 && (
                       <>
                         <div
@@ -185,11 +185,11 @@ export function SettingsClient() {
                     )}
                   </div>
                   <div className="flex items-center gap-4 mt-1.5 text-[11px]">
-                    <span className="flex items-center gap-1 text-slate-500">
+                    <span className="flex items-center gap-1 text-[var(--section-subheading)]">
                       <span className="h-2 w-2 rounded-full bg-teal-500 inline-block" />
                       Database ({formatBytes(d.database.sizeBytes)})
                     </span>
-                    <span className="flex items-center gap-1 text-slate-500">
+                    <span className="flex items-center gap-1 text-[var(--section-subheading)]">
                       <span className="h-2 w-2 rounded-full bg-violet-400 inline-block" />
                       Uploads ({formatBytes(d.uploads.sizeBytes)})
                     </span>
@@ -205,16 +205,16 @@ export function SettingsClient() {
           <SectionCard icon={Cpu} title="OCR Engine Status">
             {d ? (
               <div className="flex flex-col gap-3">
-                <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-start gap-3 rounded-lg border border-[var(--section-card-border)] bg-[var(--muted)] p-3">
                   <StatusDot ok={d.ocr.engTrainedDataFound} />
                   <div className="text-xs flex-1">
-                    <p className="font-semibold text-slate-800">
+                    <p className="font-semibold text-[var(--section-heading)]">
                       eng.traineddata
                       {d.ocr.engTrainedDataFound
                         ? ` — ${formatBytes(d.ocr.engTrainedDataSizeBytes)}`
                         : ' — Not found'}
                     </p>
-                    <p className="text-slate-500 mt-0.5">
+                    <p className="text-[var(--section-subheading)] mt-0.5">
                       {d.ocr.engTrainedDataFound
                         ? 'English OCR language pack present and ready.'
                         : 'Place eng.traineddata in /tessdata directory.'}
@@ -224,7 +224,7 @@ export function SettingsClient() {
 
                 {d.ocr.availableLanguages.length > 0 && (
                   <div>
-                    <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1.5">Available Language Packs</p>
+                    <p className="text-[11px] text-[var(--section-subheading)] font-semibold uppercase tracking-wide mb-1.5">Available Language Packs</p>
                     <div className="flex flex-wrap gap-1.5">
                       {d.ocr.availableLanguages.map((lang) => (
                         <span key={lang} className="rounded-full px-2.5 py-0.5 text-[11px] font-mono font-medium bg-teal-50 text-teal-700 border border-teal-200">
@@ -258,31 +258,31 @@ export function SettingsClient() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Gemini */}
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+                  <div className="rounded-lg border border-[var(--section-card-border)] bg-[var(--muted)] p-3 text-xs">
                     <div className="flex items-center gap-2 mb-1.5">
                       <StatusDot ok={d.ai.gemini.configured} />
-                      <span className="font-semibold text-slate-800">Gemini (Google AI)</span>
+                      <span className="font-semibold text-[var(--section-heading)]">Gemini (Google AI)</span>
                     </div>
-                    <p className="text-slate-500">
+                    <p className="text-[var(--section-subheading)]">
                       API Key: <strong className={d.ai.gemini.configured ? 'text-emerald-700' : 'text-rose-600'}>
                         {d.ai.gemini.configured ? 'Configured ✓' : 'Not configured'}
                       </strong>
                     </p>
-                    <p className="text-slate-500 mt-0.5">Model: <span className="font-mono text-slate-700">{d.ai.gemini.model}</span></p>
+                    <p className="text-[var(--section-subheading)] mt-0.5">Model: <span className="font-mono text-[var(--table-row-text)]">{d.ai.gemini.model}</span></p>
                   </div>
 
                   {/* OpenAI */}
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+                  <div className="rounded-lg border border-[var(--section-card-border)] bg-[var(--muted)] p-3 text-xs">
                     <div className="flex items-center gap-2 mb-1.5">
                       <StatusDot ok={d.ai.openai.configured} />
-                      <span className="font-semibold text-slate-800">OpenAI</span>
+                      <span className="font-semibold text-[var(--section-heading)]">OpenAI</span>
                     </div>
-                    <p className="text-slate-500">
+                    <p className="text-[var(--section-subheading)]">
                       API Key: <strong className={d.ai.openai.configured ? 'text-emerald-700' : 'text-rose-600'}>
                         {d.ai.openai.configured ? 'Configured ✓' : 'Not configured'}
                       </strong>
                     </p>
-                    <p className="text-slate-500 mt-0.5">Model: <span className="font-mono text-slate-700">{d.ai.openai.model}</span></p>
+                    <p className="text-[var(--section-subheading)] mt-0.5">Model: <span className="font-mono text-[var(--table-row-text)]">{d.ai.openai.model}</span></p>
                   </div>
                 </div>
               </div>
@@ -292,9 +292,9 @@ export function SettingsClient() {
           </SectionCard>
 
           {/* ── Disclaimer ────────────────────────────────────────────── */}
-          <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <HardDrive className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-slate-500 leading-relaxed">
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--section-card-border)] bg-[var(--muted)] p-4">
+            <HardDrive className="h-4 w-4 text-[var(--section-subheading)] mt-0.5 shrink-0" />
+            <p className="text-xs text-[var(--section-subheading)] leading-relaxed">
               NyayaTrace stores records locally in SQLite and uploaded files in the project&apos;s private uploads directory.
               It has no login or multi-user access control — use only public records or files you are authorised to process.
               No data is transmitted to external servers except for AI analysis requests to configured providers.

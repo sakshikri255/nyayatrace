@@ -32,18 +32,18 @@ export default function CaseProgressPage() {
     <div className="flex flex-col gap-6 p-6 max-w-6xl mx-auto w-full">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Case Progress &amp; Transparency</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-[var(--section-heading)]">Case Progress &amp; Transparency</h1>
+        <p className="text-sm text-[var(--section-subheading)] mt-1">
           View hearing timelines, activity charts, and judicial orders for each case.
         </p>
       </div>
 
       {/* Case grid */}
       {enriched.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-white border border-slate-200 rounded-lg">
-          <CalendarIcon className="w-10 h-10 text-slate-300 mb-3" />
-          <p className="text-sm font-medium text-slate-700">No cases created yet.</p>
-          <Link href="/cases?new=1" className="mt-3 text-sm font-medium text-teal-700 underline">Create a case</Link>
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-[var(--section-card-bg)] border border-[var(--section-card-border)] rounded-lg">
+          <CalendarIcon className="w-10 h-10 text-[var(--section-subheading)] mb-3" />
+          <p className="text-sm font-medium text-[var(--section-heading)]">No cases created yet.</p>
+          <Link href="/cases?new=1" className="mt-3 text-sm font-medium text-teal underline">Create a case</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-grid">
@@ -61,11 +61,11 @@ export default function CaseProgressPage() {
               <Link
                 key={c.id}
                 href={`/case-progress/${c.id}`}
-                className="animate-fade-up group bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 hover:border-teal-400 hover:shadow-sm transition-all"
+                className="animate-fade-up group bg-[var(--section-card-bg)] border border-[var(--section-card-border)] rounded-lg p-4 flex flex-col gap-3 hover:border-teal/40 hover:shadow-sm transition-all"
               >
                 {/* Case number + badges */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-mono font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono font-semibold text-[var(--section-subheading)] bg-[var(--muted)] px-2 py-0.5 rounded">
                     {c.caseNumber}
                   </span>
                   <CaseStatusBadge status={c.status} />
@@ -73,14 +73,14 @@ export default function CaseProgressPage() {
                 </div>
 
                 {/* Title */}
-                <p className="text-sm font-semibold text-slate-800 leading-snug group-hover:text-teal-700 transition-colors">
+                <p className="text-sm font-semibold text-[var(--section-heading)] leading-snug group-hover:text-teal transition-colors">
                   {c.title}
                 </p>
 
                 {/* Stats row */}
-                <div className="flex items-center gap-4 text-xs text-slate-500">
+                <div className="flex items-center gap-4 text-xs text-[var(--section-subheading)]">
                   <span>
-                    <span className="font-semibold text-slate-700">{c.hearingCount}</span>{' '}
+                    <span className="font-semibold text-[var(--section-heading)]">{c.hearingCount}</span>{' '}
                     hearing{c.hearingCount === 1 ? '' : 's'}
                   </span>
                   {dateRange && (
@@ -93,7 +93,7 @@ export default function CaseProgressPage() {
 
                 {/* CTA strip */}
                 <div className="flex items-center justify-between mt-auto">
-                  <div className="flex items-center gap-1 text-xs font-medium text-teal-600 group-hover:gap-2 transition-all">
+                  <div className="flex items-center gap-1 text-xs font-medium text-teal group-hover:gap-2 transition-all">
                     View Progress
                     <ArrowRightIcon className="w-3.5 h-3.5" />
                   </div>

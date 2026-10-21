@@ -82,8 +82,8 @@ function SectionCard({ item, highlighted }: { item: LegalSectionMapping; highlig
   )
 }
 
-export function ConcordanceMatrix() {
-  const [query, setQuery] = useState('')
+export function ConcordanceMatrix({ initialQuery }: { initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery ?? '')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [bailFilter, setBailFilter] = useState<BailFilter>('all')
   const [highlightedSection, setHighlightedSection] = useState<string | null>(null)

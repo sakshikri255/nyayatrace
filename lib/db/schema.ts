@@ -392,3 +392,77 @@ export const documentAnnotations = sqliteTable(
   })
 )
 
+
+// ─── 13. users ────────────────────────────────────────────────────────────────
+
+export const users = sqliteTable(
+  'users',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    passwordHash: text('password_hash').notNull(),
+    role: text('role', { enum: ['advocate', 'clerk', 'admin'] }).notNull().default('advocate'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    emailIdx: uniqueIndex('users_email_idx').on(t.email),
+  })
+)
+
+// ─── 14. sessions ─────────────────────────────────────────────────────────────
+
+export const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: text('expires_at').notNull(),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    userIdIdx: index('sessions_user_id_idx').on(t.userId),
+    expiresIdx: index('sessions_expires_at_idx').on(t.expiresAt),
+  })
+)
+
+// ─── 15. bail_drafts ──────────────────────────────────────────────────────────
+
+export const bailDrafts = sqliteTable(
+  'bail_drafts',
+  {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    caseId: integer('case_id', { mode: 'number' })
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+    version: integer('version', { mode: 'number' }).notNull().default(1),
+    content: text('content').notNull(),
+    engine: text('engine').notNull().default('template'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    caseIdIdx: index('bail_drafts_case_id_idx').on(t.caseId),
+  })
+)
+
+// ─── 16. case_chats ───────────────────────────────────────────────────────────
+
+export const caseChats = sqliteTable(
+  'case_chats',
+  {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    caseId: integer('case_id', { mode: 'number' })
+      .notNull()
+      .references(() => cases.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['user', 'assistant'] }).notNull(),
+    content: text('content').notNull(),
+    citations: text('citations'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    caseIdIdx: index('case_chats_case_id_idx').on(t.caseId),
+  })
+)

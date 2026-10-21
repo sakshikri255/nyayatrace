@@ -1,32 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
-import { useEffect } from 'react'
 
 /**
- * Wraps all (app) routes. Checks auth synchronously on mount to eliminate
- * the blank-screen flash caused by an async useEffect check.
+ * Wraps all (app) routes. Checks server session via /api/auth/me, with a
+ * localStorage fallback for backward compatibility.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-
-  // Lazy initialiser — runs synchronously, no re-render needed on happy path
-  const [status] = useState<'ok' | 'checking' | 'redirect'>(() => {
-    if (typeof window === 'undefined') return 'checking'
-    return getSession() ? 'ok' : 'redirect'
-  })
+  const [status, setStatus] = useState<'ok' | 'checking'>('checking')
 
   useEffect(() => {
-    if (status === 'redirect') {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`)
+    // Fast path: check legacy localStorage session first for instant feedback
+    if (getSession()) {
+      setStatus('ok')
+      return
     }
-  }, [status, pathname, router])
 
-  if (status === 'redirect' || status === 'checking') {
+    // Then verify via server session
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((res) => {
+        if (res.ok) {
+          setStatus('ok')
+        } else {
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`)
+        }
+      })
+      .catch(() => {
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`)
+      })
+  }, [pathname, router])
+
+  if (status === 'checking') {
     return (
       <div className="min-h-screen bg-navy flex flex-col items-center justify-center gap-4">
         <NyayaTraceLogo size="lg" variant="light" />

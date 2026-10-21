@@ -131,7 +131,7 @@ export function parseGroundedAIAnalysis(
   return { provider, model, executiveSummary, executiveSources, documentSummaries, potentialInconsistencies }
 }
 
-export async function generateAIAnalysis(documents: DocumentWithPages[]): Promise<AIAnalysis> {
+export async function generateAIAnalysis(documents: DocumentWithPages[], language = 'English'): Promise<AIAnalysis> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OpenAI is not configured. Set OPENAI_API_KEY on the server and restart the application.')
 
@@ -171,7 +171,7 @@ export async function generateAIAnalysis(documents: DocumentWithPages[]): Promis
           role: 'system',
           content: [{
             type: 'input_text',
-            text: 'Analyze only the supplied extracted legal-document pages. Do not infer guilt, legal eligibility, procedural status, legal sections, court outcomes, or facts not present. Treat allegations and statements as reported content, not established findings. Return JSON with executiveSummary, executiveSources, documentSummaries, and potentialInconsistencies. Every factual sentence in the executive summary and each document summary must be supported by exact quotes. A potentialInconsistencies item must contain field, values, a neutral explanation, and at least two exact source quotes from different documentIds; only include it when the discrepancy is supported by those passages. Each source must contain documentId, pageNumber, and quote copied exactly from supplied text. documentSummaries items must contain documentId, apparentType, summary, and sources. If no discrepancies are supported, return an empty potentialInconsistencies array. Do not invent facts or citations.',
+            text: `Analyze only the supplied extracted legal-document pages. Do not infer guilt, legal eligibility, procedural status, legal sections, court outcomes, or facts not present. Treat allegations and statements as reported content, not established findings. Return JSON with executiveSummary, executiveSources, documentSummaries, and potentialInconsistencies. Every factual sentence in the executive summary and each document summary must be supported by exact quotes. A potentialInconsistencies item must contain field, values, a neutral explanation, and at least two exact source quotes from different documentIds; only include it when the discrepancy is supported by those passages. Each source must contain documentId, pageNumber, and quote copied exactly from supplied text. documentSummaries items must contain documentId, apparentType, summary, and sources. If no discrepancies are supported, return an empty potentialInconsistencies array. Do not invent facts or citations. Write all natural-language output fields (executiveSummary, summary, apparentType, explanation) in ${language}. Keep documentId, pageNumber, field, values, and quote values unchanged — those must remain in their original form.`,
           }],
         },
         {

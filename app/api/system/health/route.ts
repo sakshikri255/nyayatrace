@@ -7,27 +7,30 @@ import { count } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
 
+// Pre-compute base directory at module level for Turbopack compatibility
+const BASE_DIR = process.cwd()
+
 function dirSizeBytes(dir: string): number {
-  if (!fs.existsSync(dir)) return 0
   let total = 0
-  const walk = (d: string) => {
-    try {
-      for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
-        const fp = path.join(d, entry.name)
-        if (entry.isDirectory()) walk(fp)
-        else total += fs.statSync(fp).size
-      }
-    } catch { /* ignore permission errors */ }
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      const fp = path.join(dir, entry.name)
+      if (entry.isDirectory()) total += dirSizeBytes(fp)
+      else total += fs.statSync(fp).size
+    }
+  } catch {
+    // Directory doesn't exist or permission error — return 0
   }
-  walk(dir)
   return total
 }
 
 export async function GET() {
   try {
     // ── DB stats ─────────────────────────────────────────────────────────────
-    const dbPath = path.join(process.cwd(), 'local.db')
-    const dbSizeBytes = fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0
+    const dbPath = path.join(BASE_DIR, 'local.db')
+    let dbSizeBytes = 0
+    try { dbSizeBytes = fs.statSync(dbPath).size } catch { /* doesn't exist */ }
 
     const caseCount = db.select({ cnt: count() }).from(cases).get()?.cnt ?? 0
     const documentCount = db.select({ cnt: count() }).from(documents).get()?.cnt ?? 0
@@ -36,7 +39,7 @@ export async function GET() {
     const hearingCount = db.select({ cnt: count() }).from(hearings).get()?.cnt ?? 0
 
     // ── Uploads dir ──────────────────────────────────────────────────────────
-    const uploadsDir = path.join(process.cwd(), 'uploads')
+    const uploadsDir = path.join(BASE_DIR, 'uploads')
     const uploadsSizeBytes = dirSizeBytes(uploadsDir)
 
     // Orphan file detection: files on disk not referenced in DB
@@ -47,34 +50,37 @@ export async function GET() {
           .map((r) => r.filePath)
           .filter(Boolean) as string[]
       )
-      const walk = (dir: string) => {
-        if (!fs.existsSync(dir)) return
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-          const fp = path.join(dir, entry.name)
-          if (entry.isDirectory()) walk(fp)
-          else {
-            const rel = path.relative(process.cwd(), fp).replace(/\\/g, '/')
-            if (!dbFilePaths.has(rel) && !dbFilePaths.has(fp)) orphanCount++
+      const walkOrphans = (dir: string) => {
+        try {
+          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const fp = path.join(dir, entry.name)
+            if (entry.isDirectory()) walkOrphans(fp)
+            else {
+              const rel = path.relative(BASE_DIR, fp).replace(/\\/g, '/')
+              if (!dbFilePaths.has(rel) && !dbFilePaths.has(fp)) orphanCount++
+            }
           }
-        }
+        } catch { /* directory doesn't exist or permission error */ }
       }
-      walk(uploadsDir)
+      walkOrphans(uploadsDir)
     } catch { /* ignore */ }
 
     // ── OCR / Tesseract ───────────────────────────────────────────────────────
-    const tessDataDir = path.join(process.cwd(), 'tessdata')
+    const tessDataDir = path.join(BASE_DIR, 'tessdata')
     const engTrainedDataPath = path.join(tessDataDir, 'eng.traineddata')
-    const engTrainedDataExists = fs.existsSync(engTrainedDataPath)
-    const engTrainedDataSizeBytes = engTrainedDataExists ? fs.statSync(engTrainedDataPath).size : 0
+    let engTrainedDataExists = false
+    let engTrainedDataSizeBytes = 0
+    try {
+      engTrainedDataSizeBytes = fs.statSync(engTrainedDataPath).size
+      engTrainedDataExists = true
+    } catch { /* doesn't exist */ }
 
     const availableLanguages: string[] = []
-    if (fs.existsSync(tessDataDir)) {
-      try {
-        for (const f of fs.readdirSync(tessDataDir)) {
-          if (f.endsWith('.traineddata')) availableLanguages.push(f.replace('.traineddata', ''))
-        }
-      } catch { /* ignore */ }
-    }
+    try {
+      for (const f of fs.readdirSync(tessDataDir)) {
+        if (f.endsWith('.traineddata')) availableLanguages.push(f.replace('.traineddata', ''))
+      }
+    } catch { /* ignore */ }
 
     // ── AI Providers ─────────────────────────────────────────────────────────
     const geminiConfigured = Boolean(process.env.GEMINI_API_KEY)

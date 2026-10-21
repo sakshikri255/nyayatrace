@@ -260,7 +260,7 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-slate-50/90 hover:bg-slate-100/90 hover:border-teal/40 px-3.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 transition-all shadow-2xs group w-48 lg:w-64 xl:w-72"
+        className="hidden md:flex h-9 items-center gap-2.5 rounded-lg border border-slate-200 dark:border-border-dark bg-slate-50/90 dark:bg-charcoal/80 hover:bg-slate-100/90 hover:border-teal/40 px-3.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-offwhite transition-all shadow-2xs group w-48 lg:w-64 xl:w-72"
       >
         <Search className="h-3.5 w-3.5 text-teal group-hover:scale-110 transition-transform" />
         <span className="flex-1 text-left truncate text-slate-500 font-normal">Search records, laws, text…</span>
@@ -270,9 +270,9 @@ export function CommandPalette() {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl overflow-hidden p-0 bg-white border-slate-200 shadow-2xl">
+        <DialogContent className="max-w-2xl overflow-hidden p-0 bg-midnight-900 border-border-dark text-slate-100 shadow-2xl">
           {/* Search bar header */}
-          <div className="flex items-center border-b border-slate-200 px-4 py-3 bg-slate-50">
+          <div className="flex items-center border-b border-border-dark px-4 py-3 bg-midnight-950">
             <Search className="h-5 w-5 text-teal shrink-0" />
             <input
               ref={inputRef}
@@ -281,7 +281,7 @@ export function CommandPalette() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Search case numbers, IPC/BNS sections, or full document text..."
-              className="ml-3 flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              className="ml-3 flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
             />
             {query && (
               <button
@@ -292,7 +292,7 @@ export function CommandPalette() {
                 <X className="h-4 w-4" />
               </button>
             )}
-            <kbd className="ml-2 rounded bg-white px-1.5 py-0.5 text-[10px] text-slate-500 border border-slate-200">
+            <kbd className="ml-2 rounded bg-midnight-800 px-1.5 py-0.5 text-[10px] text-slate-400 border border-border-dark">
               ESC
             </kbd>
           </div>

@@ -1,13 +1,20 @@
-import { PlusCircle, Search, ShieldAlert, CalendarDays, Scale } from 'lucide-react'
-import Link from 'next/link'
-
+import React from 'react'
 import { getDashboardStats, getRecentCases, getAllCases } from '@/lib/queries/cases'
 import { getAllHearingsPerMonth } from '@/lib/queries/hearings'
 import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
-import { KPICard } from '@/components/dashboard/KPICard'
-import { ActivityLineChart } from '@/components/dashboard/ActivityLineChart'
-import { RecentCasesTable } from '@/components/dashboard/RecentCasesTable'
+
+import { HeroSection } from '@/components/landing/HeroSection'
+import { IntroductionSection } from '@/components/landing/IntroductionSection'
+import { OurProcessSection } from '@/components/landing/OurProcessSection'
+import { TrustedServicesSection } from '@/components/landing/TrustedServicesSection'
+import { TrustSection } from '@/components/landing/TrustSection'
+import { WorkspaceDashboardSection } from '@/components/landing/WorkspaceDashboardSection'
+import { LandingFooter } from '@/components/landing/LandingFooter'
+
+export const dynamic = 'force-dynamic'
+
 export default function OverviewPage() {
+  // Real data queries - preserved 100%
   const stats = getDashboardStats()
   const recentCases = getRecentCases(5)
   const chartData = getAllHearingsPerMonth()
@@ -25,154 +32,33 @@ export default function OverviewPage() {
   })
 
   return (
-    <div className="min-h-full bg-offwhite">
-      <div className="px-6 py-6 space-y-6">
-        {stats.totalCases === 0 ? (
-          <section className="flex min-h-[65vh] flex-col items-center justify-center px-6 text-center">
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-teal/10 text-teal">
-              <PlusCircle size={25} />
-            </div>
-            <h1 className="text-2xl font-semibold text-gray-900">No cases created yet.</h1>
-            <p className="mt-3 max-w-lg text-sm leading-6 text-gray-500">
-              Create a case to upload documents and generate a source-linked case synopsis.
-            </p>
-            <Link
-              href="/cases?new=1"
-              className="mt-6 inline-flex items-center gap-2 rounded-md bg-teal px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-light"
-            >
-              <PlusCircle size={16} />
-              Create Your First Case
-            </Link>
-          </section>
-        ) : (
-          <>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Overview</h1>
-            <p className="text-xs text-gray-400 mt-0.5">{today}</p>
-          </div>
-        </div>
+    <div className="min-h-full bg-midnight-950 text-slate-100 selection:bg-gold/30 selection:text-gold-light">
+      {/* 1. Hero with animated Lady Justice visual */}
+      <HeroSection />
 
-        {/* Statutory Default Bail Pulse Alert */}
-        {statutoryBailCases.length > 0 && (
-          <div className="rounded-xl border border-rose-300 bg-gradient-to-r from-rose-50 via-white to-rose-100/30 p-4 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="relative flex h-3.5 w-3.5 shrink-0">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                  <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-rose-600" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-bold text-rose-950 flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-rose-600 inline" />
-                    Statutory Default Bail Watchlist ({statutoryBailCases.length} Cases)
-                  </h3>
-                  <p className="text-xs text-rose-700 mt-0.5">
-                    Indefeasible statutory right accrued or nearing expiry under Section 167(2) CrPC / Section 187 BNSS.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/bail-briefs"
-                  className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 transition-colors"
-                >
-                  Inspect Bail Briefs &rarr;
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* 2. Introduction / Our Approach */}
+      <IntroductionSection />
 
-        {/* KPI cards row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard
-            label="Total Cases"
-            value={stats.totalCases}
-            icon="briefcase"
-            description="All cases in the system"
-            accent="default"
-            delay={0}
-            href="/cases"
-          />
-          <KPICard
-            label="Documents Processed"
-            value={stats.documentsProcessed}
-            icon="fileText"
-            description="Processing status: complete"
-            accent="teal"
-            delay={1}
-            href="/cases"
-          />
-          <KPICard
-            label="Awaiting Review"
-            value={stats.findingsAwaitingReview}
-            icon="alertCircle"
-            description="Findings needing review"
-            accent="amber"
-            delay={2}
-            href="/verification"
-          />
-          <KPICard
-            label="Verified Findings"
-            value={stats.verifiedFindings}
-            icon="checkCircle"
-            description="Confirmed discrepancies"
-            accent="green"
-            delay={3}
-            href="/verification"
-          />
-        </div>
+      {/* 3 & 4. Our Process with flowing line & Traditional vs. NyayaTrace comparison */}
+      <OurProcessSection />
 
-        {/* Chart + Quick Actions row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Activity chart — takes 2/3 width */}
-          <div className="lg:col-span-2">
-            <ActivityLineChart data={chartData} />
-          </div>
+      {/* 5. Trusted Services section */}
+      <TrustedServicesSection />
 
-          {/* Quick actions — takes 1/3 width */}
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-1">Quick Actions</h3>
-            <p className="text-xs text-gray-400 mb-4">Common tasks</p>
-            <div className="flex flex-col gap-2.5">
-              <Link
-                href="/cases?new=1"
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
-              >
-                <PlusCircle size={16} strokeWidth={1.75} />
-                Create New Case
-              </Link>
-              <Link
-                href="/verification"
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
-              >
-                <Search size={16} strokeWidth={1.75} />
-                Verify Evidence
-              </Link>
-              <Link
-                href="/bail-briefs"
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
-              >
-                <Scale size={16} strokeWidth={1.75} />
-                Bail &amp; Parole Briefs
-              </Link>
-              <Link
-                href="/cause-list"
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-md border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors duration-150"
-              >
-                <CalendarDays size={16} strokeWidth={1.75} />
-                Court Diary
-              </Link>
-            </div>
-          </div>
-        </div>
+      {/* 6. Trust and Responsibility */}
+      <TrustSection />
 
-        {/* Recent cases table */}
-        <RecentCasesTable cases={recentCases} />
-          </>
-        )}
-      </div>
+      {/* 7. Existing dashboard and workspace overview (at bottom) */}
+      <WorkspaceDashboardSection
+        stats={stats}
+        recentCases={recentCases}
+        chartData={chartData}
+        statutoryBailCases={statutoryBailCases}
+        today={today}
+      />
+
+      {/* 8. Footer and calls to action */}
+      <LandingFooter />
     </div>
   )
 }
