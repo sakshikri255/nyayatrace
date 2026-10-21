@@ -39,6 +39,10 @@ yarn-error.log*
 next-env.d.ts
 
 # NyayaTrace local data
+*.db
+*.db-*
+*.db-shm
+*.db-wal
 /nyayatrace.db
 /nyayatrace.db-*
 /nyayatrace.db-shm

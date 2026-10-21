@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
             ? body.jurisdiction.trim() || null
             : null,
         judge: typeof body.judge === 'string' ? body.judge.trim() || null : null,
+        advocate: typeof body.advocate === 'string' ? body.advocate.trim() || 'Aditi Sharma' : 'Aditi Sharma',
         remandDate: typeof body.remandDate === 'string' ? body.remandDate.trim() || null : null,
         statutoryPeriodDays: typeof body.statutoryPeriodDays === 'number' ? body.statutoryPeriodDays : 60,
         chargesheetFiled: body.chargesheetFiled ? 1 : 0,

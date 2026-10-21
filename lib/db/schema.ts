@@ -25,6 +25,7 @@ export const cases = sqliteTable(
     court: text('court'),
     jurisdiction: text('jurisdiction'),
     judge: text('judge'),
+    advocate: text('advocate').default('Aditi Sharma'),
     remandDate: text('remand_date'),
     statutoryPeriodDays: integer('statutory_period_days', { mode: 'number' }).default(60),
     maxPunishmentYears: integer('max_punishment_years', { mode: 'number' }),

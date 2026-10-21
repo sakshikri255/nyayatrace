@@ -260,11 +260,11 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2 rounded-lg border border-border-dark bg-charcoal/80 px-3 py-1.5 text-xs text-muted hover:text-offwhite hover:border-teal/50 transition-colors"
+        className="hidden md:flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-slate-50/90 hover:bg-slate-100/90 hover:border-teal/40 px-3.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 transition-all shadow-2xs group w-48 lg:w-64 xl:w-72"
       >
-        <Search className="h-3.5 w-3.5 text-teal" />
-        <span>Search cases, sections, text...</span>
-        <kbd className="ml-2 rounded border border-border-dark bg-navy/80 px-1.5 py-0.5 text-[10px] font-mono text-muted">
+        <Search className="h-3.5 w-3.5 text-teal group-hover:scale-110 transition-transform" />
+        <span className="flex-1 text-left truncate text-slate-500 font-normal">Search records, laws, text…</span>
+        <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-mono text-slate-500 shadow-2xs">
           ⌘K
         </kbd>
       </button>

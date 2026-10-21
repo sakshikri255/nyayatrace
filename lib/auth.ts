@@ -26,6 +26,13 @@ export const DEMO_USERS: Array<UserRecord & { password: string }> = [
     password: 'Demo@1234',
     role: 'Junior Associate',
   },
+  {
+    id: '3',
+    name: "Hon'ble P. R. Deshmukh",
+    email: 'judge.deshmukh@ecourts.gov.in',
+    password: 'Demo@1234',
+    role: 'Sessions Judge',
+  },
 ]
 
 const SESSION_KEY = 'nyayatrace_session'

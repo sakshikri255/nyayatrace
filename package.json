@@ -11,6 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:seed-demo": "tsx lib/db/seed-demo.ts",
+    "db:seed-aditi": "tsx lib/db/seed-aditi-case.ts",
     "db:remove-demo": "tsx lib/db/cleanup-demo-data.ts"
   },
   "dependencies": {

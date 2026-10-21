@@ -1,9 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { AlertTriangle, Check, CircleAlert, FileText, LoaderCircle, Printer, RefreshCw, Save, GitCompare } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import {
+  AlertTriangle,
+  Check,
+  CircleAlert,
+  FileText,
+  LoaderCircle,
+  Printer,
+  RefreshCw,
+  Save,
+  GitCompare,
+  Search,
+  Calendar,
+  Gavel,
+  Layers,
+  Sparkles,
+  Clock,
+  Building2,
+  MapPin,
+  CheckCircle2,
+  X,
+  Quote,
+  ShieldAlert,
+  FileCheck,
+  FolderOpen,
+  ExternalLink,
+  Copy,
+  User,
+  Scale,
+  Eye,
+  FileSpreadsheet,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { CitationHoverCard } from '@/components/shared/CitationHoverCard'
@@ -11,7 +42,7 @@ import { cn } from '@/lib/utils'
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { FindingWithSources } from '@/lib/queries/findings'
 import type { DocumentRow } from '@/lib/queries/documents'
-import type { CaseSynopsis, EvidenceReference } from '@/lib/analysis/synopsis'
+import type { CaseSynopsis, EvidenceReference, KeyEntity } from '@/lib/analysis/synopsis'
 
 interface AnalysisRun {
   id: number
@@ -29,13 +60,14 @@ interface AnalysisWorkspaceProps {
   caseData: CaseDetail
   documents: DocumentRow[]
   onUploadDocuments: () => void
+  onGoToChronology?: () => void
 }
 
 function sourceHref(source: Pick<EvidenceReference, 'documentId' | 'pageNumber'>) {
   return `/api/documents/${source.documentId}/file#page=${source.pageNumber}`
 }
 
-function SourceLink({
+function SourceBadge({
   source,
   onOpen,
 }: {
@@ -50,47 +82,23 @@ function SourceLink({
       passage={source.passage}
       onOpen={() => onOpen(source)}
     >
-      <FileText className="h-3.5 w-3.5" />
-      {source.documentName}, p. {source.pageNumber}
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800 border border-teal-200/70 hover:bg-teal-100 hover:border-teal-300 transition-colors">
+        <FileText className="h-3 w-3 text-teal-600 shrink-0" />
+        <span className="truncate max-w-[200px]">{source.documentName}</span>
+        <span className="text-teal-600 font-semibold">· p. {source.pageNumber}</span>
+      </span>
     </CitationHoverCard>
   )
 }
 
-function EvidenceList({
-  items,
-  emptyText,
-  onOpen,
-}: {
-  items: EvidenceReference[]
-  emptyText: string
-  onOpen: (source: EvidenceReference) => void
-}) {
-  if (items.length === 0) {
-    return <p className="text-sm text-slate-500">{emptyText}</p>
-  }
+type TabSection = 'all' | 'summary' | 'data' | 'conflicts' | 'evidence' | 'orders'
 
-  return (
-    <div className="divide-y divide-slate-100">
-      {items.map((item, index) => (
-        <article key={`${item.documentId}-${item.pageNumber}-${index}`} className="py-3 first:pt-0 last:pb-0">
-          <p className="text-sm leading-6 text-slate-700">“{item.passage}”</p>
-          <div className="mt-2"><SourceLink source={item} onOpen={onOpen} /></div>
-        </article>
-      ))}
-    </div>
-  )
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="border-t border-slate-200 py-5">
-      <h3 className="mb-3 text-sm font-semibold text-slate-900">{title}</h3>
-      {children}
-    </section>
-  )
-}
-
-export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: AnalysisWorkspaceProps) {
+export function AnalysisWorkspace({
+  caseData,
+  documents,
+  onUploadDocuments,
+  onGoToChronology,
+}: AnalysisWorkspaceProps) {
   const [runs, setRuns] = useState<AnalysisRun[]>([])
   const [current, setCurrent] = useState(false)
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null)
@@ -104,6 +112,34 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
   const [isDirty, setIsDirty] = useState(false)
   const [showDiff, setShowDiff] = useState(false)
   const [selectedSource, setSelectedSource] = useState<(EvidenceReference & { relatedFinding?: string }) | null>(null)
+  
+  // Interactive features
+  const [activeSection, setActiveSection] = useState<TabSection>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [entityCategoryFilter, setEntityCategoryFilter] = useState<'all' | 'charges' | 'person' | 'datetime' | 'location' | 'evidence' | 'custody'>('all')
+  const [tableSearchQuery, setTableSearchQuery] = useState('')
+
+  function copyToClipboard(text: string, label: string) {
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+    }
+    setCopiedKey(label)
+    toast.success(`Copied "${text.length > 35 ? text.slice(0, 32) + '…' : text}" to clipboard`)
+    setTimeout(() => setCopiedKey(null), 2000)
+  }
+
+  function copyAllKeyEntities(entities: KeyEntity[]) {
+    if (!entities.length) return
+    const text = entities
+      .map((e) => `[${e.field}]: ${e.value} (Source: ${e.source.documentName}, p. ${e.source.pageNumber})`)
+      .join('\n')
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+    }
+    toast.success(`Copied all ${entities.length} key values to clipboard!`)
+  }
+
   const documentStateKey = documents
     .map((document) => `${document.id}:${document.processingStatus}:${document.processedAt ?? ''}`)
     .join('|')
@@ -158,8 +194,8 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
       setCurrent(savedRun.status === 'complete')
       setNotesDraft(savedRun.reviewNotes ?? '')
       setIsDirty(false)
-      if (savedRun.status === 'failed') toast.error(savedRun.error ?? 'No readable text was found.')
-      else toast.success(`Analysis version ${savedRun.version} saved.`)
+      if (savedRun.status === 'failed') toast.error(savedRun.error ?? 'No readable text was found in documents.')
+      else toast.success(`Analysis version ${savedRun.version} generated successfully!`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Analysis failed.')
     } finally {
@@ -180,7 +216,7 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
       if (!response.ok) throw new Error(data.error ?? 'Review notes could not be saved.')
       setRuns((previous) => previous.map((run) => run.id === data.id ? { ...run, reviewNotes: data.reviewNotes } : run))
       setIsDirty(false)
-      toast.success('Review notes saved.')
+      toast.success('Your notes have been saved.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Review notes could not be saved.')
     } finally {
@@ -201,99 +237,377 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
         ? { ...run, findings: run.findings.map((finding) => finding.id === findingId ? data : finding) }
         : run
       ))
-      toast.success('Finding review saved.')
+      toast.success(
+        reviewStatus === 'verified'
+          ? 'Marked as verified difference.'
+          : reviewStatus === 'not_a_discrepancy'
+          ? 'Dismissed as not a conflict.'
+          : 'Flagged for further review.'
+      )
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Finding could not be updated.')
     }
   }
 
+  // Extracted Key Values & Data Matrix (with fallback extraction)
+  const keyEntities: KeyEntity[] = useMemo(() => {
+    if (!synopsis) return []
+    if (synopsis.keyEntities && synopsis.keyEntities.length > 0) {
+      return synopsis.keyEntities
+    }
+    // Fallback extraction from facts in case older analysis snapshot did not have keyEntities
+    const fallbackList: KeyEntity[] = []
+    for (const fact of synopsis.facts) {
+      const text = fact.passage || ''
+      const firMatch = text.match(/\bFIR\s*(?:No\.?|Number)\s*[:\-]?\s*([0-9A-Z/_-]+)/i)
+      if (firMatch && !fallbackList.some((k) => k.field === 'FIR / Crime Number')) {
+        fallbackList.push({
+          category: 'charges',
+          field: 'FIR / Crime Number',
+          value: firMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Official police crime registration number',
+        })
+      }
+      const psMatch = text.match(/\bPolice\s*Station\s*[:\-]?\s*([A-Za-z\s]+?)(?:\||\n|;|\.|\s{2,})/i)
+      if (psMatch && !fallbackList.some((k) => k.field === 'Police Station')) {
+        fallbackList.push({
+          category: 'location',
+          field: 'Police Station',
+          value: psMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Jurisdictional police station handling the investigation',
+        })
+      }
+      const distMatch = text.match(/\bDistrict\s*[:\-]?\s*([A-Za-z\s]+?)(?:\||\n|;|\.|\s{2,})/i)
+      if (distMatch && !fallbackList.some((k) => k.field === 'District / Jurisdiction')) {
+        fallbackList.push({
+          category: 'location',
+          field: 'District / Jurisdiction',
+          value: distMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Judicial district having territorial jurisdiction',
+        })
+      }
+      const secMatch = text.match(/\bActs?\s*&\s*Sections?\s*[:\-]?\s*([^\n;]{3,130})/i) || text.match(/\b(?:Sections?|U\/s)\s*[:\-]?\s*([^\n;]{3,110})/i)
+      if (secMatch && !fallbackList.some((k) => k.field === 'Applicable Penal Sections')) {
+        fallbackList.push({
+          category: 'charges',
+          field: 'Applicable Penal Sections',
+          value: secMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Substantive penal charges and corresponding criminal sections',
+        })
+      }
+      const occMatch = text.match(/(?:Date\s*and\s*Time\s*of\s*Occurrence|Incident\s*Date\s*and\s*Time|Time\s*of\s*Incident)\s*[:\-]?\s*([^\n;]{4,80})/i)
+      if (occMatch && !fallbackList.some((k) => k.field === 'Incident Date & Time')) {
+        fallbackList.push({
+          category: 'datetime',
+          field: 'Incident Date & Time',
+          value: occMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Alleged time and date when offense took place',
+        })
+      }
+      const placeMatch = text.match(/(?:Place\s*of\s*Occurrence|Incident\s*Location|Location\s*of\s*Incident)\s*[:\-]?\s*([^\n;]{3,100})/i)
+      if (placeMatch && !fallbackList.some((k) => k.field === 'Place of Incident')) {
+        fallbackList.push({
+          category: 'location',
+          field: 'Place of Incident',
+          value: placeMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Geographic location and distance from police station',
+        })
+      }
+      const accMatch = text.match(/(?:Name\s*of\s*Accused|Accused(?:\s*Name)?)\s*[:\-]?\s*([^\n;|]{2,80})/i)
+      if (accMatch && !fallbackList.some((k) => k.field === 'Accused Person')) {
+        fallbackList.push({
+          category: 'person',
+          field: 'Accused Person',
+          value: accMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Named individual facing prosecution',
+        })
+      }
+      const vicMatch = text.match(/(?:Victim|Deceased)\s*[:\-]?\s*([A-Za-z\s]{2,40})(?:\s+collapsed|\s+died|\s+injured|\s+was|\.|\n|$)/i) ||
+                       text.match(/\bvictim\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i)
+      if (vicMatch && !fallbackList.some((k) => k.field === 'Victim / Deceased')) {
+        fallbackList.push({
+          category: 'person',
+          field: 'Victim / Deceased',
+          value: vicMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Aggrieved or deceased party cited in police record',
+        })
+      }
+      const compMatch = text.match(/\bComplainant(?:\s*\/\s*Informant)?\s*[:\-]?\s*([^\n;]{2,60})/i)
+      if (compMatch && !fallbackList.some((k) => k.field === 'Complainant / Informant')) {
+        fallbackList.push({
+          category: 'person',
+          field: 'Complainant / Informant',
+          value: compMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Officer or citizen who lodged the initial complaint',
+        })
+      }
+      const arrMatch = text.match(/(?:Date\s*of\s*Arrest|Arrested\s*on)\s*[:\-]?\s*([^\n;|]{4,60})/i)
+      if (arrMatch && !fallbackList.some((k) => k.field === 'Date & Time of Arrest')) {
+        fallbackList.push({
+          category: 'custody',
+          field: 'Date & Time of Arrest',
+          value: arrMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Official police detention timestamp',
+        })
+      }
+      const remMatch = text.match(/(?:Remand\s*Period|Police\s*Custody|Judicial\s*Custody)\s*[:\-]?\s*([^\n;|]{3,60})/i)
+      if (remMatch && !fallbackList.some((k) => k.field === 'Remand / Custody Orders')) {
+        fallbackList.push({
+          category: 'custody',
+          field: 'Remand / Custody Orders',
+          value: remMatch[1].trim(),
+          source: fact,
+          contextSnippet: 'Duration of police custody authorized by court',
+        })
+      }
+    }
+    return fallbackList
+  }, [synopsis])
+
+  const filteredKeyEntities = useMemo(() => {
+    return keyEntities.filter((item) => {
+      const matchesCategory = entityCategoryFilter === 'all' || item.category === entityCategoryFilter
+      const query = tableSearchQuery.trim().toLowerCase()
+      const matchesSearch =
+        !query ||
+        item.field.toLowerCase().includes(query) ||
+        item.value.toLowerCase().includes(query) ||
+        (item.contextSnippet && item.contextSnippet.toLowerCase().includes(query)) ||
+        item.source.documentName.toLowerCase().includes(query)
+      return matchesCategory && matchesSearch
+    })
+  }, [keyEntities, entityCategoryFilter, tableSearchQuery])
+
+
+  const filteredFacts = useMemo(() => {
+    if (!synopsis) return []
+    if (!searchQuery.trim()) return synopsis.facts
+    const query = searchQuery.toLowerCase()
+    return synopsis.facts.filter((item) =>
+      item.passage.toLowerCase().includes(query) ||
+      item.documentName.toLowerCase().includes(query)
+    )
+  }, [synopsis, searchQuery])
+
+  const filteredInconsistencies = useMemo(() => {
+    if (!synopsis) return []
+    if (!searchQuery.trim()) return synopsis.potentialInconsistencies
+    const query = searchQuery.toLowerCase()
+    return synopsis.potentialInconsistencies.filter((item) =>
+      item.field.toLowerCase().includes(query) ||
+      item.values.some((v) => v.toLowerCase().includes(query)) ||
+      (item.explanation && item.explanation.toLowerCase().includes(query)) ||
+      item.sources.some((s) => s.documentName.toLowerCase().includes(query) || s.passage.toLowerCase().includes(query))
+    )
+  }, [synopsis, searchQuery])
+
+  const filteredDocuments = useMemo(() => {
+    if (!documents) return []
+    if (!searchQuery.trim()) return documents
+    const query = searchQuery.toLowerCase()
+    return documents.filter((doc) =>
+      doc.originalName.toLowerCase().includes(query)
+    )
+  }, [documents, searchQuery])
+
+  const filteredOrders = useMemo(() => {
+    if (!synopsis) return []
+    if (!searchQuery.trim()) return synopsis.ordersAndProceduralHistory
+    const query = searchQuery.toLowerCase()
+    return synopsis.ordersAndProceduralHistory.filter((item) =>
+      item.passage.toLowerCase().includes(query) ||
+      item.documentName.toLowerCase().includes(query)
+    )
+  }, [synopsis, searchQuery])
+
   return (
-    <div className="space-y-5">
-      <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900">
-        Upload only public records or records you are authorized to use. This local application has no login or access control; do not upload confidential or restricted case files.
+    <div className="space-y-6 pb-12">
+      {/* ── Security & Privacy Notice (User-Friendly Tip) ───────────────── */}
+      <div className="flex items-start gap-3 rounded-xl border border-teal-200/80 bg-teal-50/70 p-4 text-xs leading-relaxed text-teal-950 shadow-xs">
+        <Sparkles className="h-4 w-4 shrink-0 text-teal-600 mt-0.5" />
+        <div className="flex-1">
+          <span className="font-semibold text-teal-900">Secure Local Analysis: </span>
+          All facts, dates, and comparisons are read directly from your uploaded case files. When AI is enabled, only text from authorized files is sent for summarization.
+        </div>
       </div>
 
-      <div className="analysis-controls flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+      {/* ── Main Toolbar: Header & Run Controls ───────────────────────── */}
+      <div className="analysis-controls flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Case synopsis</h2>
-          <p className="mt-1 text-xs text-slate-500">Local document extraction. No AI-generated facts or legal conclusions.</p>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center rounded-lg bg-teal-100/70 p-1.5 text-teal-800">
+              <Layers className="h-5 w-5" />
+            </span>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">Case Analysis &amp; Synopsis</h2>
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500 max-w-xl">
+            Everything extracted from your case documents—organized into verified facts, chronological timeline, document breakdown, and cross-file differences.
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => window.print()} disabled={!synopsis} className="gap-2">
-            <Printer className="h-4 w-4" /> Print / Save PDF
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="outline"
+            onClick={() => window.print()}
+            disabled={!synopsis}
+            className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs"
+          >
+            <Printer className="h-4 w-4 text-slate-500" /> Print / Save PDF
           </Button>
+
           <Button
             onClick={analyseDocuments}
             disabled={analysing || !hasReadableDocuments}
-            className="gap-2 bg-teal text-white hover:bg-teal-light"
+            className="gap-2 bg-teal text-white hover:bg-teal-light shadow-xs transition-all"
           >
             {analysing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            {analysing ? 'Extracting and saving…' : useAi ? `Analyse with ${aiProvider === 'gemini' ? 'Gemini' : 'OpenAI'}` : selectedRun ? 'Analyse again locally' : 'Analyse locally'}
+            {analysing
+              ? 'Analyzing files…'
+              : useAi
+              ? `Analyze with ${aiProvider === 'gemini' ? 'Gemini AI' : 'OpenAI'}`
+              : selectedRun
+              ? 'Re-analyze Documents'
+              : 'Start Analysis'}
           </Button>
         </div>
       </div>
 
-      <div className="analysis-controls rounded-md border border-slate-200 bg-white px-4 py-3">
+      {/* ── AI Provider Configuration (Clean & Friendly Toggle) ──────────── */}
+      <div className="analysis-controls rounded-xl border border-slate-200 bg-white p-4 text-xs shadow-xs">
         {aiProviders.gemini || aiProviders.openai ? (
-          <div className="flex flex-wrap items-start gap-x-4 gap-y-2 text-xs leading-5 text-slate-600">
-            <label className="flex items-start gap-2">
-              <input type="checkbox" checked={useAi} onChange={(event) => setUseAi(event.target.checked)} className="mt-1 accent-teal" />
-              <span><strong className="text-slate-800">Add a source-grounded AI summary.</strong> Extracted document text will be sent to the selected provider. Use this only for records authorized for that provider. Local extraction comparisons remain separate.</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useAi}
+                onChange={(event) => setUseAi(event.target.checked)}
+                className="h-4 w-4 rounded accent-teal cursor-pointer"
+              />
+              <span className="text-slate-800 font-medium">
+                Include AI summary with citation checking ({aiProvider === 'gemini' ? 'Gemini' : 'OpenAI'})
+              </span>
             </label>
-            <label className="flex items-center gap-2 whitespace-nowrap">
-              Provider
-              <select value={aiProvider} onChange={(event) => setAiProvider(event.target.value as 'gemini' | 'openai')} className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700">
-                {aiProviders.gemini && <option value="gemini">Gemini</option>}
-                {aiProviders.openai && <option value="openai">OpenAI</option>}
-              </select>
-            </label>
+
+            {useAi && (
+              <div className="flex items-center gap-2 pl-6 sm:pl-0">
+                <span className="text-slate-500 font-medium">Model provider:</span>
+                <select
+                  value={aiProvider}
+                  onChange={(event) => setAiProvider(event.target.value as 'gemini' | 'openai')}
+                  className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-slate-700 text-xs focus:ring-2 focus:ring-teal/30 focus:border-teal"
+                >
+                  {aiProviders.gemini && <option value="gemini">Google Gemini</option>}
+                  {aiProviders.openai && <option value="openai">OpenAI</option>}
+                </select>
+              </div>
+            )}
           </div>
         ) : (
-          <p className="text-xs leading-5 text-slate-600"><strong className="text-slate-800">AI provider not configured.</strong> Local extraction analysis is available. To enable Gemini, set <code>GEMINI_API_KEY</code> on the server (or set <code>OPENAI_API_KEY</code> to use OpenAI), then restart NyayaTrace. Provider keys are never sent to the browser.</p>
+          <div className="flex items-center gap-2 text-slate-500">
+            <Sparkles className="h-4 w-4 text-slate-400 shrink-0" />
+            <span>
+              Local text extraction is active. To enable AI summaries, provide <code>GEMINI_API_KEY</code> or <code>OPENAI_API_KEY</code> in your environment.
+            </span>
+          </div>
         )}
       </div>
 
+      {/* ── Empty States & Loading ────────────────────────────────────── */}
       {documents.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-          <FileText className="mx-auto h-8 w-8 text-slate-400" />
-          <h3 className="mt-3 text-sm font-semibold text-slate-900">Upload documents to begin</h3>
-          <p className="mt-1 text-sm text-slate-500">The synopsis will be built only from text extracted from this case’s files.</p>
-          <Button variant="outline" onClick={onUploadDocuments} className="mt-4">Open documents</Button>
+        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center shadow-xs">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
+            <FolderOpen className="h-7 w-7" />
+          </div>
+          <h3 className="mt-4 text-base font-semibold text-slate-900">No documents uploaded yet</h3>
+          <p className="mt-1.5 text-sm text-slate-500 max-w-sm mx-auto">
+            Upload FIRs, petitions, orders, or statements to generate a comprehensive source-linked synopsis.
+          </p>
+          <Button onClick={onUploadDocuments} className="mt-5 gap-2 bg-teal text-white hover:bg-teal-light">
+            <FolderOpen className="h-4 w-4" /> Go to Documents
+          </Button>
         </div>
       ) : loading ? (
-        <p className="py-10 text-center text-sm text-slate-500">Loading saved analysis…</p>
+        <div className="py-16 text-center text-sm text-slate-500 flex flex-col items-center justify-center gap-3">
+          <LoaderCircle className="h-6 w-6 animate-spin text-teal" />
+          <p>Loading analysis and findings…</p>
+        </div>
       ) : selectedRun?.status === 'running' ? (
-        <div className="flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 px-5 py-4 text-sm text-teal-900" role="status">
-          <LoaderCircle className="h-4 w-4 animate-spin" />
-          Analysis is running and will be saved when extraction comparisons finish.
+        <div className="flex items-center gap-3 rounded-xl border border-teal-200 bg-teal-50/80 p-5 text-sm text-teal-900 shadow-xs" role="status">
+          <LoaderCircle className="h-5 w-5 animate-spin text-teal shrink-0" />
+          <div>
+            <p className="font-semibold">Analysis is running…</p>
+            <p className="text-xs text-teal-700 mt-0.5">Extracting timeline, detecting differences, and organizing records. Results will appear automatically.</p>
+          </div>
         </div>
       ) : !hasReadableDocuments && !selectedRun ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-          No document has readable extracted text yet. Check processing status or upload a text-based PDF / clearer image scan.
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-xs">
+          <p className="font-semibold flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            No readable text found in documents
+          </p>
+          <p className="mt-1 text-xs text-amber-800">
+            Please check the processing status in the Documents tab or upload clearer text-based PDFs or higher quality scans.
+          </p>
         </div>
       ) : !selectedRun ? (
-        <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-500">
-          Documents are ready. Analyse them to save a source-linked synopsis for this case.
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 shadow-xs">
+          <FileCheck className="h-10 w-10 text-teal mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-slate-900">Your documents are ready for analysis</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            Click &ldquo;Start Analysis&rdquo; above to extract a chronological timeline, find differences between statements, and compile an easy-to-read synopsis.
+          </p>
+          <Button onClick={analyseDocuments} className="mt-4 gap-2 bg-teal text-white hover:bg-teal-light">
+            <RefreshCw className="h-4 w-4" /> Start Analysis
+          </Button>
         </div>
       ) : selectedRun.status === 'failed' ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">
-          <div className="flex items-start gap-2"><CircleAlert className="mt-0.5 h-4 w-4 shrink-0" /><p>{selectedRun.error ?? 'Analysis failed.'}</p></div>
-          <p className="mt-2 text-xs">The failed run is saved in the version history. No synopsis was fabricated.</p>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800 shadow-xs">
+          <div className="flex items-start gap-2.5">
+            <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+            <div>
+              <p className="font-semibold">Analysis Could Not Complete</p>
+              <p className="text-xs text-rose-700 mt-0.5">{selectedRun.error ?? 'Unknown error during document processing.'}</p>
+            </div>
+          </div>
+          <Button onClick={analyseDocuments} variant="outline" size="sm" className="mt-4 border-rose-300 text-rose-800 hover:bg-rose-100">
+            Try Again
+          </Button>
         </div>
       ) : synopsis ? (
-        <div className="analysis-print rounded-md border border-slate-200 bg-white px-5 py-2 shadow-sm print-content">
-          <div className="analysis-controls flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 py-4">
-            <div className="flex items-center gap-2 text-xs">
-              <span className={`rounded-full px-2.5 py-1 font-semibold ${current && selectedRun.id === runs[0]?.id ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
-                {selectedRun.id !== runs[0]?.id || !current ? 'Outdated' : 'Current'}
+        /* ── Full Analysis Report Container ────────────────────────────── */
+        <div className="analysis-print rounded-2xl border border-slate-200 bg-white p-6 shadow-xs print-content space-y-7">
+          
+          {/* ── Version Header & Diff Bar ───────────────────────────────── */}
+          <div className="analysis-controls flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-2.5">
+              <span className={cn(
+                'rounded-full px-3 py-1 text-xs font-semibold',
+                current && selectedRun.id === runs[0]?.id
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-amber-50 text-amber-800 border border-amber-200'
+              )}>
+                {selectedRun.id !== runs[0]?.id || !current ? 'Previous Version' : 'Latest Version'}
               </span>
-              <span className="text-slate-500">Version {selectedRun.version} · {selectedRun.createdAt ? new Date(selectedRun.createdAt).toLocaleString() : 'Date unavailable'}</span>
+              <span className="text-xs text-slate-500">
+                Version {selectedRun.version} · {selectedRun.createdAt ? new Date(selectedRun.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Date unavailable'}
+              </span>
             </div>
+
             <div className="flex items-center gap-2">
               {runs.length > 1 && (
                 <>
-                  <label className="flex items-center gap-2 text-xs text-slate-500">
-                    Saved versions
+                  <label className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                    Switch Version:
                     <select
                       value={selectedRun.id}
                       onChange={(event) => {
@@ -302,27 +616,31 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
                         setNotesDraft(next?.reviewNotes ?? '')
                         setIsDirty(false)
                       }}
-                      className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-700"
+                      className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-slate-700 text-xs"
                     >
-                      {runs.map((run) => <option key={run.id} value={run.id}>Version {run.version} · {run.status}</option>)}
+                      {runs.map((run) => (
+                        <option key={run.id} value={run.id}>
+                          Version {run.version} ({run.status})
+                        </option>
+                      ))}
                     </select>
                   </label>
+
                   <Button
                     size="sm"
                     variant={showDiff ? 'default' : 'outline'}
                     onClick={() => setShowDiff((prev) => !prev)}
-                    className={cn('h-7 text-xs gap-1 border-slate-300', showDiff && 'bg-teal text-white')}
-                    title="Compare this run with previous run"
+                    className={cn('h-8 text-xs gap-1.5 border-slate-300', showDiff && 'bg-teal text-white')}
                   >
-                    <GitCompare className="h-3 w-3" />
-                    {showDiff ? 'Close Diff' : 'Compare Runs'}
+                    <GitCompare className="h-3.5 w-3.5" />
+                    {showDiff ? 'Hide Version Diff' : 'Compare Versions'}
                   </Button>
                 </>
               )}
             </div>
           </div>
 
-          {/* ── Version Diff Inspector ────────────────────────────── */}
+          {/* ── Version Diff Inspector (if open) ───────────────────────── */}
           {showDiff && runs.length > 1 && (() => {
             const previousRun = runs.find((r) => r.version === selectedRun.version - 1) || runs[runs.indexOf(selectedRun) + 1]
             if (!previousRun) return null
@@ -335,11 +653,11 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
             )
 
             return (
-              <div className="my-4 rounded-xl border border-teal-300 bg-gradient-to-r from-teal-50/70 to-slate-50 p-4 text-xs">
-                <div className="flex items-center justify-between border-b border-teal-200/60 pb-2">
-                  <div className="flex items-center gap-2 font-bold text-teal-900">
+              <div className="rounded-xl border border-teal-300 bg-gradient-to-r from-teal-50/70 to-slate-50 p-4 text-xs">
+                <div className="flex items-center justify-between border-b border-teal-200/60 pb-2.5">
+                  <div className="flex items-center gap-2 font-bold text-teal-950">
                     <GitCompare className="h-4 w-4 text-teal" />
-                    <span>Run Diff: Version {selectedRun.version} vs Version {previousRun.version}</span>
+                    <span>Comparing Version {selectedRun.version} with Version {previousRun.version}</span>
                   </div>
                   <span className="text-slate-500 text-[11px]">
                     {selectedRun.findings.length} findings vs {previousRun.findings.length} findings
@@ -347,7 +665,6 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
                 </div>
 
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* New findings */}
                   <div className="rounded-lg bg-white p-3 border border-emerald-200">
                     <span className="text-[11px] font-bold uppercase text-emerald-800 block mb-1.5">
                       + New Observations in Version {selectedRun.version} ({newFindings.length})
@@ -357,7 +674,7 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
                     ) : (
                       <ul className="space-y-1.5">
                         {newFindings.map((nf, i) => (
-                          <li key={i} className="text-slate-700 bg-emerald-50/50 p-1.5 rounded text-[11px] border border-emerald-100">
+                          <li key={i} className="text-slate-700 bg-emerald-50/50 p-2 rounded text-[11px] border border-emerald-100">
                             <strong>[{nf.findingType}]</strong> {nf.description}
                           </li>
                         ))}
@@ -365,17 +682,16 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
                     )}
                   </div>
 
-                  {/* Resolved findings */}
                   <div className="rounded-lg bg-white p-3 border border-slate-200">
                     <span className="text-[11px] font-bold uppercase text-slate-500 block mb-1.5">
                       Resolved / Omitted Since Version {previousRun.version} ({resolvedFindings.length})
                     </span>
                     {resolvedFindings.length === 0 ? (
-                      <p className="text-slate-400 italic text-[11px]">No discrepancies removed.</p>
+                      <p className="text-slate-400 italic text-[11px]">No differences removed.</p>
                     ) : (
                       <ul className="space-y-1.5">
                         {resolvedFindings.map((rf, i) => (
-                          <li key={i} className="text-slate-400 line-through bg-slate-50 p-1.5 rounded text-[11px]">
+                          <li key={i} className="text-slate-400 line-through bg-slate-50 p-2 rounded text-[11px]">
                             [{rf.findingType}] {rf.description}
                           </li>
                         ))}
@@ -383,200 +699,1240 @@ export function AnalysisWorkspace({ caseData, documents, onUploadDocuments }: An
                     )}
                   </div>
                 </div>
-
-                {previousRun.reviewNotes !== selectedRun.reviewNotes && (
-                  <div className="mt-3 p-2.5 rounded bg-white border border-slate-200 text-[11px]">
-                    <strong className="text-slate-700 block mb-1">Notes Revision:</strong>
-                    <div className="grid grid-cols-2 gap-2 text-slate-600">
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Version {previousRun.version} Notes:</span>
-                        <p className="italic">{previousRun.reviewNotes || 'Empty'}</p>
-                      </div>
-                      <div>
-                        <span className="text-teal-700 block text-[10px] font-semibold">Version {selectedRun.version} Notes:</span>
-                        <p>{selectedRun.reviewNotes || 'Empty'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })()}
 
-          <header className="py-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">NyayaTrace · Local extraction analysis</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-900">{synopsis.caseOverview.title}</h2>
-            <p className="mt-1 text-sm text-slate-500">Reference: {synopsis.caseOverview.reference}</p>
-          </header>
-
-          <Section title="Analysis Summary">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-              {[
-                { label: 'Documents processed', value: documents.filter((document) => document.processingStatus === 'complete').length },
-                { label: 'Pages extracted', value: synopsis.sourceIndex.filter((source) => source.readable).length },
-                { label: 'Timeline dates', value: synopsis.chronology.length },
-                { label: 'Potential differences', value: synopsis.potentialInconsistencies.length },
-                { label: 'Needs review', value: selectedRun.findings.filter((finding) => finding.reviewStatus === 'needs_review').length },
-                { label: 'Verified', value: selectedRun.findings.filter((finding) => finding.reviewStatus === 'verified').length },
-              ].map((metric) => (
-                <div key={metric.label} className="rounded border border-slate-200 bg-slate-50 px-3 py-3">
-                  <p className="text-xl font-semibold text-slate-900">{metric.value}</p>
-                  <p className="mt-1 text-xs leading-4 text-slate-500">{metric.label}</p>
-                </div>
-              ))}
+          {/* ── Case Header ───────────────────────────────────────────── */}
+          <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-300">
+                NyayaTrace · Case Record Analysis
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-0.5 text-xs font-medium text-slate-200">
+                {caseData.caseNumber || synopsis.caseOverview.reference || 'Case #1'}
+              </span>
             </div>
-            <p className="mt-3 text-xs text-slate-500">Counts are calculated from this saved analysis and its current case documents.</p>
-          </Section>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
+              {caseData.title || synopsis.caseOverview.title}
+            </h1>
+            <p className="mt-1 text-xs text-slate-300">
+              Generated from {documents.length} uploaded files · {synopsis.sourceIndex.filter((s) => s.readable).length} readable pages
+            </p>
+          </div>
 
-          <Section title="1. Case Overview">
-            <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-              <div><dt className="text-xs text-slate-500">Case type</dt><dd className="mt-1 text-slate-800">{synopsis.caseOverview.caseType === 'unspecified' ? 'Not entered' : synopsis.caseOverview.caseType}</dd></div>
-              <div><dt className="text-xs text-slate-500">Procedural status</dt><dd className="mt-1 text-slate-800">{synopsis.caseOverview.status === 'unspecified' ? 'Not entered' : synopsis.caseOverview.status}</dd></div>
-              <div><dt className="text-xs text-slate-500">Court</dt><dd className="mt-1 text-slate-800">{synopsis.caseOverview.court || 'Not entered'}</dd></div>
-              <div><dt className="text-xs text-slate-500">Jurisdiction</dt><dd className="mt-1 text-slate-800">{synopsis.caseOverview.jurisdiction || 'Not entered'}</dd></div>
-            </dl>
-            {synopsis.caseOverview.userNotes && <p className="mt-4 whitespace-pre-wrap text-sm text-slate-700">{synopsis.caseOverview.userNotes}</p>}
-            <p className="mt-3 text-xs text-slate-500">Case metadata above was entered by the user; it was not inferred from documents.</p>
-          </Section>
+          {/* ── High-Impact Metric Cards (At a Glance) ─────────────────── */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <FileText className="h-4 w-4 text-slate-600" />
+                <span className="text-[10px] uppercase font-bold text-slate-500">Files</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{documents.filter((d) => d.processingStatus === 'complete').length}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Processed</p>
+            </div>
 
-          <Section title="2. Executive Synopsis">
-            <p className="text-sm leading-6 text-slate-700">{synopsis.executiveSynopsis}</p>
-            {synopsis.aiAnalysis && (
-              <div className="mt-4 rounded-md border border-teal-200 bg-teal-50 p-4">
-                <p className="text-xs font-semibold uppercase text-teal-800">AI-generated summary · {synopsis.aiAnalysis.provider} · {synopsis.aiAnalysis.model}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-800">{synopsis.aiAnalysis.executiveSummary}</p>
-                <p className="mt-3 text-xs font-medium text-teal-900">Source passages validated against extracted page text:</p>
-                <div className="mt-2 space-y-2">
-                  {synopsis.aiAnalysis.executiveSources.map((source, index) => (
-                    <div key={`${source.documentId}-${source.pageNumber}-${index}`}>
-                      <p className="text-xs italic text-slate-700">“{source.quote}”</p>
-                      <SourceLink source={{ ...source, passage: source.quote }} onOpen={openSource} />
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <FileCheck className="h-4 w-4 text-teal" />
+                <span className="text-[10px] uppercase font-bold text-slate-500">Pages</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{synopsis.sourceIndex.filter((s) => s.readable).length}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Readable</p>
+            </div>
+
+            <div
+              onClick={onGoToChronology}
+              className={cn(
+                "rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70",
+                onGoToChronology && "cursor-pointer hover:border-teal-300 hover:bg-teal-50/50"
+              )}
+            >
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <span className="text-[10px] uppercase font-bold text-slate-500">Dates</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{synopsis.chronology.length}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500 flex items-center justify-between">
+                <span>Timeline events</span>
+                {onGoToChronology && <span className="text-[10px] text-teal-700 font-semibold">View tab →</span>}
+              </p>
+            </div>
+
+            <div className={cn(
+              'rounded-xl border p-3.5 transition-all',
+              synopsis.potentialInconsistencies.length > 0
+                ? 'border-amber-200 bg-amber-50/70'
+                : 'border-slate-200/90 bg-slate-50/70'
+            )}>
+              <div className="flex items-center justify-between mb-1">
+                <AlertTriangle className={cn('h-4 w-4', synopsis.potentialInconsistencies.length > 0 ? 'text-amber-600' : 'text-slate-500')} />
+                <span className={cn('text-[10px] uppercase font-bold', synopsis.potentialInconsistencies.length > 0 ? 'text-amber-700' : 'text-slate-500')}>Conflicts</span>
+              </div>
+              <p className={cn('text-2xl font-bold', synopsis.potentialInconsistencies.length > 0 ? 'text-amber-900' : 'text-slate-900')}>
+                {synopsis.potentialInconsistencies.length}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Differences found</p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <Clock className="h-4 w-4 text-purple-600" />
+                <span className="text-[10px] uppercase font-bold text-slate-500">Pending</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">
+                {selectedRun.findings.filter((f) => f.reviewStatus === 'needs_review').length}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Needs review</p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span className="text-[10px] uppercase font-bold text-slate-500">Checked</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">
+                {selectedRun.findings.filter((f) => f.reviewStatus === 'verified').length}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Verified</p>
+            </div>
+          </div>
+
+          {/* ── Sub-Navigation & Quick Search Filter ─────────────────────── */}
+          <div className="analysis-controls flex flex-col md:flex-row md:items-center justify-between gap-3 border-y border-slate-200/80 py-3">
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {[
+                { id: 'all', label: 'All Insights' },
+                { id: 'summary', label: 'Overview & Summary' },
+                { id: 'data', label: `📊 Key Data Table (${keyEntities.length})` },
+                { id: 'conflicts', label: `Conflicts (${synopsis.potentialInconsistencies.length})` },
+                { id: 'evidence', label: `Files & Facts (${synopsis.facts.length})` },
+                { id: 'orders', label: 'Court Orders & Notes' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSection(tab.id as TabSection)}
+                  className={cn(
+                    'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
+                    activeSection === tab.id
+                      ? 'bg-teal text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+
+              {onGoToChronology && (
+                <button
+                  onClick={onGoToChronology}
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Switch to the dedicated Checkpoints & Chronology tab"
+                >
+                  <Clock className="h-3 w-3 text-teal-600" />
+                  Full Chronology Tab ↗
+                </button>
+              )}
+            </div>
+
+            {/* Quick in-page search input */}
+            <div className="relative min-w-[240px] max-w-xs">
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search facts, dates, names…"
+                className="h-8 pl-8 pr-7 text-xs bg-slate-50 border-slate-200 focus:bg-white"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Search Result Feedback if filtered */}
+          {searchQuery && (
+            <div className="rounded-lg bg-teal-50/70 border border-teal-200/80 px-3.5 py-2 text-xs text-teal-900 flex items-center justify-between">
+              <span>Showing results matching &ldquo;<strong>{searchQuery}</strong>&rdquo;</span>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-teal-700 underline font-semibold hover:text-teal-900 cursor-pointer"
+              >
+                Clear filter
+              </button>
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 1: CASE OVERVIEW                                      */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'summary') && (
+            <section className="space-y-3.5 pt-2">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-teal-500" />
+                <h3 className="text-base font-bold text-slate-900">1. Case Overview</h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <FolderOpen className="h-4 w-4 text-teal" />
+                    <span className="text-xs font-semibold">Case Type</span>
+                  </div>
+                  <p className="text-sm font-medium text-slate-900 capitalize">
+                    {synopsis.caseOverview.caseType === 'unspecified' ? 'Not specified yet' : synopsis.caseOverview.caseType}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <Clock className="h-4 w-4 text-teal" />
+                    <span className="text-xs font-semibold">Current Status</span>
+                  </div>
+                  <p className="text-sm font-medium text-slate-900 capitalize">
+                    {synopsis.caseOverview.status === 'unspecified' ? 'Active / In Progress' : synopsis.caseOverview.status}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <Building2 className="h-4 w-4 text-teal" />
+                    <span className="text-xs font-semibold">Court</span>
+                  </div>
+                  <p className="text-sm font-medium text-slate-900">
+                    {synopsis.caseOverview.court || 'Not specified'}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <MapPin className="h-4 w-4 text-teal" />
+                    <span className="text-xs font-semibold">Jurisdiction</span>
+                  </div>
+                  <p className="text-sm font-medium text-slate-900">
+                    {synopsis.caseOverview.jurisdiction || 'Not specified'}
+                  </p>
+                </div>
+              </div>
+
+              {synopsis.caseOverview.userNotes && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                    Lawyer&apos;s Initial Case Notes
+                  </span>
+                  <p className="whitespace-pre-wrap leading-relaxed">{synopsis.caseOverview.userNotes}</p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 2: KEY CASE DATA & FACT MATRIX (TABULAR VIEW)          */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'data') && (
+            <section className="space-y-4 pt-2 border-t border-slate-200/80">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-teal-500" />
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-base font-bold text-slate-900">2. Key Case Data &amp; Fact Matrix</h3>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-800 border border-teal-200">
+                      <FileSpreadsheet className="h-3 w-3 text-teal" />
+                      {keyEntities.length} Key Value{keyEntities.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyAllKeyEntities(keyEntities)}
+                    disabled={keyEntities.length === 0}
+                    className="h-8 gap-1.5 text-xs border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    title="Copy all extracted key values as formatted text"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-slate-500" />
+                    Copy All Data
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-500 max-w-2xl">
+                Critical legal identifiers, penal sections, custody dates, and forensic items organized into structured tabular rows so key values never get lost in prose. Every entry is clickable to jump directly to its document page.
+              </p>
+
+              {/* Quick Highlight Cards Strip */}
+              {keyEntities.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* FIR / Crime No */}
+                  {(() => {
+                    const fir = keyEntities.find((k) => k.field.includes('FIR'))
+                    return fir ? (
+                      <div
+                        onClick={() => openSource(fir.source, fir.field)}
+                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500" />
+                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
+                            <Scale className="h-3.5 w-3.5 text-teal" /> FIR / Crime No
+                          </span>
+                          <span className="text-[10px] text-teal-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
+                        </div>
+                        <p className="text-lg font-mono font-bold text-slate-900 tracking-tight">{fir.value}</p>
+                        <p className="text-[11px] text-slate-500 mt-1 truncate">
+                          {keyEntities.find((k) => k.field === 'Police Station')?.value ?? 'Police Station'} · p. {fir.source.pageNumber}
+                        </p>
+                      </div>
+                    ) : null
+                  })()}
+
+                  {/* Accused Person */}
+                  {(() => {
+                    const acc = keyEntities.find((k) => k.field.includes('Accused'))
+                    return acc ? (
+                      <div
+                        onClick={() => openSource(acc.source, acc.field)}
+                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-indigo-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500" />
+                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
+                            <User className="h-3.5 w-3.5 text-indigo-600" /> Accused
+                          </span>
+                          <span className="text-[10px] text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
+                        </div>
+                        <p className="text-sm font-bold text-slate-900 truncate" title={acc.value}>{acc.value.split(',')[0]}</p>
+                        <p className="text-[11px] text-slate-500 mt-1 truncate">
+                          {acc.value.split(',')[1] || acc.contextSnippet || 'Named in FIR'}
+                        </p>
+                      </div>
+                    ) : null
+                  })()}
+
+                  {/* Charges / Penal Sections */}
+                  {(() => {
+                    const sec = keyEntities.find((k) => k.field.includes('Penal Sections'))
+                    return sec ? (
+                      <div
+                        onClick={() => openSource(sec.source, sec.field)}
+                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-rose-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-amber-500" />
+                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
+                            <Scale className="h-3.5 w-3.5 text-rose-600" /> Penal Sections
+                          </span>
+                          <span className="text-[10px] text-rose-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-900 line-clamp-2" title={sec.value}>{sec.value}</p>
+                        <p className="text-[10px] text-slate-500 mt-1 truncate">
+                          Substantive criminal sections cited
+                        </p>
+                      </div>
+                    ) : null
+                  })()}
+
+                  {/* Arrest & Custody */}
+                  {(() => {
+                    const arrest = keyEntities.find((k) => k.field.includes('Arrest'))
+                    const remand = keyEntities.find((k) => k.field.includes('Remand'))
+                    const target = arrest || remand
+                    return target ? (
+                      <div
+                        onClick={() => openSource(target.source, target.field)}
+                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-500" />
+                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
+                            <ShieldAlert className="h-3.5 w-3.5 text-amber-600" /> Custody / Remand
+                          </span>
+                          <span className="text-[10px] text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
+                        </div>
+                        <p className="text-sm font-bold text-slate-900 truncate">
+                          {remand ? remand.value : arrest?.value}
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-1 truncate">
+                          {arrest ? `Arrest: ${arrest.value}` : 'Judicial Custody'}
+                        </p>
+                      </div>
+                    ) : null
+                  })()}
+                </div>
+              )}
+
+              {/* Table Card */}
+              <div className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+                {/* Table Filter Bar */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 border-b border-slate-100 bg-slate-50/50">
+                  {/* Category Pills */}
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {[
+                      { id: 'all', label: `All (${keyEntities.length})` },
+                      { id: 'charges', label: `⚖️ Charges (${keyEntities.filter((k) => k.category === 'charges').length})` },
+                      { id: 'person', label: `👤 People (${keyEntities.filter((k) => k.category === 'person').length})` },
+                      { id: 'custody', label: `🛡️ Custody (${keyEntities.filter((k) => k.category === 'custody').length})` },
+                      { id: 'datetime', label: `📅 Dates (${keyEntities.filter((k) => k.category === 'datetime').length})` },
+                      { id: 'location', label: `📍 Locations (${keyEntities.filter((k) => k.category === 'location').length})` },
+                      { id: 'evidence', label: `🔍 Evidence (${keyEntities.filter((k) => k.category === 'evidence').length})` },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setEntityCategoryFilter(tab.id as typeof entityCategoryFilter)}
+                        className={cn(
+                          'rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer',
+                          entityCategoryFilter === tab.id
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'bg-white text-slate-600 hover:bg-slate-200/80 border border-slate-200'
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Filter inside table */}
+                  <div className="relative min-w-[220px]">
+                    <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      value={tableSearchQuery}
+                      onChange={(e) => setTableSearchQuery(e.target.value)}
+                      placeholder="Filter parameters or values…"
+                      className="h-7 pl-7 pr-6 text-xs bg-white border-slate-200 focus:border-teal"
+                    />
+                    {tableSearchQuery && (
+                      <button
+                        onClick={() => setTableSearchQuery('')}
+                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* The Responsive Table */}
+                {filteredKeyEntities.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-500">
+                    No key values match your current filter. Try clearing the search.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-100/75 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
+                        <tr>
+                          <th scope="col" className="py-3 px-4 w-[24%]">Case Parameter / Field</th>
+                          <th scope="col" className="py-3 px-4 w-[40%]">Extracted Key Value</th>
+                          <th scope="col" className="py-3 px-4 w-[22%]">Verified Source</th>
+                          <th scope="col" className="py-3 px-4 w-[14%] text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredKeyEntities.map((item, idx) => {
+                          const categoryStyle = {
+                            charges: {
+                              badge: 'bg-rose-50 text-rose-800 border-rose-200',
+                              icon: <Scale className="h-3.5 w-3.5 text-rose-600 shrink-0" />,
+                              label: 'Charge',
+                            },
+                            person: {
+                              badge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+                              icon: <User className="h-3.5 w-3.5 text-indigo-600 shrink-0" />,
+                              label: 'Person',
+                            },
+                            datetime: {
+                              badge: 'bg-blue-50 text-blue-800 border-blue-200',
+                              icon: <Calendar className="h-3.5 w-3.5 text-blue-600 shrink-0" />,
+                              label: 'Date/Time',
+                            },
+                            custody: {
+                              badge: 'bg-amber-50 text-amber-800 border-amber-200',
+                              icon: <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />,
+                              label: 'Custody',
+                            },
+                            location: {
+                              badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                              icon: <MapPin className="h-3.5 w-3.5 text-emerald-600 shrink-0" />,
+                              label: 'Location',
+                            },
+                            evidence: {
+                              badge: 'bg-purple-50 text-purple-800 border-purple-200',
+                              icon: <FileCheck className="h-3.5 w-3.5 text-purple-600 shrink-0" />,
+                              label: 'Evidence',
+                            },
+                            general: {
+                              badge: 'bg-slate-100 text-slate-800 border-slate-200',
+                              icon: <FileText className="h-3.5 w-3.5 text-slate-600 shrink-0" />,
+                              label: 'General',
+                            },
+                          }[item.category] || {
+                            badge: 'bg-slate-100 text-slate-800 border-slate-200',
+                            icon: <FileText className="h-3.5 w-3.5 text-slate-600 shrink-0" />,
+                            label: 'Data',
+                          }
+
+                          const isCopied = copiedKey === item.field
+
+                          return (
+                            <tr
+                              key={`${item.field}-${idx}`}
+                              className="hover:bg-teal-50/30 transition-colors group"
+                            >
+                              {/* Field Name & Category */}
+                              <td className="py-3 px-4 align-top">
+                                <div className="flex items-start gap-2">
+                                  <div className="mt-0.5">{categoryStyle.icon}</div>
+                                  <div>
+                                    <span className="font-bold text-slate-900 block leading-snug">
+                                      {item.field}
+                                    </span>
+                                    {item.contextSnippet && (
+                                      <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                                        {item.contextSnippet}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Extracted Key Value */}
+                              <td className="py-3 px-4 align-top">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className={cn(
+                                      "inline-block font-semibold text-xs py-1 px-2.5 rounded-lg border",
+                                      item.category === 'charges'
+                                        ? "bg-rose-50/80 text-rose-900 border-rose-200 font-mono"
+                                        : item.category === 'custody'
+                                        ? "bg-amber-50 text-amber-950 border-amber-200"
+                                        : item.category === 'person'
+                                        ? "bg-indigo-50/80 text-indigo-950 border-indigo-200"
+                                        : item.category === 'datetime'
+                                        ? "bg-blue-50/80 text-blue-950 border-blue-200 font-mono"
+                                        : "bg-slate-100 text-slate-900 border-slate-200"
+                                    )}>
+                                      {item.value}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Verified Source (Clickable) */}
+                              <td className="py-3 px-4 align-top">
+                                <div className="space-y-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => openSource(item.source, item.field)}
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-850 border border-teal-200/80 hover:bg-teal-100 hover:border-teal-300 transition-colors text-left cursor-pointer"
+                                    title="Click to view original source page in document"
+                                  >
+                                    <FileText className="h-3 w-3 text-teal-600 shrink-0" />
+                                    <span className="truncate max-w-[150px]">{item.source.documentName}</span>
+                                    <span className="text-teal-700 font-bold shrink-0">· p. {item.source.pageNumber}</span>
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-3 px-4 align-top text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(item.value, item.field)}
+                                    className={cn(
+                                      "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer border",
+                                      isCopied
+                                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                        : "bg-white text-slate-600 hover:bg-slate-100 border-slate-200"
+                                    )}
+                                    title="Copy this value to clipboard"
+                                  >
+                                    {isCopied ? (
+                                      <>
+                                        <Check className="h-3 w-3 text-emerald-600" />
+                                        <span>Copied</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="h-3 w-3 text-slate-500" />
+                                        <span>Copy</span>
+                                      </>
+                                    )}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => openSource(item.source, item.field)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors cursor-pointer"
+                                    title="View in Document Preview"
+                                  >
+                                    <Eye className="h-3 w-3 text-teal-600" />
+                                    <span>View</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 3: EXECUTIVE SUMMARY                                  */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'summary') && (
+            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-teal-500" />
+                <h3 className="text-base font-bold text-slate-900">3. Executive Summary</h3>
+                <span className="text-xs font-normal text-slate-500">(At a glance)</span>
+              </div>
+
+              {/* Standard Extracted Summary */}
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-teal-50 p-2 text-teal-700 shrink-0">
+                    <Quote className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm leading-relaxed text-slate-800">
+                      {synopsis.executiveSynopsis}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-500">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
+                        <FileCheck className="h-3.5 w-3.5 text-teal" /> {documents.length} files reviewed
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
+                        <Calendar className="h-3.5 w-3.5 text-blue-600" /> {synopsis.chronology.length} dates recorded
+                      </span>
+                      {synopsis.potentialInconsistencies.length > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2.5 py-1 text-amber-800 font-medium">
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> {synopsis.potentialInconsistencies.length} conflicts flagged
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI-Generated Summary Card (if present) */}
+              {synopsis.aiAnalysis && (
+                <div className="rounded-xl border border-teal-200/90 bg-gradient-to-br from-teal-50/70 via-white to-slate-50/50 p-5 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-teal-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-teal" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-teal-900">
+                        AI-Grounded Synthesis
+                      </span>
+                    </div>
+                    <span className="rounded-full bg-teal-100/80 px-2.5 py-0.5 text-[11px] font-semibold text-teal-800">
+                      {synopsis.aiAnalysis.provider} · {synopsis.aiAnalysis.model}
+                    </span>
+                  </div>
+
+                  <p className="text-sm leading-relaxed text-slate-800">
+                    {synopsis.aiAnalysis.executiveSummary}
+                  </p>
+
+                  {synopsis.aiAnalysis.executiveSources.length > 0 && (
+                    <div className="pt-2 border-t border-teal-100/70 space-y-2">
+                      <span className="text-xs font-semibold text-teal-950 block">
+                        Verified passages from uploaded files:
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {synopsis.aiAnalysis.executiveSources.map((source, index) => (
+                          <div key={index} className="rounded-lg border border-slate-200/80 bg-white p-2.5 text-xs text-slate-700 space-y-1.5">
+                            <p className="italic text-slate-600 line-clamp-2">
+                              &ldquo;{source.quote}&rdquo;
+                            </p>
+                            <SourceBadge source={{ ...source, passage: source.quote }} onOpen={openSource} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 4: TIMELINE & CHRONOLOGY HIGHLIGHTS                   */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'summary') && (
+            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-teal-500" />
+                  <h3 className="text-base font-bold text-slate-900">4. Timeline &amp; Event Checkpoints</h3>
+                  <span className="text-xs font-normal text-slate-500">
+                    ({synopsis.chronology.length} date milestone{synopsis.chronology.length === 1 ? '' : 's'} recorded)
+                  </span>
+                </div>
+                {onGoToChronology && (
+                  <button
+                    type="button"
+                    onClick={onGoToChronology}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    Open Complete Chronology &amp; Investigation Wall →
+                  </button>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-teal-200/80 bg-gradient-to-r from-teal-50/60 via-slate-50 to-white p-5 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-teal" />
+                      Key Milestones Mapped Across Records
+                    </h4>
+                    <p className="mt-1 text-xs text-slate-600 max-w-xl">
+                      {synopsis.chronology.length} chronological events were extracted from your case records. To prevent duplicate clutter, the full animated timeline, procedural checkpoints, and interactive investigation wall live in the dedicated tab.
+                    </p>
+                  </div>
+                  {onGoToChronology && (
+                    <Button
+                      onClick={onGoToChronology}
+                      size="sm"
+                      className="shrink-0 gap-1.5 bg-teal text-white hover:bg-teal-light shadow-xs cursor-pointer"
+                    >
+                      <Clock className="h-3.5 w-3.5" />
+                      Explore Timeline &amp; Wall
+                    </Button>
+                  )}
+                </div>
+
+                {synopsis.chronology.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-3 border-t border-teal-100">
+                    {synopsis.chronology.slice(0, 3).map((event, idx) => (
+                      <div key={idx} className="rounded-lg border border-slate-200/90 bg-white p-3 text-xs space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-teal-850 bg-teal-50 px-2 py-0.5 rounded text-[11px] border border-teal-200/60">
+                            {event.date}
+                          </span>
+                          <span className="text-[10px] text-slate-400">p. {event.pageNumber}</span>
+                        </div>
+                        <p className="text-slate-700 line-clamp-2 text-[11px]">
+                          {event.passage}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 5: CONFLICTS & DIFFERENCES (POTENTIAL INCONSISTENCIES)*/}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'conflicts') && (
+            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  <h3 className="text-base font-bold text-slate-900">5. Conflicts &amp; Differences Found</h3>
+                  <span className="text-xs font-normal text-slate-500">
+                    ({filteredInconsistencies.length} item{filteredInconsistencies.length === 1 ? '' : 's'})
+                  </span>
+                </div>
+              </div>
+
+              {filteredInconsistencies.length === 0 ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 text-sm text-emerald-900">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="font-semibold">No conflicting statements found</p>
+                      <p className="text-xs text-emerald-800 mt-0.5">
+                        {documents.length <= 1
+                          ? 'Only 1 file uploaded so cross-document comparison is not applicable. Upload related records to compare.'
+                          : 'No conflicting dates, party names, or locations were detected between your uploaded documents.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredInconsistencies.map((issue, index) => {
+                    const finding = selectedRun.findings.find(
+                      (item) => item.analysisRunId === selectedRun.id && item.extractedValue === issue.values[0]
+                    ) ?? selectedRun.findings[index]
+
+                    return (
+                      <div
+                        key={`${issue.field}-${index}`}
+                        className="rounded-xl border border-amber-200/80 bg-white p-5 shadow-xs space-y-4"
+                      >
+                        {/* Header with field name & origin badge */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                            <span className="font-bold text-slate-900 text-sm capitalize">
+                              Difference in: {issue.field}
+                            </span>
+                            <span className={cn(
+                              'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                              issue.origin === 'ai' ? 'bg-teal-50 text-teal-800 border border-teal-200' : 'bg-slate-100 text-slate-700'
+                            )}>
+                              {issue.origin === 'ai' ? 'AI Flagged' : 'Direct Text Comparison'}
+                            </span>
+                          </div>
+
+                          {/* Review status badge */}
+                          <span className={cn(
+                            'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold',
+                            finding?.reviewStatus === 'verified'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : finding?.reviewStatus === 'not_a_discrepancy'
+                              ? 'bg-slate-100 text-slate-600'
+                              : 'bg-amber-50 text-amber-800 border border-amber-200'
+                          )}>
+                            {finding?.reviewStatus === 'verified'
+                              ? '✓ Verified Conflict'
+                              : finding?.reviewStatus === 'not_a_discrepancy'
+                              ? '✕ Dismissed (Not a conflict)'
+                              : '⚠️ Needs Review'}
+                          </span>
+                        </div>
+
+                        {/* Explanation in plain english */}
+                        {issue.explanation && (
+                          <p className="text-xs leading-relaxed text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/60">
+                            <strong>Note: </strong>{issue.explanation}
+                          </p>
+                        )}
+
+                        {/* Conflicting Values Comparison */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {issue.sources.map((source, sIdx) => (
+                            <div key={sIdx} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-semibold text-slate-700">Record #{sIdx + 1} states:</span>
+                                <SourceBadge source={source} onOpen={(ref) => openSource(ref, finding?.description)} />
+                              </div>
+                              <p className="text-sm font-bold text-slate-900 bg-white p-2 rounded border border-slate-200">
+                                {issue.values[sIdx] || issue.values[0]}
+                              </p>
+                              {source.passage && (
+                                <p className="text-xs text-slate-600 italic line-clamp-2">
+                                  &ldquo;{source.passage}&rdquo;
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Interactive review buttons */}
+                        {finding && (
+                          <div className="analysis-controls flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                            <span className="text-slate-500 font-medium">Verify this difference:</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => reviewFinding(finding.id, 'verified')}
+                                className={cn(
+                                  'rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer',
+                                  finding.reviewStatus === 'verified'
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-800'
+                                )}
+                              >
+                                ✓ Looks Valid
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => reviewFinding(finding.id, 'needs_review')}
+                                className={cn(
+                                  'rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer',
+                                  finding.reviewStatus === 'needs_review'
+                                    ? 'bg-amber-600 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-amber-50 hover:text-amber-800'
+                                )}
+                              >
+                                ⚠️ Needs Review
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => reviewFinding(finding.id, 'not_a_discrepancy')}
+                                className={cn(
+                                  'rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer',
+                                  finding.reviewStatus === 'not_a_discrepancy'
+                                    ? 'bg-slate-700 text-white'
+                                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                                )}
+                              >
+                                ✕ Not a Conflict
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 6: UPLOADED DOCUMENTS & EVIDENCE                      */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'evidence') && (
+            <section className="space-y-4 pt-2 border-t border-slate-200/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-teal-500" />
+                  <h3 className="text-base font-bold text-slate-900">6. Uploaded Documents &amp; Files</h3>
+                  <span className="text-xs font-normal text-slate-500">
+                    ({filteredDocuments.length} file{filteredDocuments.length === 1 ? '' : 's'})
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {filteredDocuments.map((doc) => {
+                  const summary = synopsis.documentSummaries.find((item) => item.documentId === doc.id)
+                  const aiDocSummary = synopsis.aiAnalysis?.documentSummaries.find((item) => item.documentId === doc.id)
+
+                  return (
+                    <div
+                      key={doc.id}
+                      className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-slate-300 space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2.5">
+                          <div className="rounded-lg bg-slate-100 p-2 text-slate-600 mt-0.5">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => openSource(summary?.summary ?? {
+                                documentId: doc.id,
+                                documentName: doc.originalName,
+                                pageNumber: 1,
+                                passage: 'Previewing document.',
+                              })}
+                              className="text-left font-bold text-teal-800 hover:underline hover:text-teal-950 text-sm"
+                            >
+                              {doc.originalName}
+                            </button>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                                {summary?.apparentType || 'General Record'}
+                              </span>
+                              <span className="text-xs text-slate-400">
+                                {doc.pageCount ?? 1} page{doc.pageCount === 1 ? '' : 's'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className={cn(
+                          'rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                          doc.processingStatus === 'complete'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-800'
+                        )}>
+                          {doc.processingStatus === 'complete' ? 'Ready' : doc.processingStatus}
+                        </span>
+                      </div>
+
+                      {/* Text snippet preview */}
+                      {summary?.summary && (
+                        <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 line-clamp-2">
+                          {summary.summary.passage}
+                        </p>
+                      )}
+
+                      {aiDocSummary && (
+                        <div className="text-xs text-teal-900 bg-teal-50/70 p-2.5 rounded-lg border border-teal-200/60 space-y-1">
+                          <span className="font-semibold block">AI Summary:</span>
+                          <p>{aiDocSummary.summary}</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+                        <span>Processed: {doc.processedAt ? new Date(doc.processedAt).toLocaleDateString() : 'Ready'}</span>
+                        <button
+                          type="button"
+                          onClick={() => openSource(summary?.summary ?? {
+                            documentId: doc.id,
+                            documentName: doc.originalName,
+                            pageNumber: 1,
+                            passage: 'Previewing document.',
+                          })}
+                          className="text-teal-700 hover:underline font-semibold cursor-pointer"
+                        >
+                          Preview File →
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Verified Facts & Important Statements */}
+              <div className="pt-4 space-y-3">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Quote className="h-4 w-4 text-teal" />
+                  Key Facts &amp; Quotes Extracted
+                </h4>
+
+                {filteredFacts.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">No key facts matching your query.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {filteredFacts.slice(0, 8).map((fact, index) => (
+                      <div key={index} className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs space-y-2">
+                        <p className="text-xs text-slate-700 leading-relaxed">
+                          &ldquo;{fact.passage}&rdquo;
+                        </p>
+                        <div className="flex justify-end">
+                          <SourceBadge source={fact} onOpen={openSource} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 7: COURT ORDERS & PROCEDURAL HISTORY                  */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'orders') && (
+            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-teal-500" />
+                <h3 className="text-base font-bold text-slate-900">7. Court Orders &amp; Procedural History</h3>
+                <span className="text-xs font-normal text-slate-500">
+                  ({filteredOrders.length} record{filteredOrders.length === 1 ? '' : 's'})
+                </span>
+              </div>
+
+              {filteredOrders.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-xs text-slate-500">
+                  No prior court orders or procedural directions were found in the uploaded documents.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {filteredOrders.map((order, idx) => (
+                    <div key={idx} className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                          <Gavel className="h-4 w-4 text-teal" />
+                          <span>Court Direction / Ruling</span>
+                        </div>
+                        <SourceBadge source={order} onOpen={openSource} />
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed">
+                        &ldquo;{order.passage}&rdquo;
+                      </p>
                     </div>
                   ))}
                 </div>
+              )}
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 8: MISSING OR UNCLEAR DETAILS                         */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'orders') && (
+            <section className="space-y-3 pt-2 border-t border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-slate-400" />
+                <h3 className="text-base font-bold text-slate-900">8. Missing Details &amp; Unclear Scans</h3>
               </div>
-            )}
-            <p className="mt-3 rounded border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
-              This is a summary of extracted document text. Allegations and statements are reported content, not independently established findings.
-            </p>
-          </Section>
 
-          <Section title="3. Facts and Important Statements">
-            <EvidenceList items={synopsis.facts} emptyText="Not found in the uploaded documents." onOpen={openSource} />
-          </Section>
+              {synopsis.missingOrUnclear.length === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs text-slate-600 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>All uploaded pages were clear and readable. No processing errors reported.</span>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-2 text-xs text-amber-900">
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    Please check the following items:
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {synopsis.missingOrUnclear.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
 
-          <Section title="4. Chronology of Events">
-            {synopsis.chronology.length === 0 ? <p className="text-sm text-slate-500">No dates were found in the uploaded text.</p> : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[540px] text-left text-sm">
-                  <thead><tr className="border-b border-slate-200 text-xs text-slate-500"><th className="py-2 pr-4">Date as written</th><th className="py-2 pr-4">Extracted event</th><th className="py-2 pr-4">Source</th><th className="py-2">Date handling</th></tr></thead>
-                  <tbody>{synopsis.chronology.map((event, index) => <tr key={`${event.documentId}-${event.pageNumber}-${index}`} className="border-b border-slate-100 align-top"><td className="py-3 pr-4 font-medium text-slate-800">{event.date}</td><td className="py-3 pr-4 text-slate-600">{event.passage}</td><td className="py-3 pr-4"><SourceLink source={event} onOpen={openSource} /></td><td className="py-3 text-xs text-slate-500">{event.dateNote}</td></tr>)}</tbody>
-                </table>
-              </div>
-            )}
-          </Section>
-
-          <Section title="5. Document Register">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
-                <thead><tr className="border-b border-slate-200 text-xs text-slate-500"><th className="py-2 pr-3">Document</th><th className="py-2 pr-3">Apparent type</th><th className="py-2 pr-3">Pages</th><th className="py-2 pr-3">Extraction</th><th className="py-2 pr-3">Analysis</th><th className="py-2">Last processed</th></tr></thead>
-                <tbody>{documents.map((document) => {
-                  const summary = synopsis.documentSummaries.find((item) => item.documentId === document.id)
-                  const aiDocumentSummary = synopsis.aiAnalysis?.documentSummaries.find((item) => item.documentId === document.id)
-                  const included = Boolean(summary)
-                  const analysisStatus = !selectedRun ? 'Not analyzed' : !included ? 'Not included' : current ? 'Current' : 'Outdated'
-                  return (
-                    <tr key={document.id} className="border-b border-slate-100 align-top">
-                      <td className="py-3 pr-3"><button type="button" onClick={() => openSource(summary?.summary ?? { documentId: document.id, documentName: document.originalName, pageNumber: 1, passage: 'No extracted passage is available for this document.' })} className="text-left font-medium text-teal-700 underline underline-offset-2">{document.originalName}</button>{summary?.summary && <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">Extractive preview: {summary.summary.passage}</p>}{aiDocumentSummary && <><p className="mt-2 text-xs font-medium text-teal-800">AI summary: {aiDocumentSummary.summary}</p><div className="mt-1 flex flex-wrap gap-x-3">{aiDocumentSummary.sources.map((source, index) => <SourceLink key={`${source.documentId}-${source.pageNumber}-${index}`} source={{ ...source, passage: source.quote }} onOpen={openSource} />)}</div></>}</td>
-                      <td className="py-3 pr-3 text-slate-600">{summary?.apparentType ?? 'Could not be determined'}</td>
-                      <td className="py-3 pr-3 text-slate-600">{document.pageCount ?? 0}</td>
-                      <td className="py-3 pr-3"><span className={`rounded-full px-2 py-1 text-xs ${document.processingStatus === 'complete' ? 'bg-emerald-50 text-emerald-700' : document.processingStatus === 'failed' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}`}>{document.processingStatus}</span></td>
-                      <td className="py-3 pr-3 text-xs text-slate-600">{analysisStatus}</td>
-                      <td className="py-3 text-xs text-slate-500">{document.processedAt ? new Date(document.processedAt).toLocaleString() : 'Not processed'}</td>
-                    </tr>
-                  )
-                })}</tbody>
-              </table>
-            </div>
-          </Section>
-
-          <Section title="6. Important Statements and Evidence">
-            <EvidenceList items={synopsis.importantStatements} emptyText="Not found in the uploaded documents." onOpen={openSource} />
-          </Section>
-
-          <Section title="7. Potential Inconsistencies">
-            {synopsis.potentialInconsistencies.length === 0 ? <p className="text-sm text-slate-500">{documents.length === 1 ? 'Only one document is attached, so local cross-document comparison is not possible. Add related records or configure Gemini for a broader source-grounded analysis. ' : 'No explicitly labeled date, name, or location differences were detected. '}This does not verify that all records are consistent.</p> : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] text-left text-sm">
-                  <thead><tr className="border-b border-slate-200 text-xs text-slate-500"><th className="py-2 pr-4">Field</th><th className="py-2 pr-4">Values found</th><th className="py-2 pr-4">Evidence</th><th className="py-2">Review</th></tr></thead>
-                  <tbody>{synopsis.potentialInconsistencies.map((issue, index) => {
-                    const finding = selectedRun.findings.find((item) => item.analysisRunId === selectedRun.id && item.extractedValue === issue.values[0]) ?? selectedRun.findings[index]
-                    return <tr key={`${issue.field}-${index}`} className="border-b border-slate-100 align-top"><td className="py-3 pr-4 font-medium text-slate-800">{issue.field}<p className={`mt-1 text-[11px] font-normal ${issue.origin === 'ai' ? 'text-teal-700' : 'text-slate-500'}`}>{issue.origin === 'ai' ? 'AI suggested · requires human review' : 'Local labeled comparison'}</p>{issue.explanation && <p className="mt-2 max-w-xs text-xs font-normal leading-5 text-slate-600">{issue.explanation}</p>}</td><td className="py-3 pr-4 text-slate-700">{issue.values.join(' · ')}</td><td className="py-3 pr-4"><div className="flex flex-col gap-1">{issue.sources.map((source, sourceIndex) => <SourceLink key={`${source.documentId}-${source.pageNumber}-${sourceIndex}`} source={source} onOpen={(reference) => openSource(reference, finding?.description)} />)}</div></td><td className="py-3"><div className="flex flex-col gap-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700"><AlertTriangle className="h-3.5 w-3.5" />{finding?.reviewStatus === 'verified' ? 'Verified' : finding?.reviewStatus === 'not_a_discrepancy' ? 'Not a Discrepancy' : 'Needs Review'}</span>{finding && <div className="analysis-controls flex flex-wrap gap-1"><button onClick={() => reviewFinding(finding.id, 'verified')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Verify</button><button onClick={() => reviewFinding(finding.id, 'needs_review')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Needs review</button><button onClick={() => reviewFinding(finding.id, 'not_a_discrepancy')} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Not a discrepancy</button></div>}</div></td></tr>
-                  })}</tbody>
-                </table>
-              </div>
-            )}
-          </Section>
-
-          <Section title="8. Missing or Unclear Information">
-            {synopsis.missingOrUnclear.length === 0 ? <p className="text-sm text-slate-500">No unreadable pages were reported. Other missing details could not be determined from the uploaded text.</p> : <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">{synopsis.missingOrUnclear.map((item) => <li key={item}>{item}</li>)}</ul>}
-          </Section>
-
-          <Section title="9. Orders and Procedural History">
-            <EvidenceList items={synopsis.ordersAndProceduralHistory} emptyText="Not found in the uploaded documents." onOpen={openSource} />
-          </Section>
-
-          <Section title="10. Review Notes">
-            <div className="analysis-controls space-y-2">
-              <Textarea
-                value={notesDraft}
-                onChange={(event) => { setNotesDraft(event.target.value); setIsDirty(true) }}
-                placeholder="Add your verification notes for this saved analysis."
-                rows={4}
-                maxLength={20000}
-              />
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 9: CASE REVIEW NOTES                                  */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'orders') && (
+            <section className="space-y-3 pt-2 border-t border-slate-200/80">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">{isDirty ? 'Unsaved changes' : 'Saved with this analysis version'}</span>
-                <Button size="sm" variant="outline" onClick={saveNotes} disabled={!isDirty || savingNotes} className="gap-2">
-                  {savingNotes ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                  Save notes
-                </Button>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-teal-500" />
+                  <h3 className="text-base font-bold text-slate-900">9. Lawyer&apos;s Review Notes</h3>
+                </div>
+                <span className="text-xs text-slate-400">Saved with this analysis version</span>
               </div>
-            </div>
-            {!isDirty && selectedRun.reviewNotes && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{selectedRun.reviewNotes}</p>}
-          </Section>
 
-          <Section title="11. Source Index">
-            {synopsis.sourceIndex.length === 0 ? <p className="text-sm text-slate-500">No page references are available.</p> : (
-              <ol className="grid gap-2 sm:grid-cols-2">{synopsis.sourceIndex.map((source, index) => <li key={`${source.documentId}-${source.pageNumber}-${index}`} className="flex items-center justify-between gap-3 rounded border border-slate-200 px-3 py-2"><SourceLink source={{ ...source, passage: '' }} onOpen={openSource} /><span className={`text-xs ${source.readable ? 'text-emerald-700' : 'text-rose-700'}`}>{source.readable ? <><Check className="mr-1 inline h-3.5 w-3.5" />Readable</> : 'Unclear'}</span></li>)}</ol>
-            )}
-          </Section>
+              <div className="analysis-controls rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                <Textarea
+                  value={notesDraft}
+                  onChange={(event) => { setNotesDraft(event.target.value); setIsDirty(true) }}
+                  placeholder="Type any lawyer notes, verification thoughts, or hearing strategy for this case version…"
+                  rows={4}
+                  className="bg-white border-slate-200 text-sm focus:border-teal"
+                  maxLength={20000}
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">
+                    {isDirty ? '⚠️ Unsaved changes' : 'All notes saved for Version ' + selectedRun.version}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={saveNotes}
+                    disabled={!isDirty || savingNotes}
+                    className="gap-2 bg-teal text-white hover:bg-teal-light cursor-pointer"
+                  >
+                    {savingNotes ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Save Notes
+                  </Button>
+                </div>
+              </div>
 
-          <p className="border-t border-slate-200 py-4 text-xs leading-5 text-slate-500">{synopsis.method} Extracted text is not independently verified and is not legal advice.</p>
+              {!isDirty && selectedRun.reviewNotes && (
+                <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  <span className="font-bold text-slate-900 block mb-1">Current Saved Note:</span>
+                  {selectedRun.reviewNotes}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 10: PAGE CITATIONS & SOURCE INDEX                     */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {(activeSection === 'all' || activeSection === 'orders') && (
+            <section className="space-y-3 pt-2 border-t border-slate-200/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-slate-400" />
+                  <h3 className="text-base font-bold text-slate-900">10. Page Citations &amp; Source Index</h3>
+                </div>
+                <span className="text-xs text-slate-500">
+                  {synopsis.sourceIndex.filter((s) => s.readable).length} of {synopsis.sourceIndex.length} pages verified
+                </span>
+              </div>
+
+              {synopsis.sourceIndex.length === 0 ? (
+                <p className="text-xs text-slate-500">No page references available.</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {synopsis.sourceIndex.map((source, index) => (
+                    <button
+                      key={`${source.documentId}-${source.pageNumber}-${index}`}
+                      type="button"
+                      onClick={() => openSource({
+                        documentId: source.documentId,
+                        documentName: source.documentName,
+                        pageNumber: source.pageNumber,
+                        passage: 'Viewing source page.',
+                      })}
+                      className="flex items-center justify-between rounded-lg border border-slate-200/90 bg-slate-50/70 px-3 py-2 text-xs text-slate-700 hover:bg-teal-50 hover:border-teal-200 transition-all text-left cursor-pointer"
+                    >
+                      <div className="truncate mr-1">
+                        <span className="font-medium truncate block max-w-[120px]">{source.documentName}</span>
+                        <span className="text-[10px] text-slate-400">p. {source.pageNumber}</span>
+                      </div>
+                      <span className={cn(
+                        'h-2 w-2 rounded-full shrink-0',
+                        source.readable ? 'bg-emerald-500' : 'bg-rose-500'
+                      )} title={source.readable ? 'Readable' : 'Unreadable'} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ── Document Preview Modal ──────────────────────────────────── */}
+          <Dialog open={selectedSource !== null} onOpenChange={(open) => { if (!open) setSelectedSource(null) }}>
+            <DialogContent className="sm:max-w-5xl p-6 rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-slate-900 text-base">
+                  <FileText className="h-5 w-5 text-teal" />
+                  {selectedSource ? `${selectedSource.documentName} · Page ${selectedSource.pageNumber}` : 'Source Document'}
+                </DialogTitle>
+              </DialogHeader>
+
+              {selectedSource && (
+                <div className="space-y-4">
+                  {selectedSource.relatedFinding && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                      <strong>Related Issue: </strong> {selectedSource.relatedFinding}
+                    </div>
+                  )}
+
+                  <blockquote className="rounded-xl border-l-4 border-teal-500 bg-slate-50 p-3.5 text-xs leading-relaxed text-slate-800 italic">
+                    &ldquo;{selectedSource.passage || 'No text snippet available for this page.'}&rdquo;
+                  </blockquote>
+
+                  <div className="h-[55vh] min-h-64 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                    {selectedDocument?.fileType === 'image' ? (
+                      <img
+                        src={`/api/documents/${selectedSource.documentId}/file`}
+                        alt={`${selectedSource.documentName}, page ${selectedSource.pageNumber}`}
+                        className="mx-auto h-full max-h-full max-w-full object-contain"
+                      />
+                    ) : (
+                      <iframe
+                        title={`${selectedSource.documentName}, page ${selectedSource.pageNumber}`}
+                        src={sourceHref(selectedSource)}
+                        className="h-full w-full"
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Double check this snippet against the original record.</span>
+                    <a
+                      href={sourceHref(selectedSource)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-teal-700 hover:underline font-semibold"
+                    >
+                      Open file in new tab <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
         </div>
       ) : null}
-
-      <Dialog open={selectedSource !== null} onOpenChange={(open) => { if (!open) setSelectedSource(null) }}>
-        <DialogContent className="sm:max-w-5xl p-5">
-          <DialogHeader>
-            <DialogTitle>{selectedSource ? `${selectedSource.documentName} · Page ${selectedSource.pageNumber}` : 'Source document'}</DialogTitle>
-          </DialogHeader>
-          {selectedSource && (
-            <div className="space-y-3">
-              {selectedSource.relatedFinding && <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">Related finding: {selectedSource.relatedFinding}</p>}
-              <blockquote className="border-l-2 border-teal-500 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">{selectedSource.passage || 'No extracted passage is available for this page.'}</blockquote>
-              <div className="h-[55vh] min-h-64 overflow-hidden rounded border border-slate-200 bg-slate-100">
-                {selectedDocument?.fileType === 'image' ? (
-                  <img src={`/api/documents/${selectedSource.documentId}/file`} alt={`${selectedSource.documentName}, page ${selectedSource.pageNumber}`} className="mx-auto h-full max-h-full max-w-full object-contain" />
-                ) : (
-                  <iframe title={`${selectedSource.documentName}, page ${selectedSource.pageNumber}`} src={sourceHref(selectedSource)} className="h-full w-full" />
-                )}
-              </div>
-              <p className="text-xs text-slate-500">Verify the extracted passage against the original page. OCR and PDF parsing may contain errors.</p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
