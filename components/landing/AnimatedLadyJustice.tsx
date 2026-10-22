@@ -551,11 +551,11 @@ export function AnimatedLadyJustice() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-teal" />
               </span>
               <span className="text-[11px] font-semibold tracking-wider uppercase text-gold-champagne/90">
-                Impartial Justice
+                Compassionate Advocacy
               </span>
             </div>
             <span className="text-[10px] font-mono text-muted/70">
-              Active Equilibrium
+              Transparent Solution
             </span>
           </div>
         </div>
@@ -563,10 +563,10 @@ export function AnimatedLadyJustice() {
         {/* ── Elegant Pedestal Inscription Footer ── */}
         <div className="mt-2.5 px-3 py-1.5 flex items-center justify-between text-xs text-muted/80">
           <span className="tracking-widest text-[11px] font-semibold text-gold/90 uppercase">
-            Justitia Regnorum Fundamentum
+            Safeguarding Your Rights & Liberties
           </span>
           <span className="text-[10px] text-teal-light/80 font-medium">
-            Taraju Balance
+            Empowred Communities
           </span>
         </div>
       </motion.div>

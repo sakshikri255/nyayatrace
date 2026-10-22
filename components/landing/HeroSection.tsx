@@ -5,6 +5,41 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Compass, ShieldCheck, FileCheck, UserCheck } from 'lucide-react'
 import { AnimatedLadyJustice } from './AnimatedLadyJustice'
 
+/** Splits text into individual words and reveals them one by one */
+function AnimatedWords({
+  text,
+  className,
+  delay = 0,
+  stagger = 0.06,
+}: {
+  text: string
+  className?: string
+  delay?: number
+  stagger?: number
+}) {
+  const words = text.split(' ')
+  return (
+    <span className={className} aria-label={text}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          className="inline-block"
+          initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{
+            duration: 0.5,
+            ease: 'easeOut',
+            delay: delay + i * stagger,
+          }}
+        >
+          {word}
+          {i < words.length - 1 ? '\u00A0' : ''}
+        </motion.span>
+      ))}
+    </span>
+  )
+}
+
 export function HeroSection() {
   const scrollToProcess = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
@@ -67,17 +102,20 @@ export function HeroSection() {
             </motion.div>
 
             {/* Main Heading */}
-            <motion.h1
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: 'easeOut', delay: 0.08 }}
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-100 leading-[1.22] mb-6"
-            >
-              Complex Case Files.{' '}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-100 leading-[1.22] mb-6">
+              <AnimatedWords
+                text="Complex Case Files."
+                delay={0.08}
+                stagger={0.07}
+              />
               <span className="block mt-1 pb-3 -mb-3 text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne leading-normal">
-                Clearer Legal Understanding.
+                <AnimatedWords
+                  text="Clearer Legal Understanding."
+                  delay={0.35}
+                  stagger={0.07}
+                />
               </span>
-            </motion.h1>
+            </h1>
 
             {/* Supporting Text */}
             <motion.p

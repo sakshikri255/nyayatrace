@@ -9,7 +9,6 @@ import {
   Briefcase,
   Search,
   Scale,
-  FileText,
   Settings,
   ChevronLeft,
   BookOpen,
@@ -30,7 +29,6 @@ const NAV_ITEMS = [
   { label: 'Verification', href: '/verification', icon: Search },
   { label: 'Bail & Parole', href: '/bail-briefs', icon: Scale },
   { label: 'Concordance', href: '/concordance', icon: BookOpen },
-  { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
 

@@ -15,6 +15,7 @@ import { FindingsTab } from './tabs/FindingsTab'
 import { HearingsTab } from './tabs/HearingsTab'
 import { OrdersTab } from './tabs/OrdersTab'
 import { BriefTab } from './tabs/BriefTab'
+import { ReportTab } from './tabs/ReportTab'
 import { AnalysisWorkspace } from './tabs/AnalysisWorkspace'
 import { MasterChronologyView } from '@/components/progress/MasterChronologyView'
 import { LegalSectionsTab } from './tabs/LegalSectionsTab'
@@ -60,6 +61,7 @@ type TabId =
   | 'hearings'
   | 'orders'
   | 'brief'
+  | 'report'
 
 const tabVariants: Variants = {
   hidden: { opacity: 0, x: -4 },
@@ -94,6 +96,7 @@ export function CaseDetailTabs({
           'hearings',
           'orders',
           'brief',
+          'report',
         ].includes(tabParam)
       ) {
         setActiveTab(tabParam as TabId)
@@ -119,6 +122,7 @@ export function CaseDetailTabs({
       { id: 'hearings', label: 'Hearings', count: hearings.length },
       { id: 'orders', label: 'Orders', count: orders.length },
       { id: 'brief', label: 'Brief' },
+      { id: 'report', label: 'Report' },
     ]
 
     return (
@@ -224,6 +228,9 @@ export function CaseDetailTabs({
           )}
           {activeTab === 'brief' && (
             <BriefTab caseId={caseData.id} />
+          )}
+          {activeTab === 'report' && (
+            <ReportTab caseId={caseData.id} />
           )}
         </motion.div>
       </AnimatePresence>

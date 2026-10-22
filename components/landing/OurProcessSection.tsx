@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useRef } from 'react'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
+import React, { useRef, useState } from 'react'
+import { motion, useInView, useReducedMotion, AnimatePresence } from 'framer-motion'
 import {
   UploadCloud,
   Layers,
@@ -31,6 +31,7 @@ export function OurProcessSection() {
   const containerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(containerRef, { once: true, margin: '-80px' })
   const shouldReduceMotion = useReducedMotion()
+  const [hoveredStage, setHoveredStage] = useState<string | null>(null)
 
   const STAGES: Stage[] = [
     {
@@ -58,6 +59,20 @@ export function OurProcessSection() {
             <FolderDown className="w-5 h-5 text-gold" />
             <span className="text-xs font-mono font-semibold text-gold-champagne">Case Records</span>
           </motion.div>
+          {/* Animated upload particles */}
+          {isInView && !shouldReduceMotion && (
+            <>
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 rounded-full bg-gold/60"
+                  initial={{ y: 20, x: (i - 1) * 14, opacity: 0 }}
+                  animate={{ y: -20, opacity: [0, 1, 0] }}
+                  transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.4 + 0.6, ease: 'easeOut' }}
+                />
+              ))}
+            </>
+          )}
         </div>
       ),
     },
@@ -94,7 +109,11 @@ export function OurProcessSection() {
                 className="flex items-center gap-2 text-xs"
               >
                 <span className="font-mono text-gold-light text-[11px] font-semibold w-14 shrink-0">{item.date}</span>
-                <div className={`h-2 w-2 rounded-full ${item.color} shrink-0`} />
+                <motion.div
+                  animate={isInView ? { scale: [1, 1.4, 1] } : {}}
+                  transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.5 + 1 }}
+                  className={`h-2 w-2 rounded-full ${item.color} shrink-0`}
+                />
                 <span className="text-slate-200 truncate font-medium text-[11px]">{item.label}</span>
               </motion.div>
             ))}
@@ -129,13 +148,17 @@ export function OurProcessSection() {
               </div>
               <span className="text-[10px] font-mono text-slate-400 mt-1 block">p.8 · Para 3</span>
             </div>
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 flex flex-col justify-between">
+            <motion.div
+              animate={isInView ? { borderColor: ['rgba(245,158,11,0.3)', 'rgba(245,158,11,0.7)', 'rgba(245,158,11,0.3)'] } : {}}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.8 }}
+              className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 flex flex-col justify-between"
+            >
               <div>
                 <span className="text-amber-300 font-bold block text-xs">Duty Log</span>
                 <span className="text-slate-200 block text-[11px] mt-0.5 leading-snug">&ldquo;On patrol duty&rdquo;</span>
               </div>
               <span className="text-[10px] font-mono text-amber-300/90 mt-1 block">p.14 · Line 6</span>
-            </div>
+            </motion.div>
           </div>
         </div>
       ),
@@ -153,7 +176,11 @@ export function OurProcessSection() {
             <span className="font-mono text-emerald-400 flex items-center gap-1.5 font-medium">
               <FileText className="w-3.5 h-3.5" /> Working Brief
             </span>
-            <span className="text-teal-light font-mono text-xs font-semibold">Hearing Ready</span>
+            <motion.span
+              animate={isInView ? { opacity: [0.5, 1, 0.5] } : {}}
+              transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
+              className="text-teal-light font-mono text-xs font-semibold"
+            >Hearing Ready</motion.span>
           </div>
           <div className="space-y-1.5 mt-2">
             {[
@@ -197,7 +224,12 @@ export function OurProcessSection() {
       <div ref={containerRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+        <motion.div
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.55, ease: 'easeOut' }}
+          className="text-center max-w-3xl mx-auto mb-12 lg:mb-16"
+        >
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="h-1.5 w-1.5 rounded-full bg-gold" />
             <span className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-gold">
@@ -210,30 +242,45 @@ export function OurProcessSection() {
           <p className="text-base sm:text-lg text-slate-300/90 font-light">
             From lengthy documents to hearing-ready briefs — in four structured steps.
           </p>
-        </div>
+        </motion.div>
 
         {/* Desktop Progress Line & Stage Labels */}
         <div className="hidden lg:block relative mb-12">
-          {/* Subtle connecting track */}
-          <div className="absolute top-5 left-12 right-12 h-0.5 bg-gradient-to-r from-gold/30 via-teal/30 to-gold/30" />
+          {/* Animated connecting track */}
+          <div className="absolute top-5 left-12 right-12 h-0.5 bg-white/5 overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-gold/60 via-teal/60 to-gold/60"
+              initial={{ scaleX: 0, originX: 0 }}
+              animate={isInView ? { scaleX: 1 } : {}}
+              transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
+            />
+          </div>
 
           <div className="relative flex justify-between items-start max-w-4xl mx-auto">
             {STAGES.map((stage, idx) => {
               const Icon = stage.icon
+              const isHovered = hoveredStage === stage.number
               return (
                 <div key={stage.number} className="flex flex-col items-center gap-2 shrink-0">
                   <motion.div
-                    initial={shouldReduceMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+                    initial={shouldReduceMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
                     animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                    transition={{ delay: idx * 0.15, duration: 0.4, ease: 'backOut' }}
+                    transition={{ delay: idx * 0.15 + 0.3, duration: 0.4, ease: 'backOut' }}
                     className="flex flex-col items-center gap-2 shrink-0"
                   >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-gold/40 bg-midnight-900 text-gold shadow-lg shadow-gold/10">
+                    <motion.div
+                      animate={isHovered ? { scale: 1.12, borderColor: 'rgba(229,195,120,0.8)' } : { scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                      className="flex h-11 w-11 items-center justify-center rounded-full border border-gold/40 bg-midnight-900 text-gold shadow-lg shadow-gold/10"
+                    >
                       <Icon className="w-5 h-5 text-gold-light" />
-                    </div>
-                    <span className="text-xs font-mono font-semibold text-slate-300">
+                    </motion.div>
+                    <motion.span
+                      animate={isHovered ? { color: '#e5c378' } : { color: '#cbd5e1' }}
+                      className="text-xs font-mono font-semibold"
+                    >
                       {stage.shortLabel}
-                    </span>
+                    </motion.span>
                   </motion.div>
                 </div>
               )
@@ -248,24 +295,42 @@ export function OurProcessSection() {
             return (
               <motion.div
                 key={stage.number}
-                initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.45, ease: 'easeOut', delay: shouldReduceMotion ? 0 : 0.1 + idx * 0.12 }}
-                className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-midnight-950/80 p-5 shadow-xl hover:border-gold/40 hover:bg-midnight-950 transition-all duration-300"
+                transition={{ duration: 0.5, ease: 'easeOut', delay: shouldReduceMotion ? 0 : 0.15 + idx * 0.14 }}
+                onHoverStart={() => setHoveredStage(stage.number)}
+                onHoverEnd={() => setHoveredStage(null)}
+                className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-midnight-950/80 p-5 shadow-xl hover:border-gold/40 hover:bg-midnight-950 transition-all duration-300 cursor-default"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3.5">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/30 bg-gradient-to-b from-midnight-800 to-midnight-900 text-gold shadow-md group-hover:scale-105 group-hover:border-gold transition-transform">
+                    <motion.div
+                      animate={hoveredStage === stage.number ? { scale: 1.1, rotate: [0, -4, 4, 0] } : { scale: 1, rotate: 0 }}
+                      transition={{ duration: 0.4, ease: 'easeInOut' }}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/30 bg-gradient-to-b from-midnight-800 to-midnight-900 text-gold shadow-md group-hover:border-gold"
+                    >
                       <Icon className="w-5 h-5 text-gold-light" />
-                    </div>
-                    <span className="text-xl sm:text-2xl font-black text-gold/40 group-hover:text-gold/80 transition-colors">
+                    </motion.div>
+                    <motion.span
+                      animate={hoveredStage === stage.number ? { opacity: 0.9 } : { opacity: 0.4 }}
+                      transition={{ duration: 0.25 }}
+                      className="text-xl sm:text-2xl font-black text-gold"
+                    >
                       {stage.number}
-                    </span>
+                    </motion.span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-100 mb-1.5">{stage.title}</h3>
                   <p className="text-xs sm:text-sm text-slate-300/90 leading-relaxed mb-4">{stage.description}</p>
                 </div>
                 <div className="w-full mt-auto">{stage.renderVisual()}</div>
+
+                {/* Bottom accent line */}
+                <motion.div
+                  className="mt-4 h-0.5 rounded-full bg-gradient-to-r from-gold/60 to-teal/60"
+                  initial={{ scaleX: 0, originX: 0 }}
+                  animate={hoveredStage === stage.number ? { scaleX: 1 } : { scaleX: 0 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                />
               </motion.div>
             )
           })}
@@ -273,20 +338,35 @@ export function OurProcessSection() {
 
         {/* Traditional vs NyayaTrace comparison strip */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.55 }}
+          transition={{ duration: 0.6, delay: shouldReduceMotion ? 0 : 0.6 }}
           className="mt-12 lg:mt-16 rounded-2xl border border-white/10 bg-midnight-950/90 p-6 sm:p-8 backdrop-blur-md shadow-2xl"
         >
-          <div className="flex items-center justify-center gap-2.5 mb-7">
-            <Zap className="w-5 h-5 text-gold" />
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.96 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.45, delay: 0.65 }}
+            className="flex items-center justify-center gap-2.5 mb-7"
+          >
+            <motion.div
+              animate={isInView ? { rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] } : {}}
+              transition={{ duration: 1.2, delay: 0.8, ease: 'easeInOut' }}
+            >
+              <Zap className="w-5 h-5 text-gold" />
+            </motion.div>
             <span className="text-base sm:text-lg font-bold text-slate-100">Elevating the Legal Research Standard</span>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Traditional */}
-            <div className="rounded-xl border border-rose-500/20 bg-rose-950/10 p-5">
+            <motion.div
+              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: -18 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              className="rounded-xl border border-rose-500/20 bg-rose-950/10 p-5"
+            >
               <div className="flex items-center gap-2.5 mb-3.5 text-rose-400">
                 <XCircle className="w-4 h-4 shrink-0" />
                 <span className="text-sm font-bold uppercase tracking-wider">Traditional</span>
@@ -294,7 +374,14 @@ export function OurProcessSection() {
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 {['Open PDFs', 'Page-by-page search', 'Re-read statements', 'Manually organize'].map((step, i, arr) => (
                   <React.Fragment key={step}>
-                    <span className="bg-midnight-900 px-3 py-1.5 rounded border border-white/10 text-slate-300 font-medium">{step}</span>
+                    <motion.span
+                      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                      animate={isInView ? { opacity: 1 } : {}}
+                      transition={{ delay: 0.75 + i * 0.09 }}
+                      className="bg-midnight-900 px-3 py-1.5 rounded border border-white/10 text-slate-300 font-medium"
+                    >
+                      {step}
+                    </motion.span>
                     {i < arr.length - 1 && <ArrowRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />}
                   </React.Fragment>
                 ))}
@@ -302,10 +389,15 @@ export function OurProcessSection() {
               <p className="text-xs sm:text-sm text-rose-300/80 mt-4 pt-3 border-t border-white/5 leading-relaxed font-normal">
                 Prone to missed cross-references and repetitive searching under time pressure.
               </p>
-            </div>
+            </motion.div>
 
             {/* NyayaTrace */}
-            <div className="rounded-xl border border-teal/40 bg-teal/5 p-5 relative overflow-hidden">
+            <motion.div
+              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: 18 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.75 }}
+              className="rounded-xl border border-teal/40 bg-teal/5 p-5 relative overflow-hidden"
+            >
               <div className="absolute top-0 right-0 w-24 h-24 bg-teal/10 rounded-full blur-xl pointer-events-none" />
               <div className="flex items-center gap-2.5 mb-3.5 text-teal-light">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -314,7 +406,14 @@ export function OurProcessSection() {
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 {['Organize docs', 'Source-linked synopsis', 'Review passages', 'Structured brief'].map((step, i, arr) => (
                   <React.Fragment key={step}>
-                    <span className={`px-3 py-1.5 rounded border font-semibold ${i === arr.length - 1 ? 'border-gold/50 bg-midnight-900/90 text-gold-light' : 'border-teal/40 bg-midnight-900/90 text-teal-light'}`}>{step}</span>
+                    <motion.span
+                      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                      animate={isInView ? { opacity: 1 } : {}}
+                      transition={{ delay: 0.8 + i * 0.09 }}
+                      className={`px-3 py-1.5 rounded border font-semibold ${i === arr.length - 1 ? 'border-gold/50 bg-midnight-900/90 text-gold-light' : 'border-teal/40 bg-midnight-900/90 text-teal-light'}`}
+                    >
+                      {step}
+                    </motion.span>
                     {i < arr.length - 1 && <ArrowRight className="w-3.5 h-3.5 text-teal shrink-0" />}
                   </React.Fragment>
                 ))}
@@ -322,7 +421,7 @@ export function OurProcessSection() {
               <p className="text-xs sm:text-sm text-slate-200 mt-4 pt-3 border-t border-teal/20 leading-relaxed font-normal">
                 Immediate traceability to source records with full editorial control.
               </p>
-            </div>
+            </motion.div>
 
           </div>
         </motion.div>
