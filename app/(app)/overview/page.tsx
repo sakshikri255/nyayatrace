@@ -1,8 +1,8 @@
 import React from 'react'
 
 import { HeroSection } from '@/components/landing/HeroSection'
-import { IntroductionSection } from '@/components/landing/IntroductionSection'
 import { OurProcessSection } from '@/components/landing/OurProcessSection'
+import { IntroductionSection } from '@/components/landing/IntroductionSection'
 import { TrustedServicesSection } from '@/components/landing/TrustedServicesSection'
 import { TrustSection } from '@/components/landing/TrustSection'
 import { LandingFooter } from '@/components/landing/LandingFooter'
@@ -15,19 +15,19 @@ export default function OverviewPage() {
       {/* 1. Hero with animated Lady Justice visual */}
       <HeroSection />
 
-      {/* 2. Introduction / Our Approach */}
-      <IntroductionSection />
-
-      {/* 3 & 4. Our Process with flowing line & Traditional vs. NyayaTrace comparison */}
+      {/* 2. Our Process with flowing line & Traditional vs. NyayaTrace comparison */}
       <OurProcessSection />
 
-      {/* 5. Trusted Services section */}
+      {/* 3. Introduction / Our Approach */}
+      <IntroductionSection />
+
+      {/* 4. Trusted Services section */}
       <TrustedServicesSection />
 
-      {/* 6. Trust and Responsibility */}
+      {/* 5. Trust and Responsibility */}
       <TrustSection />
 
-      {/* 7. Footer and calls to action */}
+      {/* 6. Footer and calls to action */}
       <LandingFooter />
     </div>
   )

@@ -13,6 +13,7 @@ import {
   ArrowRight,
   X,
   FileSearch,
+  LayoutDashboard,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -65,6 +66,17 @@ export function CommandPalette() {
     if (!trimmed) {
       // Default quick actions
       setItems([
+        {
+          id: 'act-overview',
+          title: 'Workspace Overview',
+          subtitle: 'System dashboard, statistics, and platform introduction',
+          category: 'Actions',
+          icon: LayoutDashboard,
+          onSelect: () => {
+            setOpen(false)
+            router.push('/overview')
+          },
+        },
         {
           id: 'act-new-case',
           title: 'Create New Case Record',

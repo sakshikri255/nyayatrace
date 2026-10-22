@@ -56,7 +56,7 @@ export default function SignUpPage() {
         setLoading(false)
         return
       }
-      router.replace('/cases')
+      router.replace('/overview')
     } catch {
       setError('Network error. Please try again.')
       setLoading(false)

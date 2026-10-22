@@ -14,8 +14,12 @@ function LoginContent() {
 
   // If already logged in, skip to the app
   useEffect(() => {
-    if (getSession()) router.replace('/cases')
-  }, [router])
+    if (getSession()) {
+      const rawNext = searchParams.get('next')
+      const target = rawNext && rawNext !== '/' && rawNext !== '/login' ? rawNext : '/overview'
+      router.replace(target)
+    }
+  }, [router, searchParams])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -41,7 +45,8 @@ function LoginContent() {
         setLoading(false)
         return
       }
-      const next = searchParams.get('next') || '/cases'
+      const rawNext = searchParams.get('next')
+      const next = rawNext && rawNext !== '/' && rawNext !== '/login' ? rawNext : '/overview'
       router.replace(next)
     } catch {
       setError('Network error. Please try again.')

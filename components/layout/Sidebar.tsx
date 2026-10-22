@@ -81,13 +81,16 @@ export function Sidebar() {
         style={{ minWidth: 0 }}
       >
         {/* ── Logo ── */}
-        <div className="flex items-center h-14 px-4 border-b border-border-dark shrink-0">
+        <Link
+          href="/overview"
+          className="flex items-center h-14 px-4 border-b border-border-dark shrink-0 hover:opacity-90 transition-opacity"
+        >
           {collapsed ? (
             <NyayaTraceLogo size="sm" variant="light" />
           ) : (
             <NyayaTraceLogo size="lg" variant="light" />
           )}
-        </div>
+        </Link>
 
         {/* ── Navigation ── */}
         <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
