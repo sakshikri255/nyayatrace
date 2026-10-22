@@ -2,23 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import {
   Menu,
-  LogOut,
   Plus,
   ChevronRight,
-  ChevronDown,
-  User,
-  Check,
   Bell,
   X,
   AlertTriangle,
 } from 'lucide-react'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
 import { CommandPalette } from '@/components/layout/CommandPalette'
-import { logoutUser, setSession, DEMO_USERS, type UserRecord } from '@/lib/auth'
-import { useSession } from '@/hooks/useSession'
 import { cn } from '@/lib/utils'
 import type { BailAlert } from '@/app/api/overview/alerts/route'
 
@@ -106,11 +100,7 @@ function dismissUntilTomorrow(caseId: number) {
 
 export function Topbar() {
   const pathname = usePathname()
-  const router = useRouter()
   const { setMobileOpen } = useMobileSidebar()
-  const session = useSession()
-  const [profileOpen, setProfileOpen] = useState(false)
-  const profileRef = useRef<HTMLDivElement>(null)
 
   // Bail alert states
   const [alerts, setAlerts] = useState<BailAlert[]>([])
@@ -136,21 +126,15 @@ export function Topbar() {
     return () => clearInterval(timer)
   }, [fetchAlerts])
 
-  // Close dropdowns on outside click or Escape
+  // Close bell dropdown on outside click or Escape
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false)
-      }
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
         setBellOpen(false)
       }
     }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setProfileOpen(false)
-        setBellOpen(false)
-      }
+      if (e.key === 'Escape') setBellOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleKeyDown)
@@ -160,54 +144,10 @@ export function Topbar() {
     }
   }, [])
 
-  async function handleLogout() {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-    } catch {
-      /* ignore */
-    }
-    logoutUser()
-    router.replace('/login')
-  }
-
   function handleDismiss(caseId: number) {
     dismissUntilTomorrow(caseId)
     setAlerts((prev) => prev.filter((a) => a.caseId !== caseId))
   }
-
-  async function handleSwitchUser(user: (typeof DEMO_USERS)[number]) {
-    if (typeof window !== 'undefined') {
-      const newSession: UserRecord = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      }
-      setSession(newSession)
-      setProfileOpen(false)
-
-      try {
-        await fetch('/api/auth/switch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: user.email }),
-        })
-      } catch {
-        /* ignore */
-      }
-
-      router.refresh()
-    }
-  }
-
-  const initials = session?.name
-    ? session.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
-    : 'AS'
 
   const urgentCount = alerts.length
 
@@ -257,7 +197,7 @@ export function Topbar() {
         <CommandPalette dark={true} />
       </div>
 
-      {/* ── Right: Alerts Bell + Primary Action + Profile Menu ── */}
+      {/* ── Right: Alerts Bell + Primary Action ── */}
       <div className="flex items-center gap-2.5 shrink-0">
         <div className="md:hidden">
           <CommandPalette dark={isOverview} />
@@ -361,102 +301,6 @@ export function Topbar() {
           <span className="hidden sm:inline">New Case</span>
           <span className="sm:hidden">New</span>
         </Link>
-
-        {/* User Account / Persona Menu */}
-        <div className="relative" ref={profileRef}>
-          <button
-            type="button"
-            onClick={() => setProfileOpen((prev) => !prev)}
-            aria-expanded={profileOpen}
-            aria-label="User menu"
-            className={cn(
-              'group flex items-center gap-2.5 rounded-lg border border-gold/30 bg-gold/[0.04] hover:bg-gold/[0.09] p-1 sm:pl-1.5 sm:pr-2.5 sm:py-1 text-left transition-all duration-200 shadow-xs hover:border-gold/55 hover:shadow-sm hover:shadow-gold/10 cursor-pointer',
-              profileOpen && 'border-gold bg-gold/10 ring-2 ring-gold/25 shadow-sm'
-            )}
-          >
-            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white shadow-xs bg-gradient-to-br from-gold-dark via-gold-muted to-midnight-700 ring-1 ring-gold/30">
-              {initials}
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-1.5 ring-midnight-900" />
-            </div>
-
-            <div className="hidden sm:flex flex-col text-left min-w-0">
-              <span className="text-xs font-semibold transition-colors leading-none truncate max-w-[125px] text-slate-100 group-hover:text-gold-light">
-                {session?.name || 'Advocate'}
-              </span>
-              <span className="text-[10px] font-medium leading-tight mt-0.5 truncate max-w-[125px] text-gold-muted">
-                {session?.role || 'Senior Advocate'}
-              </span>
-            </div>
-
-            <ChevronDown className={cn(
-              'hidden sm:block h-3.5 w-3.5 transition-transform duration-200 text-gold/60 group-hover:text-gold',
-              profileOpen && 'rotate-180 text-gold'
-            )} />
-          </button>
-
-          {profileOpen && (
-            <div className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 bg-midnight-900 p-0 shadow-2xl z-50 animate-in fade-in-0 zoom-in-95 duration-100">
-              {/* Profile identity header */}
-              <div className="p-3.5 border-b border-white/10 bg-white/5 rounded-t-xl">
-                <p className="text-xs font-bold truncate text-slate-100">
-                  {session?.name || 'Aditi Sharma'}
-                </p>
-                <p className="text-[11px] truncate text-slate-400">{session?.email || 'aditi@nyayatrace.in'}</p>
-                <span className="inline-block mt-1 rounded px-1.5 py-0.2 text-[10px] font-semibold bg-gold/15 text-gold-light border border-gold/30">
-                  {session?.role || 'Senior Advocate'}
-                </span>
-              </div>
-
-              {/* Persona Switcher */}
-              <div className="p-2 border-b border-white/10">
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 text-slate-500">
-                  Switch Persona
-                </p>
-                <div className="space-y-0.5">
-                  {DEMO_USERS.map((user) => {
-                    const isSelected = session?.email === user.email
-                    return (
-                      <button
-                        key={user.id}
-                        type="button"
-                        onClick={() => handleSwitchUser(user)}
-                        className={cn(
-                          'w-full flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-left transition-colors',
-                          isSelected
-                            ? 'bg-gold/15 text-gold-light font-semibold'
-                            : 'hover:bg-white/8 text-slate-300'
-                        )}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <User className={cn('h-3.5 w-3.5 shrink-0', isSelected ? 'text-gold' : 'text-slate-500')} />
-                          <div className="truncate">
-                            <span className="block truncate leading-tight">{user.name}</span>
-                            <span className="block text-[10px] font-normal leading-tight text-slate-500">
-                              {user.role}
-                            </span>
-                          </div>
-                        </div>
-                        {isSelected && <Check className="h-3.5 w-3.5 shrink-0 ml-1.5 text-gold" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Sign out */}
-              <div className="p-1.5">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  <span>Sign out</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </header>
   )

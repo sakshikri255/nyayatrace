@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -12,6 +12,10 @@ import {
   Settings,
   ChevronLeft,
   BookOpen,
+  LogOut,
+  ChevronUp,
+  User,
+  Check,
 } from 'lucide-react'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
 import {
@@ -22,6 +26,9 @@ import {
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
+import { logoutUser, setSession, DEMO_USERS, type UserRecord } from '@/lib/auth'
+import { useSession } from '@/hooks/useSession'
+import { getAvatar } from '@/lib/avatars'
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/overview', icon: LayoutDashboard },
@@ -40,8 +47,12 @@ const sidebarVariants = {
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [hasUrgentBail, setHasUrgentBail] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const session = useSession()
   const { mobileOpen, setMobileOpen } = useMobileSidebar()
+  const profileRef = useRef<HTMLDivElement>(null)
 
   const checkAlerts = useCallback(async () => {
     try {
@@ -57,6 +68,55 @@ export function Sidebar() {
     const timer = setInterval(checkAlerts, 5 * 60_000)
     return () => clearInterval(timer)
   }, [checkAlerts])
+
+  // Close profile dropdown on outside click or Escape
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setProfileOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
+  async function handleLogout() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    } catch { /* ignore */ }
+    logoutUser()
+    router.replace('/login')
+  }
+
+  async function handleSwitchUser(user: (typeof DEMO_USERS)[number]) {
+    if (typeof window !== 'undefined') {
+      const newSession: UserRecord = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      }
+      setSession(newSession)
+      setProfileOpen(false)
+      try {
+        await fetch('/api/auth/switch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email }),
+        })
+      } catch { /* ignore */ }
+      router.refresh()
+    }
+  }
+
+  const avatar = getAvatar(session?.avatarId)
 
   return (
     <TooltipProvider delay={0}>
@@ -156,7 +216,122 @@ export function Sidebar() {
         </nav>
 
         {/* ── Bottom Section ── */}
-        <div className="border-t border-white/10 px-2.5 py-3 shrink-0">
+        <div className="border-t border-white/10 px-2.5 py-3 shrink-0 flex flex-col gap-2">
+
+          {/* Profile button + dropdown */}
+          <div className="relative" ref={profileRef}>
+            {/* Upward dropdown */}
+            {profileOpen && (
+              <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl border border-white/10 bg-midnight-900 shadow-2xl z-50 animate-in fade-in-0 zoom-in-95 duration-100 overflow-hidden">
+                {/* Identity header */}
+                <div className="p-3 border-b border-white/10 bg-white/5">
+                  <p className="text-xs font-bold truncate text-slate-100">
+                    {session?.name || 'Advocate'}
+                  </p>
+                  <p className="text-[11px] truncate text-slate-400">
+                    {session?.email || ''}
+                  </p>
+                  <span className="inline-block mt-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-gold/15 text-gold-light border border-gold/30">
+                    {session?.role || 'Senior Advocate'}
+                  </span>
+                </div>
+
+                {/* Persona Switcher */}
+                <div className="p-2 border-b border-white/10">
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5 px-2 text-slate-500">
+                    Switch Persona
+                  </p>
+                  <div className="space-y-0.5">
+                    {DEMO_USERS.map((user) => {
+                      const isSelected = session?.email === user.email
+                      return (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => handleSwitchUser(user)}
+                          className={cn(
+                            'w-full flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-left transition-colors',
+                            isSelected
+                              ? 'bg-gold/15 text-gold-light font-semibold'
+                              : 'hover:bg-white/8 text-slate-300'
+                          )}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <User className={cn('h-3.5 w-3.5 shrink-0', isSelected ? 'text-gold' : 'text-slate-500')} />
+                            <div className="truncate">
+                              <span className="block truncate leading-tight">{user.name}</span>
+                              <span className="block text-[10px] font-normal leading-tight text-slate-500">
+                                {user.role}
+                              </span>
+                            </div>
+                          </div>
+                          {isSelected && <Check className="h-3.5 w-3.5 shrink-0 ml-1.5 text-gold" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Sign out */}
+                <div className="p-1.5">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    onClick={() => setProfileOpen((p) => !p)}
+                    aria-expanded={profileOpen}
+                    aria-label="User menu"
+                    className={cn(
+                      'group w-full flex items-center gap-2.5 rounded-lg border border-gold/20 bg-gold/[0.04] hover:bg-gold/[0.09] px-2 py-1.5 text-left transition-all duration-200 hover:border-gold/45 cursor-pointer',
+                      profileOpen && 'border-gold/50 bg-gold/10 ring-1 ring-gold/20'
+                    )}
+                  >
+                    {/* Avatar */}
+                    <div className="relative h-7 w-7 shrink-0 rounded-md overflow-hidden border border-gold/30 bg-midnight-800">
+                      {avatar.render()}
+                      <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-1 ring-midnight-900" />
+                    </div>
+
+                    {!collapsed && (
+                      <>
+                        <div className="flex-1 min-w-0 text-left">
+                          <span className="block text-xs font-semibold leading-none truncate text-slate-100 group-hover:text-gold-light transition-colors">
+                            {session?.name || 'Advocate'}
+                          </span>
+                          <span className="block text-[10px] font-medium leading-tight mt-0.5 truncate text-gold-muted">
+                            {session?.role || 'Senior Advocate'}
+                          </span>
+                        </div>
+                        <ChevronUp className={cn(
+                          'h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-gold/50 group-hover:text-gold',
+                          profileOpen && 'rotate-180 text-gold'
+                        )} />
+                      </>
+                    )}
+                  </button>
+                }
+              />
+              {collapsed && (
+                <TooltipContent side="right" className="bg-midnight-900 border-white/10 text-slate-100">
+                  {session?.name || 'Advocate'}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
+
           {/* Collapse toggle */}
           <button
             onClick={() => setCollapsed((c) => !c)}

@@ -8,6 +8,7 @@ export interface UserRecord {
   name: string
   email: string
   role: string
+  avatarId?: string
 }
 
 /** Sample accounts users can log in with */
