@@ -40,7 +40,8 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value
   if (!token) {
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('next', pathname)
+    const nextTarget = pathname === '/' ? '/overview' : pathname
+    loginUrl.searchParams.set('next', nextTarget)
     return NextResponse.redirect(loginUrl)
   }
 
