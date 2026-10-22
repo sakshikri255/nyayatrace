@@ -139,12 +139,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
       <div
         suppressHydrationWarning
         className={cn(
-          'relative overflow-hidden rounded-xl border p-5 transition-all shadow-sm',
-          isAccrued
-            ? 'border-rose-300 bg-gradient-to-br from-rose-50/80 via-white to-rose-100/40'
-            : isUrgent
-            ? 'border-amber-300 bg-gradient-to-br from-amber-50/80 via-white to-amber-100/40'
-            : 'border-slate-200 bg-white'
+          'relative mb-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 p-5 transition-all shadow-sm',
         )}
       >
         {/* Header */}
@@ -170,7 +165,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-slate-900">Statutory Default Bail Tracker</h3>
+                <h3 className="text-sm font-bold text-slate-900">Statutory Default Bail Tracker</h3>
                 <span
                   className={cn(
                     'rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
@@ -186,7 +181,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
                   {bail.statusLabel}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{bail.statutorySection}</p>
+              <p className="mt-0.5 text-xs font-medium text-slate-600">{bail.statutorySection}</p>
             </div>
           </div>
 
@@ -208,7 +203,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
           {bail.isCalculable ? (
             <div className="mt-4 space-y-2.5">
               {/* Progress bar */}
-              <div className="flex items-center justify-between text-xs text-slate-500">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-600">
                 <span>
                   Custody: <strong className="text-slate-800">{bail.daysInCustody}</strong> of{' '}
                   <strong className="text-slate-800">{bail.statutoryPeriodDays}</strong> days
@@ -243,15 +238,15 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
               {/* Stat grid */}
               <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs">
                 <div className="rounded-md bg-slate-50 p-2">
-                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Remand Date</span>
+                  <span className="block text-[10px] font-medium uppercase text-slate-600">Remand Date</span>
                   <span className="font-medium text-slate-800">{bail.remandDate ?? 'Not set'}</span>
                 </div>
                 <div className="rounded-md bg-slate-50 p-2">
-                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Statutory Limit</span>
+                  <span className="block text-[10px] font-medium uppercase text-slate-600">Statutory Limit</span>
                   <span className="font-medium text-slate-800">{bail.statutoryPeriodDays} Days</span>
                 </div>
                 <div className="rounded-md bg-slate-50 p-2">
-                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Chargesheet Status</span>
+                  <span className="block text-[10px] font-medium uppercase text-slate-600">Chargesheet Status</span>
                   <span
                     className={cn(
                       'font-medium',

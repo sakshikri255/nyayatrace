@@ -22,7 +22,7 @@ const statusConfig: Record<Status, { label: string; className: string }> = {
   },
   unspecified: {
     label: 'Not specified',
-    className: 'bg-slate-50 text-slate-500 border-slate-200',
+    className: 'rounded-md border-slate-200/80 bg-slate-100 px-3 py-1 font-medium text-slate-700',
   },
 }
 
@@ -45,7 +45,7 @@ const typeConfig: Record<CaseType, { label: string; className: string }> = {
   },
   unspecified: {
     label: 'Not specified',
-    className: 'bg-slate-50 text-slate-500 border-slate-200',
+    className: 'rounded-md border-slate-200/80 bg-slate-100 px-3 py-1 font-medium text-slate-700',
   },
 }
 

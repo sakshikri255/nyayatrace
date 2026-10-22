@@ -96,7 +96,7 @@ export function DeleteCaseDialog({
           variant="outline"
           onClick={() => setOpen(true)}
           className={cn(
-            'border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 gap-1.5 shadow-sm transition-all',
+            'h-auto gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 shadow-sm transition-all hover:bg-red-100 hover:text-red-700 hover:border-red-200',
             className
           )}
         >

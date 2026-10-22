@@ -51,7 +51,11 @@ export function EditCaseDialog({ caseData }: { caseData: CaseDetail }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button variant="outline" onClick={() => setOpen(true)} className="gap-2">
+      <Button
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="h-auto gap-2 rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-200"
+      >
         <Pencil className="h-4 w-4" /> Edit case
       </Button>
       <DialogContent className="sm:max-w-2xl p-6">

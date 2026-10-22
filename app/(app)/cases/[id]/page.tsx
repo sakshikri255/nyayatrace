@@ -5,9 +5,6 @@ import { getCaseById } from '@/lib/queries/cases'
 import { getDocumentsByCaseId } from '@/lib/queries/documents'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
 import { getHearingsByCaseId, getCaseHearingsPerMonth } from '@/lib/queries/hearings'
-import { db } from '@/lib/db'
-import { judicialOrders, bailConditions } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
 import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBadge'
 import { CaseDetailTabs } from '@/components/cases/CaseDetailTabs'
 import { EditCaseDialog } from '@/components/cases/EditCaseDialog'
@@ -29,22 +26,10 @@ export default function CaseDetailPage({ params }: PageProps) {
   const findingList = getFindingsByCaseId(id)
   const hearingList = getHearingsByCaseId(id)
   const hearingChartData = getCaseHearingsPerMonth(id)
-  const orderList = db
-    .select()
-    .from(judicialOrders)
-    .where(eq(judicialOrders.caseId, id))
-    .orderBy(judicialOrders.orderDate)
-    .all()
-  const conditionList = db
-    .select()
-    .from(bailConditions)
-    .where(eq(bailConditions.caseId, id))
-    .all()
-
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6">
+    <div className="min-h-screen w-full min-w-0 space-y-6 bg-[#F8FAFC] p-6 sm:p-8">
       {/* Back nav + cross-feature shortcuts */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/cases"
           className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal transition-colors"
@@ -85,41 +70,41 @@ export default function CaseDetailPage({ params }: PageProps) {
       </div>
 
       {/* Case header */}
-      <div className="rounded-xl border border-slate-200 bg-white px-6 py-5 mb-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-sm font-semibold text-teal tracking-tight">
+              <h1 className="text-2xl font-bold leading-tight text-slate-900">
+                {caseData.title}
+              </h1>
+              <span className="rounded-md border border-slate-200/80 bg-slate-100 px-3 py-1 font-mono text-xs font-medium text-slate-700">
                 {caseData.caseNumber}
               </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <CaseStatusBadge status={caseData.status} />
               <CaseTypeBadge caseType={caseData.caseType} />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-              {caseData.title}
-            </h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
               {caseData.court && (
-                <span className="text-sm text-slate-500">
-                  <span className="text-slate-400 font-medium">Court:</span>{' '}
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
+                  <span className="font-medium text-slate-700">Court:</span>{' '}
                   {caseData.court}
                 </span>
               )}
               {caseData.jurisdiction && (
-                <span className="text-sm text-slate-500">
-                  <span className="text-slate-400 font-medium">Jurisdiction:</span>{' '}
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
+                  <span className="font-medium text-slate-700">Jurisdiction:</span>{' '}
                   {caseData.jurisdiction}
                 </span>
               )}
               {caseData.judge && (
-                <span className="text-sm text-slate-500">
-                  <span className="text-slate-400 font-medium">Judge:</span>{' '}
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
+                  <span className="font-medium text-slate-700">Judge:</span>{' '}
                   {caseData.judge}
                 </span>
               )}
               {caseData.createdAt && (
-                <span className="text-sm text-slate-400" suppressHydrationWarning>
-                  Filed{' '}
+                <span className="rounded-md border border-slate-200/80 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700" suppressHydrationWarning>
+                  Record created{' '}
                   {new Date(caseData.createdAt).toLocaleDateString('en-IN', {
                     day: 'numeric',
                     month: 'short',
@@ -129,8 +114,7 @@ export default function CaseDetailPage({ params }: PageProps) {
               )}
             </div>
           </div>
-          {/* Quick stats strip */}
-          <div className="flex flex-wrap items-center justify-end gap-4 shrink-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <EditCaseDialog caseData={caseData} />
               <DeleteCaseDialog
@@ -139,27 +123,6 @@ export default function CaseDetailPage({ params }: PageProps) {
                 caseTitle={caseData.title}
                 redirectAfterDelete
               />
-            </div>
-            <div className="flex gap-4 text-center">
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold text-slate-800">{documents.length}</span>
-              <span className="text-xs text-slate-500">Documents</span>
-            </div>
-            <div className="w-px bg-slate-200" />
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold text-slate-800">{findingList.length}</span>
-              <span className="text-xs text-slate-500">Findings</span>
-            </div>
-            <div className="w-px bg-slate-200" />
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold text-slate-800">{hearingList.length}</span>
-              <span className="text-xs text-slate-500">Hearings</span>
-            </div>
-            <div className="w-px bg-slate-200" />
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold text-slate-800">{orderList.length}</span>
-              <span className="text-xs text-slate-500">Orders</span>
-            </div>
             </div>
           </div>
         </div>
@@ -173,8 +136,6 @@ export default function CaseDetailPage({ params }: PageProps) {
         findings={findingList}
         hearings={hearingList}
         hearingChartData={hearingChartData}
-        orders={orderList}
-        conditions={conditionList}
       />
     </div>
   )
