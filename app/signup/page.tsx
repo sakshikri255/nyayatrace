@@ -33,15 +33,8 @@ export default function SignUpPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-
-    if (!pwStrong) {
-      setError('Password does not meet all requirements.')
-      return
-    }
-    if (password !== confirm) {
-      setError('Passwords do not match.')
-      return
-    }
+    if (!pwStrong) { setError('Password does not meet all requirements.'); return }
+    if (password !== confirm) { setError('Passwords do not match.'); return }
 
     setLoading(true)
     try {
@@ -64,50 +57,52 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
-      {/* Background Image with warm judicial ambient overlay */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+    <div className="auth-root">
+       {/* ── Warm off-white background ── */}
+      <div className="auth-bg" aria-hidden="true" />
+
+      {/* ── Lady Justice — fixed to the RIGHT side of the screen ── */}
+      <div className="auth-statue" aria-hidden="true">
         <Image
-          src="/images/auth-bg.jpg"
-          alt="NyayaTrace Legal Chambers"
+          src="/images/lady-justice-statue.jpg"
+          alt=""
           fill
           priority
-          sizes="100vw"
-          className="object-cover object-center"
+          sizes="70vw"
+          className="object-cover object-top"
         />
-        {/* Balanced dark overlay so the library, books, and glowing scales of justice remain clearly visible */}
-        <div className="absolute inset-0 bg-slate-950/60 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-950/70" />
+        {/* Fade from the warm bg colour on the left edge of the statue */}
+        <div className="auth-statue-fade" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Card */}
-        <div className="rounded-2xl border border-white/15 bg-charcoal/85 backdrop-blur-xl shadow-2xl shadow-black/80 px-8 py-10">
+      {/* ── Content ── */}
+      <div className="auth-content-wrap">
+        {/* Signup card — single column, centred */}
+        <div className="auth-card-single">
+
           {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <NyayaTraceLogo size="lg" variant="light" />
+          <div className="flex justify-center mb-7">
+            <NyayaTraceLogo size="lg" variant="auth" />
           </div>
 
-          <h1 className="text-xl font-bold text-offwhite text-center mb-1">
-            Create your account
-          </h1>
-          <p className="text-sm text-muted text-center mb-8">
+          <h1 className="auth-heading text-center">Create your account</h1>
+          <p className="auth-subheading text-center mb-8">
             Join NyayaTrace — your legal case workspace
           </p>
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 mb-6 text-sm text-red-400">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <div className="auth-error mb-5">
+              <AlertCircle size={15} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
             {/* Full name */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted uppercase tracking-wider">
-                Full name
-              </label>
+              <label className="auth-label">Full name</label>
               <input
                 type="text"
                 autoComplete="name"
@@ -115,15 +110,13 @@ export default function SignUpPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Aditi Sharma"
-                className="w-full rounded-lg border border-border-dark bg-navy px-4 py-2.5 text-sm text-offwhite placeholder:text-muted/50 outline-none focus:border-teal focus:ring-1 focus:ring-teal/40 transition-colors"
+                className="auth-input"
               />
             </div>
 
             {/* Email */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted uppercase tracking-wider">
-                Email address
-              </label>
+              <label className="auth-label">Email address</label>
               <input
                 type="email"
                 autoComplete="email"
@@ -131,15 +124,13 @@ export default function SignUpPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-border-dark bg-navy px-4 py-2.5 text-sm text-offwhite placeholder:text-muted/50 outline-none focus:border-teal focus:ring-1 focus:ring-teal/40 transition-colors"
+                className="auth-input"
               />
             </div>
 
             {/* Password */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted uppercase tracking-wider">
-                Password
-              </label>
+              <label className="auth-label">Password</label>
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -148,29 +139,29 @@ export default function SignUpPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-lg border border-border-dark bg-navy px-4 py-2.5 pr-11 text-sm text-offwhite placeholder:text-muted/50 outline-none focus:border-teal focus:ring-1 focus:ring-teal/40 transition-colors"
+                  className="auth-input pr-11"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-offwhite transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   aria-label={showPw ? 'Hide password' : 'Show password'}
                 >
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
 
-              {/* Strength checklist — shown once the user starts typing */}
+              {/* Strength checklist */}
               {password.length > 0 && (
-                <ul className="mt-2 flex flex-col gap-1">
+                <ul className="mt-2 flex flex-col gap-1 p-3 rounded-lg bg-slate-50 border border-slate-100">
                   {pwResults.map((r) => (
-                    <li key={r.label} className="flex items-center gap-1.5 text-xs">
+                    <li key={r.label} className="flex items-center gap-2 text-xs">
                       {r.passed ? (
-                        <Check size={12} className="text-teal-light shrink-0" />
+                        <Check size={11} className="text-emerald-500 shrink-0" />
                       ) : (
-                        <X size={12} className="text-red-400 shrink-0" />
+                        <X size={11} className="text-slate-300 shrink-0" />
                       )}
-                      <span className={r.passed ? 'text-teal-light' : 'text-muted'}>
+                      <span className={r.passed ? 'text-emerald-600' : 'text-slate-400'}>
                         {r.label}
                       </span>
                     </li>
@@ -181,9 +172,7 @@ export default function SignUpPage() {
 
             {/* Confirm password */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted uppercase tracking-wider">
-                Confirm password
-              </label>
+              <label className="auth-label">Confirm password</label>
               <div className="relative">
                 <input
                   type={showConfirm ? 'text' : 'password'}
@@ -192,23 +181,23 @@ export default function SignUpPage() {
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full rounded-lg border bg-navy px-4 py-2.5 pr-11 text-sm text-offwhite placeholder:text-muted/50 outline-none focus:ring-1 transition-colors ${
+                  className={`auth-input pr-11 ${
                     confirm.length > 0 && confirm !== password
-                      ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30'
-                      : 'border-border-dark focus:border-teal focus:ring-teal/40'
+                      ? '!border-red-300 focus:!border-red-400 focus:!ring-red-200'
+                      : ''
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-offwhite transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   aria-label={showConfirm ? 'Hide password' : 'Show password'}
                 >
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {confirm.length > 0 && confirm !== password && (
-                <p className="text-xs text-red-400 mt-0.5">Passwords do not match.</p>
+                <p className="text-xs text-[#7A6240] mt-0.5">Passwords do not match.</p>
               )}
             </div>
 
@@ -216,24 +205,31 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-teal px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-light disabled:opacity-60 disabled:cursor-not-allowed"
+              className="auth-btn-primary mt-1"
             >
               {loading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
               ) : (
-                <UserPlus size={16} />
+                <UserPlus size={15} />
               )}
               {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
 
-          {/* Sign in link */}
-          <p className="mt-6 text-center text-sm text-muted">
+          {/* Sign in */}
+          <p className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <Link href="/login" className="text-teal-light hover:underline font-medium">
+            <Link href="/login" className="auth-link font-medium">
               Sign in
             </Link>
           </p>
+
+          {/* Tagline */}
+          <div className="mt-7 flex items-center gap-2">
+            <div className="auth-divider-line" />
+            <span className="auth-tagline">Justice. Precision. Clarity.</span>
+            <div className="auth-divider-line" />
+          </div>
         </div>
       </div>
     </div>

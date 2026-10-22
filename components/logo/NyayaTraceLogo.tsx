@@ -2,8 +2,8 @@ import React from 'react'
 
 interface NyayaTraceLogoProps {
   size?: 'sm' | 'lg'
-  /** 'light' = white wordmark (for dark backgrounds), 'dark' = navy wordmark */
-  variant?: 'light' | 'dark'
+  /** 'light' = white wordmark (dark bg), 'dark' = navy wordmark, 'auth' = warm ivory/gold (auth pages) */
+  variant?: 'light' | 'dark' | 'auth'
   className?: string
 }
 
@@ -15,9 +15,19 @@ export function NyayaTraceLogo({
   const isSmall = size === 'sm'
   const iconSize = isSmall ? 24 : 40
   const fontSize = isSmall ? 14 : 22
-  const wordmarkColor = variant === 'light' ? '#F8FAFC' : '#0F172A'
-  const teal = '#0D9488'
-  const tealLight = '#14B8A6'
+
+  // "Nyaya" base color
+  const wordmarkColor =
+    variant === 'light' ? '#F8FAFC' :
+    variant === 'auth'  ? '#2C1F0E' :
+    '#0F172A'
+
+  // Icon structural color (pillar, beam, base, pivot)
+  const teal = variant === 'auth' ? '#7A6240' : '#0D9488'
+  // Icon accent color (chains, pans)
+  const tealLight = variant === 'auth' ? '#C5A880' : '#14B8A6'
+  // "Trace" accent word
+  const accentColor = variant === 'auth' ? '#C5A880' : teal
 
   return (
     <div
@@ -83,7 +93,7 @@ export function NyayaTraceLogo({
           }}
         >
           Nyaya
-          <span style={{ color: teal }}>Trace</span>
+          <span style={{ color: accentColor }}>Trace</span>
         </span>
       )}
     </div>

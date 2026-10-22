@@ -20,6 +20,14 @@ const config: Config = {
         navy: "#0F172A",
         charcoal: "#1E293B",
         offwhite: "#F8FAFC",
+        // Auth pages — premium light legal-tech palette
+        crimson: {
+          DEFAULT: "#B91C1C",
+          dark: "#991B1B",
+          light: "#DC2626",
+        },
+        "auth-warm": "#F2F0EB",
+        "auth-gold": "#C5A880",
         gold: {
           DEFAULT: "#C5A880",
           light: "#E5C378",

@@ -12,7 +12,6 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // If already logged in, skip to the app
   useEffect(() => {
     if (getSession()) {
       const rawNext = searchParams.get('next')
@@ -32,7 +31,6 @@ function LoginContent() {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -68,200 +66,203 @@ function LoginContent() {
   }
 
   return (
-    <div className="relative min-h-screen md:h-screen md:overflow-hidden flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      {/* Background Image with warm judicial ambient overlay */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+    <div className="auth-root">
+      {/* ── Warm off-white background ── */}
+      <div className="auth-bg" aria-hidden="true" />
+
+      {/* ── Lady Justice — fixed to the RIGHT side of the screen ── */}
+      <div className="auth-statue" aria-hidden="true">
         <Image
-          src="/images/auth-bg.jpg"
-          alt="NyayaTrace Legal Chambers"
+          src="/images/lady-justice.jpg"
+          alt=""
           fill
           priority
-          sizes="100vw"
-          className="object-cover object-center"
+          sizes="70vw"
+          className="object-cover object-top"
         />
-        {/* Balanced dark overlay so the library, books, and glowing scales of justice remain clearly visible */}
-        <div className="absolute inset-0 bg-slate-950/60 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-950/70" />
+        {/* Fade from the warm bg colour on the left edge of the statue */}
+        <div className="auth-statue-fade" />
       </div>
 
-      <div className="relative z-10 w-full max-w-4xl">
-        {/* Unified Glassmorphic Card */}
-        <div className="rounded-2xl border border-white/15 bg-charcoal/90 backdrop-blur-xl shadow-2xl shadow-black/80 overflow-hidden grid grid-cols-1 md:grid-cols-2">
-          {/* Left Column: Sign in form */}
-          <div className="p-6 sm:p-8 md:p-10 flex flex-col justify-between">
-            <div>
-              {/* Logo */}
-              <div className="mb-6">
-                <NyayaTraceLogo size="lg" variant="light" />
-              </div>
+      {/* ── Main content ── */}
+      <div className="auth-content-wrap">
+        {/* ── Unified card ── */}
+        <div className="auth-card">
 
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-offwhite tracking-tight">
-                  Welcome back
-                </h1>
-                <p className="text-sm text-muted mt-1">
-                  Sign in to your NyayaTrace legal workspace
-                </p>
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 py-2 mb-4 text-xs text-red-400">
-                  <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {/* Email */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-muted uppercase tracking-wider">
-                    Email address
-                  </label>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full rounded-lg border border-border-dark bg-navy/80 px-3.5 py-2.5 text-sm text-offwhite placeholder:text-muted/50 outline-none focus:border-teal focus:ring-1 focus:ring-teal/40 transition-colors"
-                  />
-                </div>
-
-                {/* Password */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-muted uppercase tracking-wider">
-                      Password
-                    </label>
-                    <Link
-                      href="/reset-password"
-                      className="text-xs text-teal-light hover:underline"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={showPw ? 'text' : 'password'}
-                      autoComplete="current-password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full rounded-lg border border-border-dark bg-navy/80 px-3.5 py-2.5 pr-10 text-sm text-offwhite placeholder:text-muted/50 outline-none focus:border-teal focus:ring-1 focus:ring-teal/40 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-offwhite transition-colors"
-                      aria-label={showPw ? 'Hide password' : 'Show password'}
-                    >
-                      {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-light disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-teal/20"
-                >
-                  {loading ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  ) : (
-                    <LogIn size={16} />
-                  )}
-                  {loading ? 'Signing in…' : 'Sign in'}
-                </button>
-              </form>
+          {/* ══ LEFT PANEL: Login form ══ */}
+          <div className="auth-form-panel">
+            {/* Logo */}
+            <div className="mb-7">
+              <NyayaTraceLogo size="lg" variant="auth" />
             </div>
 
-            {/* Sign up link */}
-            <p className="mt-6 text-sm text-muted">
+            <div className="mb-6">
+              <h1 className="auth-heading">Welcome back</h1>
+              <p className="auth-subheading">Sign in to your NyayaTrace legal workspace</p>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="auth-error">
+                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {/* Email */}
+              <div className="flex flex-col gap-1.5">
+                <label className="auth-label">Email address</label>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="auth-input"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="auth-label">Password</label>
+                  <Link href="/reset-password" className="auth-link text-xs">
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="auth-input pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label={showPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="auth-btn-primary mt-1"
+              >
+                {loading ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : (
+                  <LogIn size={15} />
+                )}
+                {loading ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+
+            {/* Sign up */}
+            <p className="mt-7 text-sm text-slate-500">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-teal-light hover:underline font-medium">
+              <Link href="/signup" className="auth-link font-medium">
                 Create one
               </Link>
             </p>
-          </div>
 
-          {/* Right Column: Demo Accounts & Fast Access */}
-          <div className="border-t md:border-t-0 md:border-l border-white/10 bg-navy/40 p-6 sm:p-8 md:p-10 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-teal-light">
-                  Demo Workspace
-                </span>
-                <span className="text-[11px] text-muted/70 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">
-                  1-Click Fill
-                </span>
-              </div>
-              <h2 className="text-lg font-semibold text-offwhite">
-                Quick Test Accounts
-              </h2>
-              <p className="text-xs text-muted mt-1 mb-5">
-                Click any profile below to autofill credentials:
-              </p>
-
-              <div className="flex flex-col gap-3">
-                {DEMO_USERS.map((u) => {
-                  const isSelected = email === u.email
-                  return (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => fillDemo(u.email, u.password)}
-                      className={`group text-left rounded-xl border p-3.5 transition-all ${
-                        isSelected
-                          ? 'border-teal bg-teal/10 shadow-md shadow-teal/10'
-                          : 'border-white/10 bg-navy/60 hover:border-teal/50 hover:bg-navy/90'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-offwhite group-hover:text-teal-light transition-colors">
-                              {u.name}
-                            </span>
-                            <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-white/5 text-muted">
-                              {u.role}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted mt-1 font-mono">
-                            {u.email}
-                          </p>
-                        </div>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            copyToClipboard(u.email, u.id)
-                          }}
-                          className="text-muted hover:text-teal-light transition-colors p-1"
-                          title="Copy email"
-                        >
-                          {copied === u.id ? (
-                            <Check size={14} className="text-teal-light" />
-                          ) : (
-                            <Copy size={14} />
-                          )}
-                        </div>
-                      </div>
-                      <div className="mt-2.5 flex items-center justify-between text-xs text-muted/70 pt-2 border-t border-white/5">
-                        <span>
-                          Password: <code className="text-offwhite/90 font-mono">Demo@1234</code>
-                        </span>
-                        <span className="text-teal-light group-hover:translate-x-0.5 transition-transform font-medium">
-                          {isSelected ? 'Selected ✓' : 'Use profile →'}
-                        </span>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+            {/* Legal footer */}
+            <div className="mt-auto pt-8 flex items-center gap-2">
+              <div className="auth-divider-line" />
+              <span className="auth-tagline">Justice. Precision. Clarity.</span>
+              <div className="auth-divider-line" />
             </div>
           </div>
+
+          {/* ══ RIGHT PANEL: Demo accounts ══ */}
+          <div className="auth-demo-panel">
+            <div className="flex items-center justify-between mb-1">
+              <span className="auth-demo-badge">Demo Workspace</span>
+              <span className="auth-one-click-pill">1-Click Fill</span>
+            </div>
+            <h2 className="auth-demo-heading">Quick Test Accounts</h2>
+            <p className="auth-demo-sub">Click any profile below to autofill credentials:</p>
+
+            <div className="flex flex-col gap-3 mt-5">
+              {DEMO_USERS.map((u) => {
+                const isSelected = email === u.email
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => fillDemo(u.email, u.password)}
+                    className={`auth-demo-card group text-left${isSelected ? ' auth-demo-card--selected' : ''}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-slate-800 group-hover:text-crimson transition-colors">
+                            {u.name}
+                          </span>
+                          <span className="auth-role-pill">{u.role}</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 font-mono">{u.email}</p>
+                      </div>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          copyToClipboard(u.email, u.id)
+                        }}
+                        className="p-1 text-slate-400 hover:text-crimson transition-colors"
+                        title="Copy email"
+                      >
+                        {copied === u.id ? (
+                          <Check size={14} className="text-emerald-500" />
+                        ) : (
+                          <Copy size={14} />
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                      <span>
+                        Password:{' '}
+                        <code className="text-slate-600 font-mono">Demo@1234</code>
+                      </span>
+                      <span className={`font-medium transition-transform group-hover:translate-x-0.5 ${isSelected ? 'text-crimson' : 'text-slate-400'}`}>
+                        {isSelected ? 'Selected ✓' : 'Use profile →'}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Decorative seal */}
+            <div className="auth-seal mt-auto pt-6 flex items-center gap-3">
+              <div className="auth-seal-icon">
+                <svg width="28" height="28" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                  <rect x="19" y="8" width="2" height="24" rx="1" fill="#C5A880" />
+                  <rect x="12" y="30" width="16" height="2.5" rx="1.25" fill="#C5A880" />
+                  <rect x="6" y="11.5" width="28" height="2" rx="1" fill="#C5A880" />
+                  <line x1="9" y1="13.5" x2="9" y2="20" stroke="#E5C378" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="31" y1="13.5" x2="31" y2="20" stroke="#E5C378" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M5 20 Q9 26 13 20" stroke="#E5C378" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                  <path d="M27 22 Q31 28 35 22" stroke="#E5C378" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                  <circle cx="20" cy="9" r="2" fill="#C5A880" />
+                </svg>
+              </div>
+              <p className="text-xs text-slate-400 leading-snug">
+                Trusted by legal professionals<br />
+                <span className="text-slate-500 font-medium">Secure · Private · Reliable</span>
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -270,7 +271,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F7F6F3]" />}>
       <LoginContent />
     </Suspense>
   )
