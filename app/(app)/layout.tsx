@@ -7,6 +7,7 @@ import { AuthGuard } from '@/components/layout/AuthGuard'
 import { UrgencyTicker, type UrgencyItem } from '@/components/layout/UrgencyTicker'
 import { OfflineBanner } from '@/components/layout/OfflineBanner'
 import { InstallPrompt } from '@/components/layout/InstallPrompt'
+import { RouteThemeController } from '@/components/layout/RouteThemeController'
 import { db } from '@/lib/db'
 import { cases, hearings } from '@/lib/db/schema'
 import { and, gte, lte, eq } from 'drizzle-orm'
@@ -119,18 +120,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
     <MobileSidebarProvider>
+      <RouteThemeController />
       <NavigationProgressBar />
-      <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
+      <div className="flex h-screen w-full min-w-0 overflow-hidden bg-background text-foreground">
         {/* Sidebar — desktop fixed, mobile overlay */}
         <Sidebar />
 
         {/* Main content column */}
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div className="no-print">
             <Topbar />
             <UrgencyTicker items={urgentItems} />
           </div>
-          <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-background text-foreground">
+          <main id="main-viewport" className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-background text-foreground transition-colors duration-200">
             <AnimatedPageWrapper>
               {children}
             </AnimatedPageWrapper>

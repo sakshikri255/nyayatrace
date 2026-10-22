@@ -17,7 +17,6 @@ import {
 } from 'lucide-react'
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
 import { CommandPalette } from '@/components/layout/CommandPalette'
-import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { logoutUser, setSession, DEMO_USERS, type UserRecord } from '@/lib/auth'
 import { useSession } from '@/hooks/useSession'
 import { cn } from '@/lib/utils'
@@ -258,7 +257,7 @@ export function Topbar() {
         <CommandPalette dark={true} />
       </div>
 
-      {/* ── Right: Alerts Bell + ThemeToggle + Primary Action + Profile Menu ── */}
+      {/* ── Right: Alerts Bell + Primary Action + Profile Menu ── */}
       <div className="flex items-center gap-2.5 shrink-0">
         <div className="md:hidden">
           <CommandPalette dark={isOverview} />
@@ -352,9 +351,6 @@ export function Topbar() {
             </div>
           )}
         </div>
-
-        {/* Dark / Light Theme Toggle */}
-        <ThemeToggle dark={true} />
 
         {/* Global Primary Action: + New Case */}
         <Link

@@ -11,7 +11,7 @@ export default function CasesPage({ searchParams }: CasesPageProps) {
   const initialCases = getAllCases()
 
   return (
-    <div className="px-6 py-6 max-w-7xl mx-auto">
+    <div className="min-h-full bg-[#F8FAFC] p-6 sm:p-8 space-y-6">
       <CasesClient
         initialCases={initialCases}
         initialDialogOpen={searchParams?.new === '1'}

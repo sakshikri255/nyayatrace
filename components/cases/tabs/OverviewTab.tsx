@@ -46,12 +46,12 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
 
       {/* Analysis Call to Action if documents exist */}
       {documents.length > 0 && findings.length === 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700/80 dark:bg-slate-800/80">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               {documents.length} document{documents.length > 1 ? 's' : ''} uploaded — Case Analysis ready
             </h3>
-            <p className="mt-0.5 text-xs font-medium text-slate-600">
+            <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
               Review extractive findings, chronology, and contradictory statements in the Analysis &amp; Synopsis workspace.
             </p>
           </div>
@@ -68,9 +68,9 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
 
       {/* Description */}
       {caseData.description && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Description</h3>
-          <p className="text-sm text-slate-700 leading-relaxed">{caseData.description}</p>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700/80 dark:bg-slate-800/80">
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 dark:text-slate-400">Description</h3>
+          <p className="text-sm text-slate-700 leading-relaxed dark:text-slate-200">{caseData.description}</p>
         </div>
       )}
 
@@ -105,8 +105,8 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
 
       {/* Finding status breakdown */}
       {findings.length > 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700/80 dark:bg-slate-800/80">
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 dark:text-slate-400">
             Finding Status Breakdown
           </h3>
           <div className="flex gap-4">
@@ -128,11 +128,11 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
 
       {/* Next hearing */}
       {upcoming && (
-        <div className="rounded-lg border border-violet-200 bg-violet-50 p-4">
+        <div className="rounded-lg border border-violet-200 bg-violet-50 p-4 dark:border-violet-800/70 dark:bg-violet-950/40">
           <h3 className="text-xs font-semibold text-violet-600 uppercase tracking-wide mb-2">
             Next Scheduled Hearing
           </h3>
-          <p className="text-sm font-semibold text-slate-800">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
             {new Date(upcoming.hearingDate).toLocaleDateString('en-IN', {
               weekday: 'long',
               day: 'numeric',
@@ -140,7 +140,7 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
               year: 'numeric',
             })}
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
             {upcoming.eventType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
             {upcoming.description ? ` — ${upcoming.description}` : ''}
           </p>
@@ -148,14 +148,14 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
       )}
 
       {/* Cross-feature navigation panel */}
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+      <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700/80 dark:bg-slate-800/80">
+        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 dark:text-slate-400">
           Explore This Case In
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <Link
             href={`/cases/${caseData.id}?tab=chronology`}
-            className="flex items-center gap-2.5 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+            className="flex items-center gap-2.5 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors dark:border-slate-700 dark:text-slate-200"
           >
             <ClockIcon className="w-4 h-4 shrink-0 text-slate-400" />
             <div className="min-w-0">
@@ -166,7 +166,7 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
           </Link>
           <Link
             href={`/bail-briefs/${caseData.id}`}
-            className="flex items-center gap-2.5 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+            className="flex items-center gap-2.5 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors dark:border-slate-700 dark:text-slate-200"
           >
             <ScaleIcon className="w-4 h-4 shrink-0 text-slate-400" />
             <div className="min-w-0">
@@ -177,7 +177,7 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
           </Link>
           <Link
             href={`/verification/${caseData.id}`}
-            className="flex items-center gap-2.5 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+            className="flex items-center gap-2.5 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors dark:border-slate-700 dark:text-slate-200"
           >
             <SearchIcon className="w-4 h-4 shrink-0 text-slate-400" />
             <div className="min-w-0">
@@ -222,12 +222,12 @@ function StatCard({
   subColor?: string
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 flex flex-col gap-1">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 flex flex-col gap-1 dark:border-slate-700/80 dark:bg-slate-800/80">
       <div className="flex items-center gap-2">
         {icon}
-        <span className="text-xs font-medium text-slate-500">{label}</span>
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
       </div>
-      <span className="text-3xl font-bold text-slate-800">{value}</span>
+      <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">{value}</span>
       {sub && <span className={`text-xs font-medium ${subColor}`}>{sub}</span>}
     </div>
   )

@@ -127,7 +127,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
 
   if (!mounted) {
     return (
-      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm min-h-[140px] animate-pulse">
+      <div className="relative min-h-[140px] animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700/80 dark:bg-slate-800/80 dark:shadow-md">
         <div className="h-4 w-48 bg-slate-200 rounded mb-2" />
         <div className="h-3 w-32 bg-slate-100 rounded" />
       </div>
@@ -139,7 +139,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
       <div
         suppressHydrationWarning
         className={cn(
-          'relative mb-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 p-5 transition-all shadow-sm',
+          'relative mb-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 p-5 transition-all shadow-sm dark:border-slate-700/80 dark:bg-slate-800/80 dark:shadow-md',
         )}
       >
         {/* Header */}
@@ -165,7 +165,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900">Statutory Default Bail Tracker</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Statutory Default Bail Tracker</h3>
                 <span
                   className={cn(
                     'rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
@@ -181,7 +181,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
                   {bail.statusLabel}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs font-medium text-slate-600">{bail.statutorySection}</p>
+              <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">{bail.statutorySection}</p>
             </div>
           </div>
 
@@ -198,15 +198,15 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
 
         {/* Content body */}
         <div className="mt-4">
-          <p className="text-xs text-slate-600 leading-relaxed">{bail.legalGround}</p>
+          <p className="text-xs text-slate-600 leading-relaxed dark:text-slate-300">{bail.legalGround}</p>
 
           {bail.isCalculable ? (
             <div className="mt-4 space-y-2.5">
               {/* Progress bar */}
-              <div className="flex items-center justify-between text-xs font-medium text-slate-600">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300">
                 <span>
-                  Custody: <strong className="text-slate-800">{bail.daysInCustody}</strong> of{' '}
-                  <strong className="text-slate-800">{bail.statutoryPeriodDays}</strong> days
+                  Custody: <strong className="text-slate-800 dark:text-slate-100">{bail.daysInCustody}</strong> of{' '}
+                  <strong className="text-slate-800 dark:text-slate-100">{bail.statutoryPeriodDays}</strong> days
                 </span>
                 <span>
                   {bail.chargesheetFiled ? (
@@ -214,7 +214,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
                   ) : (
                     <span>
                       Deadline:{' '}
-                      <strong className="text-slate-800">{bail.deadlineDate ?? '—'}</strong>
+                      <strong className="text-slate-800 dark:text-slate-100">{bail.deadlineDate ?? '—'}</strong>
                     </span>
                   )}
                 </span>
@@ -236,21 +236,21 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
               </div>
 
               {/* Stat grid */}
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs">
-                <div className="rounded-md bg-slate-50 p-2">
-                  <span className="block text-[10px] font-medium uppercase text-slate-600">Remand Date</span>
-                  <span className="font-medium text-slate-800">{bail.remandDate ?? 'Not set'}</span>
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs dark:border-slate-700">
+                <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900/70">
+                  <span className="block text-[10px] font-medium uppercase text-slate-600 dark:text-slate-400">Remand Date</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-100">{bail.remandDate ?? 'Not set'}</span>
                 </div>
-                <div className="rounded-md bg-slate-50 p-2">
-                  <span className="block text-[10px] font-medium uppercase text-slate-600">Statutory Limit</span>
-                  <span className="font-medium text-slate-800">{bail.statutoryPeriodDays} Days</span>
+                <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900/70">
+                  <span className="block text-[10px] font-medium uppercase text-slate-600 dark:text-slate-400">Statutory Limit</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-100">{bail.statutoryPeriodDays} Days</span>
                 </div>
-                <div className="rounded-md bg-slate-50 p-2">
-                  <span className="block text-[10px] font-medium uppercase text-slate-600">Chargesheet Status</span>
+                <div className="rounded-md bg-slate-50 p-2 dark:bg-slate-900/70">
+                  <span className="block text-[10px] font-medium uppercase text-slate-600 dark:text-slate-400">Chargesheet Status</span>
                   <span
                     className={cn(
                       'font-medium',
-                      bail.chargesheetFiled ? 'text-emerald-700' : isAccrued ? 'text-rose-700' : 'text-slate-700'
+                      bail.chargesheetFiled ? 'text-emerald-700' : isAccrued ? 'text-rose-700' : 'text-slate-700 dark:text-slate-300'
                     )}
                   >
                     {bail.chargesheetFiled ? 'Submitted' : 'Pending'}

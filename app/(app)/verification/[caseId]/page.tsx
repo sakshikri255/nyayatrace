@@ -30,12 +30,14 @@ export default function VerificationWorkspacePage({ params }: PageProps) {
   return (
     // Use a fixed viewport-height container so the workspace fills the screen
     // and each panel scrolls independently (instead of relying on the outer main scroll)
-    <div className="h-[calc(100vh-56px)] flex flex-col overflow-hidden">
-      <VerificationWorkspace
-        caseData={caseData}
-        initialDocuments={documents}
-        initialFindings={findings}
-      />
+    <div className="min-h-full bg-[#F8FAFC] p-6 sm:p-8 space-y-6">
+      <div className="h-[calc(100vh-10rem)] min-h-[32rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <VerificationWorkspace
+          caseData={caseData}
+          initialDocuments={documents}
+          initialFindings={findings}
+        />
+      </div>
     </div>
   )
 }

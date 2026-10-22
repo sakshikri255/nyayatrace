@@ -17,9 +17,9 @@ export default function BailBriefDetailPage({ params }: PageProps) {
   if (!data) notFound()
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6">
+    <div className="min-h-full bg-[#F8FAFC] p-6 sm:p-8 space-y-6">
       {/* Back navigation + cross-feature shortcuts */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/bail-briefs"
           className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal-600 transition-colors"

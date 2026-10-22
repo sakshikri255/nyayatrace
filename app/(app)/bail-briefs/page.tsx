@@ -12,7 +12,8 @@ export default function BailBriefsPage() {
   const otherCases = allCases.filter((c) => c.caseType !== 'bail' && c.caseType !== 'parole')
 
   return (
-    <div className="px-6 py-8 max-w-5xl mx-auto flex flex-col gap-6">
+    <div className="min-h-full bg-[#F8FAFC] p-6 sm:p-8 space-y-6">
+      <div className="flex flex-col gap-6">
 
       {/* Page header */}
       <div className="flex items-start gap-3">
@@ -32,7 +33,7 @@ export default function BailBriefsPage() {
 
       {/* Floating metrics strip */}
       {allCases.length > 0 && (
-        <div className="flex flex-wrap items-center gap-8 px-4 py-4 border-b border-[var(--section-card-border)]">
+        <div className="flex flex-wrap items-center gap-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
           <div className="flex flex-col gap-0.5">
             <span className="text-3xl font-bold text-teal tabular-nums">{allCases.length}</span>
             <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Total Cases</span>
@@ -60,7 +61,7 @@ export default function BailBriefsPage() {
           </Link>
         </div>
       ) : (
-        <div className="divide-y divide-[var(--section-card-border)]">
+        <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           {allCases.map((c) => (
             <div
               key={c.id}
@@ -111,6 +112,7 @@ export default function BailBriefsPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }

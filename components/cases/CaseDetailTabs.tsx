@@ -76,6 +76,16 @@ export function CaseDetailTabs({
     }
   }, [caseData.id])
 
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('nyaya:case-tab-change', { detail: { tab: activeTab } })
+    )
+  }, [activeTab])
+
+  function changeActiveTab(tab: TabId) {
+    setActiveTab(tab)
+  }
+
     const TAB_ITEMS: Array<{
       id: TabId
       label: string
@@ -96,12 +106,12 @@ export function CaseDetailTabs({
     return (
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as TabId)}
+        onValueChange={(v) => changeActiveTab(v as TabId)}
         className="w-full"
       >
         <div
           aria-label="Case sections"
-          className="relative mb-5 flex w-full min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap rounded-xl border border-slate-200/80 bg-slate-100 px-1 py-2 scrollbar-none scroll-smooth"
+          className="relative mb-5 flex w-full min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap rounded-xl border border-slate-200/80 bg-slate-100 px-1 py-2 scrollbar-none scroll-smooth dark:border-slate-700/80 dark:bg-slate-800"
           tabIndex={0}
         >
           {TAB_ITEMS.map((tab) => {
@@ -112,12 +122,12 @@ export function CaseDetailTabs({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => changeActiveTab(tab.id)}
                 className={cn(
                   'relative flex flex-none cursor-pointer select-none items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium outline-none transition-all',
                   isActive
-                    ? 'bg-white font-semibold text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
+                    ? 'bg-white font-semibold text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100'
+                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/60 dark:hover:text-white'
                 )}
               >
                 {Icon && <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-teal' : 'text-slate-400')} />}
@@ -155,7 +165,7 @@ export function CaseDetailTabs({
               documents={documents}
               findings={findings}
               hearings={hearings}
-              onGoToAnalysis={() => setActiveTab('synopsis')}
+              onGoToAnalysis={() => changeActiveTab('synopsis')}
             />
           )}
           {activeTab === 'documents' && (
@@ -172,7 +182,7 @@ export function CaseDetailTabs({
             <AnalysisWorkspace
               caseData={caseData}
               documents={documents}
-              onUploadDocuments={() => setActiveTab('documents')}
+              onUploadDocuments={() => changeActiveTab('documents')}
             />
           )}
           {activeTab === 'findings' && (

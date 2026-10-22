@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export default function OverviewPage() {
   return (
-    <div className="min-h-full bg-midnight-950 text-slate-100 selection:bg-gold/30 selection:text-gold-light">
+    <div className="min-h-full bg-slate-900 text-slate-100 selection:bg-gold/30 selection:text-gold-light">
       {/* 1. Hero with animated Lady Justice visual */}
       <HeroSection />
 

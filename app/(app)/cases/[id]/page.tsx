@@ -27,7 +27,7 @@ export default function CaseDetailPage({ params }: PageProps) {
   const hearingList = getHearingsByCaseId(id)
   const hearingChartData = getCaseHearingsPerMonth(id)
   return (
-    <div className="min-h-screen w-full min-w-0 space-y-6 bg-[#F8FAFC] p-6 sm:p-8">
+    <div className="min-h-full w-full min-w-0 space-y-6 bg-[#F8FAFC] p-6 sm:p-8 dark:bg-slate-900">
       {/* Back nav + cross-feature shortcuts */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
@@ -70,11 +70,11 @@ export default function CaseDetailPage({ params }: PageProps) {
       </div>
 
       {/* Case header */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all dark:border-slate-700/80 dark:bg-slate-800/80 dark:shadow-md sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold leading-tight text-slate-900">
+              <h1 className="text-2xl font-bold leading-tight text-slate-900 dark:text-slate-100">
                 {caseData.title}
               </h1>
               <span className="rounded-md border border-slate-200/80 bg-slate-100 px-3 py-1 font-mono text-xs font-medium text-slate-700">

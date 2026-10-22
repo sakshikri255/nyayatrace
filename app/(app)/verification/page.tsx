@@ -23,8 +23,8 @@ export default function VerificationIndexPage() {
   const totalNeedsReview = allBreakdowns.reduce((sum, b) => sum + b.needsReview, 0)
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="max-w-5xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
+    <div className="min-h-full bg-[#F8FAFC] p-6 sm:p-8 space-y-6">
+      <div className="flex w-full flex-col gap-6">
 
         {/* ── Header: icon + text, no background box ──────────────────── */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -50,7 +50,7 @@ export default function VerificationIndexPage() {
 
         {/* ── Floating metrics strip ───────────────────────────────────── */}
         {cases.length > 0 && (
-          <div className="flex flex-wrap items-center gap-8 px-4 py-4 border-b border-[var(--section-card-border)]">
+          <div className="flex flex-wrap items-center gap-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
             <div className="flex flex-col gap-0.5">
               <span className="text-3xl font-bold text-teal tabular-nums">{cases.length}</span>
               <span className="text-xs text-[var(--section-subheading)] uppercase tracking-wide">Total Cases</span>
@@ -77,7 +77,7 @@ export default function VerificationIndexPage() {
             <Link href="/cases?new=1" className="mt-4 text-sm font-medium text-teal underline">Create a case</Link>
           </div>
         ) : (
-          <div className="divide-y divide-[var(--section-card-border)]">
+          <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             {cases.map((c, idx) => {
               const { total, needsReview, verified } = allBreakdowns[idx]
               return (
