@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { DocumentRow } from '@/lib/queries/documents'
 import type { FindingRow } from '@/lib/queries/findings'
-import type { HearingRow } from '@/lib/queries/hearings'
+import type { HearingRow, HearingChartPoint } from '@/lib/queries/hearings'
 import { OverviewTab } from './tabs/OverviewTab'
 import { DocumentsTab } from './tabs/DocumentsTab'
 import { FindingsTab } from './tabs/FindingsTab'
@@ -45,6 +45,7 @@ interface CaseDetailTabsProps {
   documents: DocumentRow[]
   findings: FindingRow[]
   hearings: HearingRow[]
+  hearingChartData?: HearingChartPoint[]
   orders: JudicialOrder[]
   conditions: BailCondition[]
 }
@@ -71,6 +72,7 @@ export function CaseDetailTabs({
   documents,
   findings,
   hearings,
+  hearingChartData,
   orders,
   conditions,
 }: CaseDetailTabsProps) {
@@ -115,7 +117,7 @@ export function CaseDetailTabs({
       { id: 'findings', label: 'Findings', count: findings.length, badgeClassName: 'text-amber-700 bg-amber-50 border border-amber-200' },
       { id: 'sections', label: 'Legal Sections' },
       { id: 'hearings', label: 'Hearings', count: hearings.length },
-      { id: 'orders', label: 'Orders' },
+      { id: 'orders', label: 'Orders', count: orders.length },
       { id: 'brief', label: 'Brief' },
     ]
 
@@ -211,7 +213,11 @@ export function CaseDetailTabs({
             <LegalSectionsTab caseData={caseData} />
           )}
           {activeTab === 'hearings' && (
-            <HearingsTab hearings={hearings} />
+            <HearingsTab
+              hearings={hearings}
+              chartData={hearingChartData}
+              caseTitle={caseData.title}
+            />
           )}
           {activeTab === 'orders' && (
             <OrdersTab caseId={caseData.id} orders={orders} conditions={conditions} />

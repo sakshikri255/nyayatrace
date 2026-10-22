@@ -27,7 +27,6 @@ const PAGE_CONFIG: Record<string, { title: string; category: string }> = {
   '/cases': { title: 'Cases', category: 'Dashboard' },
   '/verification': { title: 'Fact & Evidence Verification', category: 'Dashboard' },
   '/bail-briefs': { title: 'Bail & Statutory Relief', category: 'Dashboard' },
-  '/case-progress': { title: 'Case Progress & Strategy', category: 'Dashboard' },
   '/concordance': { title: 'Dual Law Concordance', category: 'Dashboard' },
   '/reports': { title: 'Reports', category: 'Dashboard' },
   '/settings': { title: 'Chamber Settings', category: 'Dashboard' },

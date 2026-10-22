@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { CalendarIcon, FileTextIcon, AlertTriangleIcon, ClockIcon, TrendingUpIcon, ScaleIcon, SearchIcon, ArrowRightIcon } from 'lucide-react'
+import { CalendarIcon, FileTextIcon, AlertTriangleIcon, ClockIcon, ScaleIcon, SearchIcon, ArrowRightIcon } from 'lucide-react'
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { DocumentRow } from '@/lib/queries/documents'
 import type { FindingRow } from '@/lib/queries/findings'
@@ -24,6 +24,16 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
 
   const highSeverity = findings.filter((f) => f.severity === 'high').length
   const mediumSeverity = findings.filter((f) => f.severity === 'medium').length
+
+  const sortedHearings = [...hearings].sort((a, b) => a.hearingDate.localeCompare(b.hearingDate))
+  const firstHearing = sortedHearings[0]
+  const lastHearing = sortedHearings[sortedHearings.length - 1]
+  const dateRange =
+    firstHearing && lastHearing
+      ? firstHearing.hearingDate === lastHearing.hearingDate
+        ? new Date(firstHearing.hearingDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+        : `${new Date(firstHearing.hearingDate).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })} – ${new Date(lastHearing.hearingDate).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })}`
+      : undefined
 
   const upcoming = hearings
     .filter((h) => new Date(h.hearingDate) >= new Date())
@@ -82,6 +92,7 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
           icon={<CalendarIcon className="w-4 h-4 text-violet-500" />}
           label="Hearings"
           value={hearings.length}
+          sub={dateRange}
         />
         <StatCard
           icon={<ClockIcon className="w-4 h-4 text-orange-500" />}
@@ -143,13 +154,13 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <Link
-            href={`/case-progress/${caseData.id}`}
+            href={`/cases/${caseData.id}?tab=chronology`}
             className="flex items-center gap-2.5 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
           >
-            <TrendingUpIcon className="w-4 h-4 shrink-0 text-slate-400" />
+            <ClockIcon className="w-4 h-4 shrink-0 text-slate-400" />
             <div className="min-w-0">
-              <div className="font-medium text-xs">Case Progress</div>
-              <div className="text-[11px] text-slate-400 truncate">Hearing timelines &amp; orders</div>
+              <div className="font-medium text-xs">Chronology</div>
+              <div className="text-[11px] text-slate-400 truncate">Master checkpoint timeline</div>
             </div>
             <ArrowRightIcon className="w-3.5 h-3.5 ml-auto shrink-0 text-slate-300" />
           </Link>

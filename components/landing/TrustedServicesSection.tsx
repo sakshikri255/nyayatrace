@@ -44,11 +44,11 @@ export function TrustedServicesSection() {
       badge: 'Discrepancy Matrix',
     },
     {
-      title: 'Chronology & Case Progress',
+      title: 'Chronology & Checkpoints',
       description:
         'Organize documented events, dates, and procedural developments into an easy-to-follow timeline.',
-      href: '/case-progress',
-      actionText: 'Track Progress',
+      href: '/cases?tab=chronology',
+      actionText: 'View Chronology',
       icon: TrendingUp,
       badge: 'Milestone Tracking',
     },

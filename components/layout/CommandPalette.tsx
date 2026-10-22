@@ -7,7 +7,6 @@ import {
   Briefcase,
   Scale,
   FileText,
-  TrendingUp,
   PlusCircle,
   BookOpen,
   ArrowRight,
@@ -120,17 +119,6 @@ export function CommandPalette() {
           onSelect: () => {
             setOpen(false)
             router.push('/verification')
-          },
-        },
-        {
-          id: 'act-progress',
-          title: 'Case Progress & Hearing Timelines',
-          subtitle: 'View hearing outcomes and judicial milestone activity',
-          category: 'Actions',
-          icon: TrendingUp,
-          onSelect: () => {
-            setOpen(false)
-            router.push('/case-progress')
           },
         },
         {

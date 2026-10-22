@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeftIcon, TrendingUpIcon, ScaleIcon, SearchIcon, FileTextIcon, ClockIcon } from 'lucide-react'
+import { ArrowLeftIcon, ScaleIcon, SearchIcon, FileTextIcon, ClockIcon } from 'lucide-react'
 import { getCaseById } from '@/lib/queries/cases'
 import { getDocumentsByCaseId } from '@/lib/queries/documents'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
-import { getHearingsByCaseId } from '@/lib/queries/hearings'
+import { getHearingsByCaseId, getCaseHearingsPerMonth } from '@/lib/queries/hearings'
 import { db } from '@/lib/db'
 import { judicialOrders, bailConditions } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
@@ -28,6 +28,7 @@ export default function CaseDetailPage({ params }: PageProps) {
   const documents = getDocumentsByCaseId(id)
   const findingList = getFindingsByCaseId(id)
   const hearingList = getHearingsByCaseId(id)
+  const hearingChartData = getCaseHearingsPerMonth(id)
   const orderList = db
     .select()
     .from(judicialOrders)
@@ -58,13 +59,6 @@ export default function CaseDetailPage({ params }: PageProps) {
           >
             <ClockIcon className="w-3.5 h-3.5" />
             Checkpoints &amp; Chronology
-          </Link>
-          <Link
-            href={`/case-progress/${caseData.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
-          >
-            <TrendingUpIcon className="w-3.5 h-3.5" />
-            Progress
           </Link>
           <Link
             href={`/bail-briefs/${caseData.id}`}
@@ -161,6 +155,11 @@ export default function CaseDetailPage({ params }: PageProps) {
               <span className="text-2xl font-bold text-slate-800">{hearingList.length}</span>
               <span className="text-xs text-slate-500">Hearings</span>
             </div>
+            <div className="w-px bg-slate-200" />
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold text-slate-800">{orderList.length}</span>
+              <span className="text-xs text-slate-500">Orders</span>
+            </div>
             </div>
           </div>
         </div>
@@ -173,6 +172,7 @@ export default function CaseDetailPage({ params }: PageProps) {
         documents={documents}
         findings={findingList}
         hearings={hearingList}
+        hearingChartData={hearingChartData}
         orders={orderList}
         conditions={conditionList}
       />

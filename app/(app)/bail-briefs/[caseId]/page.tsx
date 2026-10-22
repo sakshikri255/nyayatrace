@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeftIcon, BriefcaseIcon, TrendingUpIcon, SearchIcon, FileTextIcon } from 'lucide-react'
+import { ArrowLeftIcon, BriefcaseIcon, SearchIcon, FileTextIcon } from 'lucide-react'
 import { getBailBriefData } from '@/lib/queries/cases'
 import { BailBriefView } from '@/components/bail/BailBriefView'
 export const dynamic = 'force-dynamic'
@@ -34,13 +34,6 @@ export default function BailBriefDetailPage({ params }: PageProps) {
           >
             <BriefcaseIcon className="w-3.5 h-3.5" />
             Case Workspace
-          </Link>
-          <Link
-            href={`/case-progress/${caseId}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
-          >
-            <TrendingUpIcon className="w-3.5 h-3.5" />
-            Case Progress
           </Link>
           <Link
             href={`/verification/${caseId}`}

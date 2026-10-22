@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ScaleIcon, BriefcaseIcon, TrendingUpIcon, SearchIcon, ArrowRightIcon } from 'lucide-react'
+import { ScaleIcon, BriefcaseIcon, SearchIcon, ArrowRightIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { CaseStatusBadge, CaseTypeBadge } from '@/components/cases/CaseStatusBadge'
@@ -91,13 +91,6 @@ export default function BailBriefsPage() {
                   title="Case Workspace"
                 >
                   <BriefcaseIcon className="w-3.5 h-3.5" />
-                </Link>
-                <Link
-                  href={`/case-progress/${c.id}`}
-                  className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
-                  title="Case Progress"
-                >
-                  <TrendingUpIcon className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   href={`/verification/${c.id}`}
