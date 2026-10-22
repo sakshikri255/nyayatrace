@@ -51,6 +51,22 @@ function highlightPassage(text: string, passage: string | null | undefined, isAc
   ]
 }
 
+function getDocCategoryTag(name: string): { label: string; color: string } {
+  if (name.includes('Police') || name.includes('FIR') || name.includes('Panchnama')) {
+    return { label: 'POLICE RECORD', color: 'bg-blue-100 text-blue-800 border-blue-200' }
+  }
+  if (name.includes('Witness') || name.includes('PW-') || name.includes('Deposition')) {
+    return { label: 'WITNESS', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' }
+  }
+  if (name.includes('Forensic') || name.includes('Toxicology') || name.includes('RFSL')) {
+    return { label: 'FORENSIC PROOF', color: 'bg-amber-100 text-amber-800 border-amber-200' }
+  }
+  if (name.includes('Digital') || name.includes('Cyber') || name.includes('Biometric') || name.includes('CDR')) {
+    return { label: 'CYBER PROOF', color: 'bg-teal-100 text-teal-800 border-teal-200' }
+  }
+  return { label: 'RECORD', color: 'bg-slate-100 text-slate-700 border-slate-200' }
+}
+
 function HighlightSpan({ text }: { text: string }) {
   return (
     <motion.mark
@@ -104,6 +120,7 @@ export function DocumentViewer({
     const compSource = selectedFinding.sources.find((s) => s.role === 'comparison')
 
     if (primarySource && compSource && primarySource.documentId !== compSource.documentId) {
+      setDualView(true)
       if (document?.id === primarySource.documentId) {
         setSecondaryDocId(compSource.documentId)
         if (compSource.pageNumber) setSecondaryPage(compSource.pageNumber)
@@ -340,9 +357,14 @@ export function DocumentViewer({
           {/* Pane A: Primary Document */}
           <div className={cn('flex-1 flex flex-col overflow-y-auto px-5 py-4', dualView && 'border-r border-slate-200')}>
             {dualView && (
-              <div className="mb-2 pb-1 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase flex items-center justify-between">
-                <span>Primary Document (p. {currentPage})</span>
-                <span className="text-teal font-bold">{document.originalName}</span>
+              <div className="mb-2 pb-1 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className={cn('rounded px-1.5 py-0.5 text-[9px] font-bold border tracking-wide uppercase', getDocCategoryTag(document.originalName).color)}>
+                    {getDocCategoryTag(document.originalName).label}
+                  </span>
+                  <span className="text-slate-400">p. {currentPage}</span>
+                </div>
+                <span className="text-teal font-bold truncate max-w-[220px]" title={document.originalName}>{document.originalName}</span>
               </div>
             )}
 
@@ -366,42 +388,81 @@ export function DocumentViewer({
           {/* Pane B: Comparison Document (Dual View) */}
           {dualView && (
             <div className="flex-1 flex flex-col overflow-y-auto px-5 py-4 bg-slate-50/60">
-              <div className="mb-2 pb-1 border-b border-slate-200 flex items-center justify-between gap-2">
-                <select
-                  value={secondaryDocId ?? ''}
-                  onChange={(e) => {
-                    const id = Number(e.target.value)
-                    setSecondaryDocId(id)
-                    setSecondaryPage(1)
-                  }}
-                  className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 max-w-[200px] truncate"
-                >
-                  {allDocuments.map((doc) => (
-                    <option key={doc.id} value={doc.id}>
-                      {doc.originalName}
-                    </option>
-                  ))}
-                </select>
+              <div className="mb-2 pb-1.5 border-b border-slate-200 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {secondaryDoc && (
+                      <span className={cn('rounded px-1.5 py-0.5 text-[9px] font-bold border tracking-wide uppercase shrink-0', getDocCategoryTag(secondaryDoc.originalName).color)}>
+                        {getDocCategoryTag(secondaryDoc.originalName).label}
+                      </span>
+                    )}
+                    <select
+                      value={secondaryDocId ?? ''}
+                      onChange={(e) => {
+                        const id = Number(e.target.value)
+                        setSecondaryDocId(id)
+                        setSecondaryPage(1)
+                      }}
+                      className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 max-w-[240px] truncate"
+                    >
+                      {allDocuments.map((doc) => (
+                        <option key={doc.id} value={doc.id} disabled={doc.id === document.id}>
+                          {doc.originalName} {doc.id === document.id ? '(Active in Pane A)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {secondaryPages.length > 1 && (
-                  <div className="flex items-center gap-0.5 rounded border border-slate-200 bg-white px-1 py-0.5 text-[11px]">
-                    <button
-                      className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30"
-                      onClick={() => setSecondaryPage((p) => Math.max(1, p - 1))}
-                      disabled={secondaryPage === 1}
-                    >
-                      <ChevronLeftIcon className="w-3 h-3" />
-                    </button>
-                    <span className="px-1 text-slate-600 font-medium">
-                      {secondaryPage} / {secondaryPages.length}
-                    </span>
-                    <button
-                      className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30"
-                      onClick={() => setSecondaryPage((p) => Math.min(secondaryPages.length, p + 1))}
-                      disabled={secondaryPage === secondaryPages.length}
-                    >
-                      <ChevronRightIcon className="w-3 h-3" />
-                    </button>
+                  {secondaryPages.length > 1 && (
+                    <div className="flex items-center gap-0.5 rounded border border-slate-200 bg-white px-1 py-0.5 text-[11px] shrink-0">
+                      <button
+                        className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30"
+                        onClick={() => setSecondaryPage((p) => Math.max(1, p - 1))}
+                        disabled={secondaryPage === 1}
+                      >
+                        <ChevronLeftIcon className="w-3 h-3" />
+                      </button>
+                      <span className="px-1 text-slate-600 font-medium">
+                        {secondaryPage} / {secondaryPages.length}
+                      </span>
+                      <button
+                        className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30"
+                        onClick={() => setSecondaryPage((p) => Math.min(secondaryPages.length, p + 1))}
+                        disabled={secondaryPage === secondaryPages.length}
+                      >
+                        <ChevronRightIcon className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick-switch comparison pills for witness & proof */}
+                {allDocuments.length > 1 && (
+                  <div className="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-none">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Compare:</span>
+                    {allDocuments.filter((d) => d.id !== document.id).map((d) => {
+                      const isCurrentSec = secondaryDocId === d.id
+                      const cleanLabel = d.originalName.replace(/^\[.*?\]\s*/, '').replace(/\.pdf$/, '')
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => {
+                            setSecondaryDocId(d.id)
+                            setSecondaryPage(1)
+                          }}
+                          className={cn(
+                            'rounded-md px-2 py-0.5 text-[10px] font-semibold transition-all border shrink-0',
+                            isCurrentSec
+                              ? 'bg-teal text-white border-teal shadow-2xs'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-teal/50 hover:bg-teal/5'
+                          )}
+                          title={d.originalName}
+                        >
+                          <span className="truncate max-w-[120px] inline-block">{cleanLabel}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>

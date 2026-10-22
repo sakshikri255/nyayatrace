@@ -156,6 +156,22 @@ function DocIcon({ fileType }: { fileType: DocumentRow['fileType'] }) {
   return <FileTextIcon className="w-4 h-4 text-teal" />
 }
 
+function getDocCategoryBadge(name: string) {
+  if (name.includes('Police') || name.includes('FIR') || name.includes('Panchnama')) {
+    return { label: 'POLICE RECORD', className: 'bg-blue-50 text-blue-700 border-blue-200' }
+  }
+  if (name.includes('Witness') || name.includes('PW-') || name.includes('Deposition')) {
+    return { label: 'WITNESS', className: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+  }
+  if (name.includes('Forensic') || name.includes('Toxicology') || name.includes('RFSL')) {
+    return { label: 'FORENSIC PROOF', className: 'bg-amber-50 text-amber-700 border-amber-200' }
+  }
+  if (name.includes('Digital') || name.includes('Cyber') || name.includes('Biometric') || name.includes('CDR')) {
+    return { label: 'CYBER PROOF', className: 'bg-teal-50 text-teal-700 border-teal-200' }
+  }
+  return null
+}
+
 export function DocumentPanel({
   caseId,
   documents,
@@ -294,6 +310,7 @@ export function DocumentPanel({
             {documents.map((doc) => {
               const statusCfg = STATUS_CONFIG[doc.processingStatus] ?? STATUS_CONFIG.pending
               const isActive = doc.id === selectedDocumentId
+              const catBadge = getDocCategoryBadge(doc.originalName)
               return (
                 <li key={doc.id}>
                   <button
@@ -315,7 +332,12 @@ export function DocumentPanel({
                       >
                         {doc.originalName}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center flex-wrap gap-1.5 mt-1">
+                        {catBadge && (
+                          <span className={cn('text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase tracking-wider', catBadge.className)}>
+                            {catBadge.label}
+                          </span>
+                        )}
                         {doc.pageCount != null && doc.pageCount > 0 && (
                           <span className="text-xs text-slate-400">
                             {doc.pageCount}p

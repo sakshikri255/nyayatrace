@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { UploadCloudIcon, FileTextIcon, ImageIcon, FileIcon, RefreshCwIcon } from 'lucide-react'
+import Link from 'next/link'
+import { UploadCloudIcon, FileTextIcon, ImageIcon, FileIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 import type { DocumentRow } from '@/lib/queries/documents'
@@ -205,9 +206,18 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
       {/* Documents table */}
       <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Documents ({documents.length})
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Documents ({documents.length})
+            </h3>
+            <Link
+              href={`/verification/${caseId}`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-teal/40 bg-teal/10 px-2.5 py-1 text-xs font-semibold text-teal hover:bg-teal/20 transition-colors shadow-2xs"
+            >
+              <SearchIcon className="w-3.5 h-3.5" />
+              Side-by-Side Verification
+            </Link>
+          </div>
           <button
             onClick={handleRefresh}
             className="text-slate-400 hover:text-teal transition-colors"
@@ -272,13 +282,22 @@ export function DocumentsTab({ caseId, initialDocuments }: DocumentsTabProps) {
                       </span>
                     </td>
                     <td className="py-2.5 px-4 text-right">
-                      <DeleteDocumentDialog
-                        documentId={doc.id}
-                        documentName={doc.originalName}
-                        onDeleted={() => {
-                          setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
-                        }}
-                      />
+                      <div className="flex items-center justify-end gap-2.5">
+                        <Link
+                          href={`/verification/${caseId}`}
+                          className="text-xs font-semibold text-teal hover:text-teal-dark hover:underline inline-flex items-center gap-1"
+                          title="Open in Side-by-Side Verification"
+                        >
+                          Verify
+                        </Link>
+                        <DeleteDocumentDialog
+                          documentId={doc.id}
+                          documentName={doc.originalName}
+                          onDeleted={() => {
+                            setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
+                          }}
+                        />
+                      </div>
                     </td>
                   </tr>
                 )

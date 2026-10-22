@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate, BriefcaseIcon, TrendingUpIcon, ScaleIcon, Bot } from 'lucide-react'
 import { CaseChatDrawer } from './CaseChatDrawer'
@@ -79,6 +79,12 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
     }
   }, [])
 
+  useEffect(() => {
+    if (initialDocuments[0]?.id) {
+      handleSelectDocument(initialDocuments[0].id)
+    }
+  }, [])
+
   const handleSelectFinding = useCallback(
     async (findingId: number) => {
       setSelectedFindingId(findingId)
@@ -87,12 +93,11 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
 
       const primarySource = finding.sources.find((s) => s.role === 'primary')
       if (primarySource && primarySource.documentId !== selectedDocumentId) {
-        setMobileTab('viewer')
-        return
+        handleSelectDocument(primarySource.documentId)
       }
       setMobileTab('viewer')
     },
-    [findings, selectedDocumentId]
+    [findings, selectedDocumentId, handleSelectDocument]
   )
 
   const handleFindingUpdate = useCallback((updated: FindingWithSources) => {
