@@ -1,6 +1,7 @@
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { DocumentWithPages } from '@/lib/queries/documents'
 import type { AIAnalysis } from '@/lib/analysis/openai'
+import { extractLegalDates } from '@/lib/legalSanitizer'
 
 export interface EvidenceReference {
   documentId: number
@@ -62,7 +63,6 @@ export interface CaseSynopsis {
   method: string
 }
 
-const DATE_PATTERN = /\b(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,)?\s+\d{4})\b/gi
 const DATE_LABEL_PATTERN = /\b(date of (?:incident|occurrence|event)|(?:incident|occurrence|event) date)\b/gi
 const PERSON_NAME_PATTERN = /\bname of (accused|applicant|witness|complainant)\b|\b(accused|applicant|witness|complainant)(?:'s)? name\b/gi
 const INCIDENT_LOCATION_PATTERN = /\b(place of occurrence|location of incident|incident location)\b/gi
@@ -94,6 +94,29 @@ function passageForPage(document: DocumentWithPages, pageNumber: number, text: s
     pageNumber,
     passage: excerpt(text),
   }
+}
+
+export function buildCaseChronology(documents: DocumentWithPages[]) {
+  const chronology: Array<EvidenceReference & { date: string; dateNote: string }> = []
+
+  for (const document of documents) {
+    for (const page of document.pages) {
+      const text = page.extractedText?.trim() ?? ''
+      if (!text || page.quality === 'unreadable') continue
+
+      const source = passageForPage(document, page.pageNumber, text)
+      for (const { date, index } of extractLegalDates(text)) {
+        chronology.push({
+          ...source,
+          date,
+          dateNote: 'Found directly in document text',
+          passage: excerpt(text, Math.max(0, index - 90), 240),
+        })
+      }
+    }
+  }
+
+  return chronology
 }
 
 export function buildCaseSynopsis(
@@ -144,11 +167,8 @@ export function buildCaseSynopsis(
         ordersAndProceduralHistory.push(source)
       }
 
-      DATE_PATTERN.lastIndex = 0
-      let dateMatch: RegExpExecArray | null
-      while ((dateMatch = DATE_PATTERN.exec(text)) !== null) {
-        const date = dateMatch[0]
-        const index = dateMatch.index
+      const extractedDates = extractLegalDates(text)
+      for (const { date, index } of extractedDates) {
         chronology.push({
           ...source,
           date,
@@ -162,7 +182,7 @@ export function buildCaseSynopsis(
       while ((labelMatch = DATE_LABEL_PATTERN.exec(text)) !== null) {
         const index = labelMatch.index
         const nearby = text.slice(index, index + 140)
-        const date = nearby.match(DATE_PATTERN)?.[0]
+        const date = extractLegalDates(nearby)[0]?.date
         if (!date) continue
         const field = labelMatch[0].toLowerCase().replace(/\s+/g, ' ')
         addLabeledValue(field, date, { ...source, passage: excerpt(text, index, 240) })
