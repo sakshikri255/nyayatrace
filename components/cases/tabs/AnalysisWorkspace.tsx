@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import {
   AlertTriangle,
   Check,
@@ -140,6 +140,9 @@ export function AnalysisWorkspace({
   const [savingNotes, setSavingNotes] = useState(false)
   const [notesDraft, setNotesDraft] = useState('')
   const [isDirty, setIsDirty] = useState(false)
+  const [notesDrawerOpen, setNotesDrawerOpen] = useState(false)
+  const notesDraftRef = useRef(notesDraft)
+  const lastAutoSaveAttemptRef = useRef<string | null>(null)
   const [showDiff, setShowDiff] = useState(false)
   const [selectedSource, setSelectedSource] = useState<(EvidenceReference & { relatedFinding?: string }) | null>(null)
   
@@ -203,6 +206,17 @@ export function AnalysisWorkspace({
     ? documents.find((document) => document.id === selectedSource.documentId)
     : null
   const hasReadableDocuments = documents.some((document) => document.processingStatus === 'complete')
+
+  notesDraftRef.current = notesDraft
+
+  useEffect(() => {
+    if (!notesDrawerOpen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setNotesDrawerOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [notesDrawerOpen])
 
   function openSource(source: EvidenceReference, relatedFinding?: string) {
     setSelectedSource({ ...source, relatedFinding })
@@ -311,26 +325,36 @@ export function AnalysisWorkspace({
     }
   }
 
-  async function saveNotes() {
-    if (!selectedRun || !isDirty) return
+  const saveNotes = useCallback(async (showToast = true) => {
+    if (!selectedRun || !isDirty || savingNotes) return
+    const notesToSave = notesDraft
     setSavingNotes(true)
     try {
       const response = await fetch(`/api/cases/${caseData.id}/analysis/${selectedRun.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewNotes: notesDraft }),
+        body: JSON.stringify({ reviewNotes: notesToSave }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'Review notes could not be saved.')
       setRuns((previous) => previous.map((run) => run.id === data.id ? { ...run, reviewNotes: data.reviewNotes } : run))
-      setIsDirty(false)
-      toast.success('Your notes have been saved.')
+      setIsDirty(notesDraftRef.current !== notesToSave)
+      if (showToast) toast.success('Your notes have been saved.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Review notes could not be saved.')
     } finally {
       setSavingNotes(false)
     }
-  }
+  }, [caseData.id, isDirty, notesDraft, savingNotes, selectedRun])
+
+  useEffect(() => {
+    if (!isDirty || !selectedRun || savingNotes || lastAutoSaveAttemptRef.current === notesDraft) return
+    const timeout = window.setTimeout(() => {
+      lastAutoSaveAttemptRef.current = notesDraft
+      void saveNotes(false)
+    }, 800)
+    return () => window.clearTimeout(timeout)
+  }, [isDirty, notesDraft, saveNotes, savingNotes, selectedRun])
 
   async function reviewFinding(findingId: number, reviewStatus: 'verified' | 'needs_review' | 'not_a_discrepancy') {
     try {
@@ -564,6 +588,15 @@ export function AnalysisWorkspace({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="outline"
+            onClick={() => setNotesDrawerOpen(true)}
+            disabled={!selectedRun}
+            className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs"
+          >
+            <FileText className="h-4 w-4 text-slate-500" /> Notes &amp; Strategy
+          </Button>
+
           <Button
             variant="outline"
             onClick={() => window.print()}
@@ -1927,53 +1960,6 @@ export function AnalysisWorkspace({
           )}
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 9: CASE REVIEW NOTES                                  */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'orders') && (
-            <section className="space-y-3 pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-teal-500" />
-                  <h3 className="text-base font-bold text-slate-900">9. Lawyer&apos;s Review Notes</h3>
-                </div>
-                <span className="text-xs text-slate-400">Saved with this analysis version</span>
-              </div>
-
-              <div className="analysis-controls rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-                <Textarea
-                  value={notesDraft}
-                  onChange={(event) => { setNotesDraft(event.target.value); setIsDirty(true) }}
-                  placeholder="Type any lawyer notes, verification thoughts, or hearing strategy for this case version…"
-                  rows={4}
-                  className="bg-white border-slate-200 text-sm focus:border-teal"
-                  maxLength={20000}
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">
-                    {isDirty ? '⚠️ Unsaved changes' : 'All notes saved for Version ' + selectedRun.version}
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={saveNotes}
-                    disabled={!isDirty || savingNotes}
-                    className="gap-2 bg-teal text-white hover:bg-teal-light cursor-pointer"
-                  >
-                    {savingNotes ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    Save Notes
-                  </Button>
-                </div>
-              </div>
-
-              {!isDirty && selectedRun.reviewNotes && (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-                  <span className="font-bold text-slate-900 block mb-1">Current Saved Note:</span>
-                  {selectedRun.reviewNotes}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 10: PAGE CITATIONS & SOURCE INDEX                     */}
           {/* ═════════════════════════════════════════════════════════════ */}
           {(activeSection === 'all' || activeSection === 'orders') && (
@@ -2075,6 +2061,84 @@ export function AnalysisWorkspace({
 
         </div>
       ) : null}
+
+      <button
+        type="button"
+        aria-label="Close notes and strategy"
+        tabIndex={notesDrawerOpen ? 0 : -1}
+        className={`fixed inset-0 z-40 bg-slate-950/50 transition-opacity duration-300 ${
+          notesDrawerOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        aria-hidden={!notesDrawerOpen}
+        onClick={() => setNotesDrawerOpen(false)}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="notes-drawer-title"
+        aria-hidden={!notesDrawerOpen}
+        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-slate-200 bg-white shadow-2xl transition-[transform,visibility] duration-300 ease-in-out ${
+          notesDrawerOpen ? 'visible translate-x-0 delay-0' : 'invisible translate-x-full delay-300'
+        }`}
+      >
+        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h3 id="notes-drawer-title" className="text-base font-bold text-slate-900">
+              Notes &amp; Strategy
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Saved with analysis version {selectedRun?.version ?? '—'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotesDrawerOpen(false)}
+            aria-label="Close notes and strategy"
+            tabIndex={notesDrawerOpen ? 0 : -1}
+            className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
+          <p className="text-sm leading-relaxed text-slate-600">
+            Record court notes, verification details, and hearing strategy for this analysis.
+          </p>
+          <Textarea
+            value={notesDraft}
+            onChange={(event) => {
+              setNotesDraft(event.target.value)
+              setIsDirty(true)
+            }}
+            placeholder="Type court notes or strategy…"
+            className="min-h-64 flex-1 resize-y border-slate-200 text-sm focus:border-teal"
+            maxLength={20000}
+            disabled={!selectedRun}
+            tabIndex={notesDrawerOpen ? 0 : -1}
+          />
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-slate-500" role="status">
+              {!selectedRun
+                ? 'Start an analysis before adding notes.'
+                : savingNotes
+                  ? 'Saving…'
+                  : isDirty
+                    ? 'Changes will save automatically.'
+                    : 'All changes saved.'}
+            </span>
+            <Button
+              size="sm"
+              onClick={() => void saveNotes()}
+              disabled={!selectedRun || !isDirty || savingNotes}
+              tabIndex={notesDrawerOpen ? 0 : -1}
+              className="gap-2 bg-teal text-white hover:bg-teal-light"
+            >
+              {savingNotes ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Save
+            </Button>
+          </div>
+        </div>
+      </aside>
     </div>
   )
 }
