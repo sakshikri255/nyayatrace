@@ -125,12 +125,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Sidebar />
 
         {/* Main content column */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <div className="no-print">
             <Topbar />
             <UrgencyTicker items={urgentItems} />
           </div>
-          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background text-foreground">
+          <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-background text-foreground">
             <AnimatedPageWrapper>
               {children}
             </AnimatedPageWrapper>

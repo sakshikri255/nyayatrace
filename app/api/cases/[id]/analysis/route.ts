@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { buildCaseSynopsis } from '@/lib/analysis/synopsis'
+import { buildCaseChronology, buildCaseSynopsis } from '@/lib/analysis/synopsis'
 import { generateAIAnalysis } from '@/lib/analysis/openai'
 import { generateGeminiAnalysis } from '@/lib/analysis/gemini'
 import { db } from '@/lib/db'
@@ -10,6 +10,7 @@ import { getDocumentWithPages } from '@/lib/queries/documents'
 import { getFindingWithSources } from '@/lib/queries/findings'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 type RouteContext = { params: { id: string } }
 
@@ -75,6 +76,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   )
 
   const docsWithPages = currentDocuments.map((doc) => getDocumentWithPages(doc.id)).filter((d): d is NonNullable<typeof d> => d !== null)
+  const refreshedChronology = buildCaseChronology(docsWithPages)
   let fallbackKeyEntities: ReturnType<typeof buildCaseSynopsis>['keyEntities'] | null = null
 
   return NextResponse.json({
@@ -87,11 +89,12 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     latestRunId: latest?.id ?? null,
     runs: runs.map((run) => {
       const synopsis = parseSynopsis(run.result)
+      if (synopsis) synopsis.chronology = refreshedChronology
       if (synopsis && (!synopsis.keyEntities || synopsis.keyEntities.length === 0)) {
-        if (!fallbackKeyEntities && caseRecord) {
-          fallbackKeyEntities = buildCaseSynopsis(caseRecord, docsWithPages).keyEntities
+        if (!fallbackKeyEntities) {
+          fallbackKeyEntities = buildCaseSynopsis(caseRecord, docsWithPages).keyEntities ?? []
         }
-        synopsis.keyEntities = fallbackKeyEntities || []
+        synopsis.keyEntities = fallbackKeyEntities
       }
       return {
         ...run,

@@ -62,9 +62,11 @@ async function createSafeTesseractWorker(lang: string): Promise<Tesseract.Worker
     'index.js'
   )
 
+  const langPath = path.join(process.cwd(), 'tessdata')
+
   const initWorker = async (targetLang: string) => {
     console.log(`[OCR] Initialising Tesseract worker for language: "${targetLang}"`)
-    const workerPromise = Tesseract.createWorker(targetLang, 1, { workerPath })
+    const workerPromise = Tesseract.createWorker(targetLang, 1, { workerPath, langPath, gzip: false })
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error(`Tesseract worker timeout for ${targetLang}`)), 20000)
     )

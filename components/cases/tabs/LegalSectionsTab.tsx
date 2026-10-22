@@ -11,6 +11,7 @@ import type { ExtractedSectionFrequency } from '@/app/api/cases/[id]/legal-secti
 
 function LegalSectionAnalyticsCard({ caseId }: { caseId: number }) {
   const [data, setData] = useState<ExtractedSectionFrequency[] | null>(null)
+  const [selectedSectionKey, setSelectedSectionKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
@@ -31,7 +32,10 @@ function LegalSectionAnalyticsCard({ caseId }: { caseId: number }) {
 
   useEffect(() => { load() }, [caseId])
 
+  const sectionKey = (section: ExtractedSectionFrequency) => `${section.section}-${section.law}`
   const top10 = (data ?? []).slice(0, 10)
+  const selectedSection = top10.find((section) => sectionKey(section) === selectedSectionKey)
+  const chartData = selectedSection ? [selectedSection] : top10
 
   if (!loaded && !loading) return null
   if (loading) {
@@ -48,12 +52,15 @@ function LegalSectionAnalyticsCard({ caseId }: { caseId: number }) {
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mb-4">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
         <BarChart2 className="w-4 h-4 text-teal" />
-        <span className="text-sm font-semibold text-slate-800">Detected Sections</span>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800">Detected Sections</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Statutory References Detected in Case Files</p>
+        </div>
         <span className="ml-auto text-xs text-slate-400">{data.length} unique references found</span>
       </div>
       <div className="px-4 py-3">
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={top10} layout="vertical" margin={{ left: 8, right: 16, top: 0, bottom: 0 }}>
+          <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16, top: 0, bottom: 0 }}>
             <XAxis type="number" tick={{ fontSize: 10 }} />
             <YAxis
               type="category"
@@ -68,39 +75,79 @@ function LegalSectionAnalyticsCard({ caseId }: { caseId: number }) {
               contentStyle={{ fontSize: 11 }}
             />
             <Bar dataKey="count" radius={[0, 3, 3, 0]}>
-              {top10.map((entry) => (
+              {chartData.map((entry) => (
                 <Cell
-                  key={entry.section}
+                  key={sectionKey(entry)}
                   fill={
-                    entry.bailable === 'Non-Bailable' ? '#f87171' :
-                    entry.bailable === 'Bailable' ? '#34d399' :
-                    '#94a3b8'
+                    entry.section === '34' ? '#dc2626' :
+                    /BNS|BNSS/i.test(entry.law) ? '#3b82f6' :
+                    '#64748b'
                   }
                 />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filter detected section references">
           {top10.map((item) => (
-            <Link
-              key={`${item.section}-${item.law}`}
-              href={item.concordanceHref}
+            <button
+              key={sectionKey(item)}
+              type="button"
+              aria-pressed={selectedSectionKey === sectionKey(item)}
+              onClick={() => setSelectedSectionKey((active) => (
+                active === sectionKey(item) ? null : sectionKey(item)
+              ))}
               className={cn(
-                'inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border transition-colors hover:opacity-80',
-                item.bailable === 'Non-Bailable'
-                  ? 'bg-rose-50 border-rose-200 text-rose-700'
-                  : item.bailable === 'Bailable'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                  : 'bg-slate-50 border-slate-200 text-slate-600'
+                'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors',
+                selectedSectionKey === sectionKey(item)
+                  ? item.section === '34'
+                    ? 'border-red-600 bg-red-600 text-white shadow-sm'
+                    : 'border-slate-700 bg-slate-700 text-white shadow-sm'
+                  : item.section === '34'
+                    ? 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'
               )}
               title={item.offense ?? `Section ${item.section}`}
             >
-              {item.section} {item.law && <span className="text-slate-500">({item.law})</span>}
-              <span className="text-slate-400 ml-0.5">×{item.count}</span>
-            </Link>
+              {item.section}{' '}
+              {item.law && (
+                <span className={selectedSectionKey === sectionKey(item) ? 'text-white/75' : 'text-slate-500'}>
+                  ({item.law})
+                </span>
+              )}
+              <span className={cn('ml-0.5', selectedSectionKey === sectionKey(item) ? 'text-white/75' : 'text-slate-400')}>
+                ×{item.count}
+              </span>
+            </button>
           ))}
         </div>
+        {selectedSection && (
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-slate-800">
+                Extracted references for Section {selectedSection.section}
+                {selectedSection.law ? ` (${selectedSection.law})` : ''}
+              </p>
+              <Link
+                href={selectedSection.concordanceHref}
+                className="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+              >
+                View legal concordance
+              </Link>
+            </div>
+            <ul className="space-y-1.5">
+              {selectedSection.matches.map((match, index) => (
+                <li
+                  key={`${match.documentId}-${match.pageNumber}-${index}`}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-white px-2.5 py-2 text-xs"
+                >
+                  <span className="font-medium text-slate-700">{match.passage}</span>
+                  <span className="text-slate-500">{match.documentName} · p. {match.pageNumber}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   )

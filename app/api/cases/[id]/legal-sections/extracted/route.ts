@@ -12,6 +12,12 @@ export interface ExtractedSectionFrequency {
   section: string
   law: string
   count: number
+  matches: Array<{
+    documentId: number
+    documentName: string
+    pageNumber: number
+    passage: string
+  }>
   bailable?: 'Bailable' | 'Non-Bailable'
   offense?: string
   concordanceHref: string
@@ -34,13 +40,19 @@ export async function GET(
         pageNumber: pages.pageNumber,
         extractedText: pages.extractedText,
         documentId: documents.id,
+        documentName: documents.originalName,
       })
       .from(pages)
       .innerJoin(documents, eq(documents.id, pages.documentId))
       .where(eq(documents.caseId, caseId))
       .all()
 
-    const freq: Record<string, { section: string; law: string; count: number }> = {}
+    const freq: Record<string, {
+      section: string
+      law: string
+      count: number
+      matches: ExtractedSectionFrequency['matches']
+    }> = {}
 
     for (const p of casePages) {
       if (!p.extractedText) continue
@@ -48,9 +60,20 @@ export async function GET(
       for (const d of detected) {
         const key = `${d.section}-${d.law}`
         if (!freq[key]) {
-          freq[key] = { section: d.section, law: d.law, count: 0 }
+          freq[key] = {
+            section: d.section,
+            law: d.law,
+            count: 0,
+            matches: [],
+          }
         }
         freq[key].count += 1
+        freq[key].matches.push({
+          documentId: p.documentId,
+          documentName: p.documentName,
+          pageNumber: p.pageNumber,
+          passage: d.rawMatch,
+        })
       }
     }
 
@@ -63,9 +86,7 @@ export async function GET(
         (s) => s.ipcSection === item.section || s.bnsSection === item.section
       )
       return {
-        section: item.section,
-        law: item.law,
-        count: item.count,
+        ...item,
         bailable: meta?.bailable,
         offense: meta?.offense,
         concordanceHref: `/concordance?section=${encodeURIComponent(item.section)}&law=${encodeURIComponent(item.law)}`,

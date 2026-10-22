@@ -46,12 +46,12 @@ export function OverviewTab({ caseData, documents, findings, hearings, onGoToAna
 
       {/* Analysis Call to Action if documents exist */}
       {documents.length > 0 && findings.length === 0 && (
-        <div className="rounded-xl border border-teal/20 bg-teal/5 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-5">
           <div>
-            <h3 className="text-sm font-semibold text-teal-900">
+            <h3 className="text-sm font-bold text-slate-900">
               {documents.length} document{documents.length > 1 ? 's' : ''} uploaded — Case Analysis ready
             </h3>
-            <p className="text-xs text-slate-600 mt-0.5">
+            <p className="mt-0.5 text-xs font-medium text-slate-600">
               Review extractive findings, chronology, and contradictory statements in the Analysis &amp; Synopsis workspace.
             </p>
           </div>
