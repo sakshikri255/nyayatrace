@@ -157,7 +157,7 @@ export function Sidebar() {
         animate={collapsed ? 'collapsed' : 'expanded'}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className={cn(
-          'relative z-20 hidden h-full shrink-0 flex-col overflow-hidden border-r border-white/10 bg-midnight-950 md:flex',
+          'relative z-20 hidden h-full shrink-0 flex-col overflow-hidden border-r border-white/20 bg-midnight-950 md:flex',
           mobileOpen && 'fixed inset-y-0 left-0 z-50 flex w-60 shadow-2xl md:relative md:inset-auto md:z-auto md:shadow-none'
         )}
         style={{ minWidth: 0 }}
