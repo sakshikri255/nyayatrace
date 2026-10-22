@@ -22,8 +22,8 @@ export function AnimatedLadyJustice() {
   const shouldReduceMotion = useReducedMotion()
   const [isHovered, setIsHovered] = useState(false)
 
-  // Timing: 4.2 second full cycle
-  const cycleDuration = 2.2
+  // Timing: 2.8s natural pendulum cycle with authentic bronze inertia
+  const cycleDuration = 2.8
 
   return (
     <div
@@ -38,8 +38,8 @@ export function AnimatedLadyJustice() {
         className="absolute -inset-4 rounded-3xl opacity-60 blur-2xl pointer-events-none transition-opacity duration-700"
         style={{
           background: isHovered
-            ? 'radial-gradient(ellipse 65% 55% at 65% 35%, rgba(229,195,120,0.22) 0%, rgba(13,148,136,0.12) 50%, transparent 80%)'
-            : 'radial-gradient(ellipse 60% 50% at 65% 35%, rgba(197,168,128,0.14) 0%, rgba(13,148,136,0.06) 50%, transparent 80%)',
+            ? 'radial-gradient(ellipse 65% 55% at 65% 35%, rgba(229,195,120,0.28) 0%, rgba(13,148,136,0.16) 50%, transparent 80%)'
+            : 'radial-gradient(ellipse 60% 50% at 65% 35%, rgba(197,168,128,0.16) 0%, rgba(13,148,136,0.08) 50%, transparent 80%)',
         }}
       />
 
@@ -49,11 +49,11 @@ export function AnimatedLadyJustice() {
           shouldReduceMotion
             ? {}
             : {
-                y: [-3, 3, -3],
+                y: [-4, 4, -4],
               }
         }
         transition={{
-          duration: 4,
+          duration: 4.8,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
@@ -72,7 +72,7 @@ export function AnimatedLadyJustice() {
             priority
             className="object-cover object-center transform transition-transform duration-700 ease-out"
             style={{
-              transform: isHovered ? 'scale(1.015)' : 'scale(1)',
+              transform: isHovered ? 'scale(1.02)' : 'scale(1)',
             }}
           />
 
@@ -94,9 +94,12 @@ export function AnimatedLadyJustice() {
               SVG coordinate system matches the 896x1200 image 1:1.
               Ring in hand: x = 648, y = 205.
               Fulcrum pivot: x = 648, y = 275.
-              Beam length: 256px (x: 520 to 776).
+              Beam length: 256px (x: 520 to 776, radius 128px).
               Left pan center: x = 520, y = 445.
               Right pan center: x = 776, y = 445.
+              Swing height: ±25px elevation (50px full range, ±11.2° tilt).
+              3D Depth: dynamic perspective scaling (0.92x to 1.08x),
+              depth shadow elongation, and staggered pendulum inertia.
              ══════════════════════════════════════════════════════════════════ */}
           <svg
             viewBox="0 0 896 1200"
@@ -119,28 +122,31 @@ export function AnimatedLadyJustice() {
                 <stop offset="100%" stopColor="#6C532B" />
               </linearGradient>
 
-              <radialGradient id="lj-pan-left" cx="50%" cy="40%" r="55%">
-                <stop offset="0%" stopColor="#FFF2D6" />
-                <stop offset="30%" stopColor="#DFC085" />
-                <stop offset="70%" stopColor="#9E7F47" />
-                <stop offset="100%" stopColor="#544120" />
+              <radialGradient id="lj-pan-left" cx="50%" cy="38%" r="58%">
+                <stop offset="0%" stopColor="#FFF5DC" />
+                <stop offset="25%" stopColor="#E5C582" />
+                <stop offset="65%" stopColor="#9E7F47" />
+                <stop offset="100%" stopColor="#4A381A" />
               </radialGradient>
 
-              <radialGradient id="lj-pan-right" cx="50%" cy="40%" r="55%">
-                <stop offset="0%" stopColor="#FFF2D6" />
-                <stop offset="30%" stopColor="#DFC085" />
-                <stop offset="70%" stopColor="#9E7F47" />
-                <stop offset="100%" stopColor="#544120" />
+              <radialGradient id="lj-pan-right" cx="50%" cy="38%" r="58%">
+                <stop offset="0%" stopColor="#FFF5DC" />
+                <stop offset="25%" stopColor="#E5C582" />
+                <stop offset="65%" stopColor="#9E7F47" />
+                <stop offset="100%" stopColor="#4A381A" />
               </radialGradient>
 
               <radialGradient id="lj-glow-pan" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#F5DFAB" stopOpacity="0.35" />
+                <stop offset="0%" stopColor="#F5DFAB" stopOpacity="0.45" />
                 <stop offset="100%" stopColor="#A88B58" stopOpacity="0" />
               </radialGradient>
 
-              {/* Shadow Filters for realistic depth */}
-              <filter id="lj-scale-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000000" floodOpacity="0.65" />
+              {/* Shadow Filters for realistic 3D depth */}
+              <filter id="lj-scale-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="4" dy="8" stdDeviation="5" floodColor="#000000" floodOpacity="0.7" />
+              </filter>
+              <filter id="lj-pan-depth-shadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="5" dy="12" stdDeviation="7" floodColor="#000000" floodOpacity="0.8" />
               </filter>
             </defs>
 
@@ -167,83 +173,128 @@ export function AnimatedLadyJustice() {
               />
               {/* Ornate decorative collar / bead on rod */}
               <circle cx="648" cy="246" r="4.5" fill="url(#lj-brass-beam)" />
+
+              {/* Graduated Index Arc / Gauge showing swing angle behind pointer */}
+              <path
+                d="M 630,248 A 28 28 0 0 1 666,248"
+                fill="none"
+                stroke="#C8A668"
+                strokeWidth="1.2"
+                strokeDasharray="2 3"
+                opacity="0.85"
+              />
+              {/* Zero center calibration pip */}
+              <line x1="648" y1="244" x2="648" y2="249" stroke="#FFF0CE" strokeWidth="1.8" />
+              {/* Limit pips */}
+              <line x1="632" y1="247" x2="634" y2="251" stroke="#A88B58" strokeWidth="1.2" />
+              <line x1="664" y1="247" x2="662" y2="251" stroke="#A88B58" strokeWidth="1.2" />
+
               {/* Center Pivot Boss / Fulcrum Bearing */}
-              <circle cx="648" cy="275" r="7.5" fill="url(#lj-fulcrum)" stroke="#423218" strokeWidth="1.5" />
-              <circle cx="648" cy="275" r="3.2" fill="#FFE8B5" />
+              <circle cx="648" cy="275" r="8" fill="url(#lj-fulcrum)" stroke="#423218" strokeWidth="1.5" />
+              <circle cx="648" cy="275" r="3.4" fill="#FFE8B5" />
             </g>
 
             {/* ── ANIMATED SCALE BEAM ──
                 Tilts around pivot (648, 275).
-                Angles between -3.2° and +3.2°.
+                Angles between -11.2° and +11.2° for deep, majestic swing.
             ── */}
             <motion.g
               animate={
                 shouldReduceMotion
                   ? { rotate: 0 }
                   : {
-                      rotate: [-3.2, 3.2, -3.2],
+                      rotate: [-11.2, 11.2, -11.2],
                     }
               }
               transition={{
                 duration: cycleDuration,
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: [0.45, 0.05, 0.55, 0.95],
               }}
               style={{
                 transformOrigin: '648px 275px',
               }}
               filter="url(#lj-scale-shadow)"
             >
-              {/* Central pointer needle pointing upward towards center */}
+              {/* Central pointer needle pointing upward towards index gauge */}
               <polygon
-                points="648,252 645,274 651,274"
+                points="648,245 644,274 652,274"
                 fill="url(#lj-fulcrum)"
+                stroke="#544120"
+                strokeWidth="0.8"
               />
 
               {/* Main horizontal beam body (ornate sculpted dual taper) */}
               <path
                 d="M 520,275 
-                   C 555,272 610,271 648,272 
-                   C 686,271 741,272 776,275 
-                   C 741,278 686,279 648,278 
-                   C 610,279 555,278 520,275 Z"
+                   C 555,271 610,270 648,271 
+                   C 686,270 741,271 776,275 
+                   C 741,279 686,280 648,279 
+                   C 610,280 555,279 520,275 Z"
                 fill="url(#lj-brass-beam)"
                 stroke="#544120"
-                strokeWidth="1.2"
+                strokeWidth="1.4"
               />
 
               {/* Left End Loop / Eyelet */}
-              <circle cx="520" cy="275" r="5" fill="none" stroke="url(#lj-brass-beam)" strokeWidth="2.5" />
-              <circle cx="520" cy="275" r="2" fill="#FFE8B5" />
+              <circle cx="520" cy="275" r="5.5" fill="none" stroke="url(#lj-brass-beam)" strokeWidth="2.6" />
+              <circle cx="520" cy="275" r="2.2" fill="#FFE8B5" />
 
               {/* Right End Loop / Eyelet */}
-              <circle cx="776" cy="275" r="5" fill="none" stroke="url(#lj-brass-beam)" strokeWidth="2.5" />
-              <circle cx="776" cy="275" r="2" fill="#FFE8B5" />
+              <circle cx="776" cy="275" r="5.5" fill="none" stroke="url(#lj-brass-beam)" strokeWidth="2.6" />
+              <circle cx="776" cy="275" r="2.2" fill="#FFE8B5" />
             </motion.g>
 
             {/* ── LEFT SUSPENSION CHAINS & PAN ──
                 Anchored to beam left tip (520, 275).
-                Moves vertically: when beam tilts -3.2° (left down), y moves +7.2px.
-                When beam tilts +3.2° (left up), y moves -7.2px.
-                Staggered slightly for believable inertia.
+                Moves vertically ±25px: when beam tilts -11.2° (left down), y moves +25px.
+                When beam tilts +11.2° (left up), y moves -25px.
+                Perspective depth scaling: 1.08x at lowest/closest, 0.92x at highest/farthest.
             ── */}
             <motion.g
               animate={
                 shouldReduceMotion
-                  ? { y: 0 }
+                  ? { y: 0, x: 0, scale: 1 }
                   : {
-                      y: [7.2, -7.2, 7.2],
+                      y: [25, -25, 25],
+                      x: [3.5, -2.5, 3.5],
+                      scale: [1.08, 0.92, 1.08],
                     }
               }
               transition={{
                 duration: cycleDuration,
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: [0.45, 0.05, 0.55, 0.95],
               }}
-              filter="url(#lj-scale-shadow)"
+              style={{
+                transformOrigin: '520px 275px',
+              }}
+              filter="url(#lj-pan-depth-shadow)"
             >
-              {/* Ambient Glow under Left Pan */}
-              <ellipse cx="520" cy="455" rx="55" ry="14" fill="url(#lj-glow-pan)" />
+              {/* Dynamic Depth Glow under Left Pan */}
+              <motion.ellipse
+                cx="520"
+                cy="455"
+                rx="55"
+                ry="14"
+                fill="url(#lj-glow-pan)"
+                animate={
+                  shouldReduceMotion
+                    ? {}
+                    : {
+                        opacity: [0.95, 0.25, 0.95],
+                        scale: [1.18, 0.82, 1.18],
+                      }
+                }
+                transition={{
+                  duration: cycleDuration,
+                  repeat: Infinity,
+                  ease: [0.45, 0.05, 0.55, 0.95],
+                }}
+                style={{
+                  transformOrigin: '520px 455px',
+                }}
+              />
 
               {/* Three Hanging Chains (antique link pattern) */}
               {/* Outer Left Chain */}
@@ -253,10 +304,10 @@ export function AnimatedLadyJustice() {
                 x2="484"
                 y2="442"
                 stroke="#C8A668"
-                strokeWidth="1.6"
+                strokeWidth="1.7"
                 strokeDasharray="2.5 2.5"
                 strokeLinecap="round"
-                opacity="0.9"
+                opacity="0.92"
               />
               {/* Outer Right Chain */}
               <line
@@ -265,10 +316,10 @@ export function AnimatedLadyJustice() {
                 x2="556"
                 y2="442"
                 stroke="#C8A668"
-                strokeWidth="1.6"
+                strokeWidth="1.7"
                 strokeDasharray="2.5 2.5"
                 strokeLinecap="round"
-                opacity="0.9"
+                opacity="0.92"
               />
               {/* Center Rear Chain */}
               <line
@@ -277,26 +328,26 @@ export function AnimatedLadyJustice() {
                 x2="520"
                 y2="437"
                 stroke="#9E7F47"
-                strokeWidth="1.4"
+                strokeWidth="1.5"
                 strokeDasharray="2.5 2.5"
                 strokeLinecap="round"
-                opacity="0.75"
+                opacity="0.78"
               />
 
-              {/* Secondary micro-sway on the hanging pan */}
+              {/* Secondary pendulum inertia sway on the hanging pan */}
               <motion.g
                 animate={
                   shouldReduceMotion
                     ? { rotate: 0 }
                     : {
-                        rotate: [-0.9, 0.9, -0.9],
+                        rotate: [-5.2, 5.2, -5.2],
                       }
                 }
                 transition={{
                   duration: cycleDuration,
                   repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 0.18, // Staggered lag creates true physics
+                  ease: [0.45, 0.05, 0.55, 0.95],
+                  delay: 0.16, // Staggered lag creates true physics inertia
                 }}
                 style={{
                   transformOrigin: '520px 275px',
@@ -306,11 +357,11 @@ export function AnimatedLadyJustice() {
                 {/* Bowl Body */}
                 <path
                   d="M 478,442 
-                     C 482,464 500,472 520,472 
-                     C 540,472 558,464 562,442 Z"
+                     C 482,465 500,473 520,473 
+                     C 540,473 558,465 562,442 Z"
                   fill="url(#lj-pan-left)"
                   stroke="#4A381A"
-                  strokeWidth="1.5"
+                  strokeWidth="1.6"
                 />
                 {/* Rim Ellipse */}
                 <ellipse
@@ -343,27 +394,53 @@ export function AnimatedLadyJustice() {
 
             {/* ── RIGHT SUSPENSION CHAINS & PAN ──
                 Anchored to beam right tip (776, 275).
-                Moves vertically: anti-phase to left pan!
-                When beam tilts -3.2° (right up), y moves -7.2px.
-                When beam tilts +3.2° (right down), y moves +7.2px.
+                Moves vertically: counter-phase to left pan (±25px)!
+                Perspective depth scaling: 0.92x when high/distant, 1.08x when low/close.
             ── */}
             <motion.g
               animate={
                 shouldReduceMotion
-                  ? { y: 0 }
+                  ? { y: 0, x: 0, scale: 1 }
                   : {
-                      y: [-7.2, 7.2, -7.2],
+                      y: [-25, 25, -25],
+                      x: [-3.5, 2.5, -3.5],
+                      scale: [0.92, 1.08, 0.92],
                     }
               }
               transition={{
                 duration: cycleDuration,
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: [0.45, 0.05, 0.55, 0.95],
               }}
-              filter="url(#lj-scale-shadow)"
+              style={{
+                transformOrigin: '776px 275px',
+              }}
+              filter="url(#lj-pan-depth-shadow)"
             >
-              {/* Ambient Glow under Right Pan */}
-              <ellipse cx="776" cy="455" rx="55" ry="14" fill="url(#lj-glow-pan)" />
+              {/* Dynamic Depth Glow under Right Pan */}
+              <motion.ellipse
+                cx="776"
+                cy="455"
+                rx="55"
+                ry="14"
+                fill="url(#lj-glow-pan)"
+                animate={
+                  shouldReduceMotion
+                    ? {}
+                    : {
+                        opacity: [0.25, 0.95, 0.25],
+                        scale: [0.82, 1.18, 0.82],
+                      }
+                }
+                transition={{
+                  duration: cycleDuration,
+                  repeat: Infinity,
+                  ease: [0.45, 0.05, 0.55, 0.95],
+                }}
+                style={{
+                  transformOrigin: '776px 455px',
+                }}
+              />
 
               {/* Three Hanging Chains */}
               {/* Outer Left Chain */}
@@ -373,10 +450,10 @@ export function AnimatedLadyJustice() {
                 x2="740"
                 y2="442"
                 stroke="#C8A668"
-                strokeWidth="1.6"
+                strokeWidth="1.7"
                 strokeDasharray="2.5 2.5"
                 strokeLinecap="round"
-                opacity="0.9"
+                opacity="0.92"
               />
               {/* Outer Right Chain */}
               <line
@@ -385,10 +462,10 @@ export function AnimatedLadyJustice() {
                 x2="812"
                 y2="442"
                 stroke="#C8A668"
-                strokeWidth="1.6"
+                strokeWidth="1.7"
                 strokeDasharray="2.5 2.5"
                 strokeLinecap="round"
-                opacity="0.9"
+                opacity="0.92"
               />
               {/* Center Rear Chain */}
               <line
@@ -397,26 +474,26 @@ export function AnimatedLadyJustice() {
                 x2="776"
                 y2="437"
                 stroke="#9E7F47"
-                strokeWidth="1.4"
+                strokeWidth="1.5"
                 strokeDasharray="2.5 2.5"
                 strokeLinecap="round"
-                opacity="0.75"
+                opacity="0.78"
               />
 
-              {/* Secondary micro-sway on the hanging pan */}
+              {/* Secondary pendulum inertia sway on the hanging pan */}
               <motion.g
                 animate={
                   shouldReduceMotion
                     ? { rotate: 0 }
                     : {
-                        rotate: [0.9, -0.9, 0.9],
+                        rotate: [5.2, -5.2, 5.2],
                       }
                 }
                 transition={{
                   duration: cycleDuration,
                   repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 0.18,
+                  ease: [0.45, 0.05, 0.55, 0.95],
+                  delay: 0.16,
                 }}
                 style={{
                   transformOrigin: '776px 275px',
@@ -426,11 +503,11 @@ export function AnimatedLadyJustice() {
                 {/* Bowl Body */}
                 <path
                   d="M 734,442 
-                     C 738,464 756,472 776,472 
-                     C 796,472 814,464 818,442 Z"
+                     C 738,465 756,473 776,473 
+                     C 796,473 814,465 818,442 Z"
                   fill="url(#lj-pan-right)"
                   stroke="#4A381A"
-                  strokeWidth="1.5"
+                  strokeWidth="1.6"
                 />
                 {/* Rim Ellipse */}
                 <ellipse
