@@ -16,6 +16,7 @@ export type CaseWithCounts = {
   court: string | null
   jurisdiction: string | null
   judge: string | null
+  advocate: string | null
   remandDate: string | null
   statutoryPeriodDays: number | null
   maxPunishmentYears: number | null
@@ -41,6 +42,7 @@ export type CaseDetail = {
   court: string | null
   jurisdiction: string | null
   judge: string | null
+  advocate: string | null
   remandDate: string | null
   statutoryPeriodDays: number | null
   maxPunishmentYears: number | null
@@ -180,6 +182,7 @@ export function getAllCases(
       court: cases.court,
       jurisdiction: cases.jurisdiction,
       judge: cases.judge,
+      advocate: cases.advocate,
       remandDate: cases.remandDate,
       statutoryPeriodDays: cases.statutoryPeriodDays,
       chargesheetFiled: cases.chargesheetFiled,

@@ -158,12 +158,12 @@ export function calculateStatutoryBail(caseData: {
       daysRemaining: 0,
       progressPercent: 100,
       status: 'accrued',
-      statusLabel: 'Default Bail Accrued!',
+      statusLabel: 'Default Bail Ready!',
       chargesheetFiled: false,
       chargesheetDate: null,
       statutorySection: section,
       effectiveLaw,
-      legalGround: `Indefeasible statutory right to Default Bail has accrued under ${section}. Overdue by ${overdueDays} days without a chargesheet.`,
+      legalGround: `Absolute legal right to Default Bail is active under ${section}. Police are overdue by ${overdueDays} days without filing a chargesheet.`,
       summary: `Investigation period expired (${daysElapsed}/${statutoryPeriod} days). Immediate application for default bail recommended.`,
     }
   }

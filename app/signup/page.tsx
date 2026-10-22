@@ -6,7 +6,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, UserPlus, AlertCircle, Check, X } from 'lucide-react'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
-import { signUpUser } from '@/lib/auth'
 
 /* ── Password strength rules ─────────────────────────────────── */
 const PW_RULES = [
@@ -31,7 +30,7 @@ export default function SignUpPage() {
   const pwResults = PW_RULES.map((r) => ({ ...r, passed: r.test(password) }))
   const pwStrong = pwResults.every((r) => r.passed)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
@@ -45,10 +44,23 @@ export default function SignUpPage() {
     }
 
     setLoading(true)
-    setTimeout(() => {
-      signUpUser(name.trim(), email.trim(), password)
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+      })
+      const json = await res.json() as { error?: string }
+      if (!res.ok) {
+        setError(json.error ?? 'Signup failed. Please try again.')
+        setLoading(false)
+        return
+      }
       router.replace('/cases')
-    }, 600)
+    } catch {
+      setError('Network error. Please try again.')
+      setLoading(false)
+    }
   }
 
   return (

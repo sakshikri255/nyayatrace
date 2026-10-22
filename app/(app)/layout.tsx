@@ -5,6 +5,8 @@ import { NavigationProgressBar } from '@/components/layout/NavigationProgressBar
 import { AnimatedPageWrapper } from '@/components/layout/AnimatedPageWrapper'
 import { AuthGuard } from '@/components/layout/AuthGuard'
 import { UrgencyTicker, type UrgencyItem } from '@/components/layout/UrgencyTicker'
+import { OfflineBanner } from '@/components/layout/OfflineBanner'
+import { InstallPrompt } from '@/components/layout/InstallPrompt'
 import { db } from '@/lib/db'
 import { cases, hearings } from '@/lib/db/schema'
 import { and, gte, lte, eq } from 'drizzle-orm'
@@ -39,7 +41,7 @@ function computeUrgentItems(): UrgencyItem[] {
       )
       items.push({
         id: `hearing-${h.id}`,
-        label: `${h.caseTitle} — Hearing in ${daysAway === 0 ? 'TODAY' : `${daysAway}d`}`,
+        label: `${h.caseTitle} — ${daysAway === 0 ? 'Hearing Today' : `Hearing in ${daysAway} day${daysAway > 1 ? 's' : ''}`}`,
         href: `/bail-briefs/${h.caseId}`,
         level: daysAway === 0 ? 'critical' : 'warning',
       })
@@ -66,14 +68,14 @@ function computeUrgentItems(): UrgencyItem[] {
       if (bail.status === 'accrued') {
         items.push({
           id: `bail-accrued-${c.id}`,
-          label: `${c.title} — Bail default right accrued`,
+          label: `${c.title} — Default Bail Ready (Overdue)`,
           href: `/bail-briefs/${c.id}`,
           level: 'critical',
         })
       } else if (bail.status === 'urgent') {
         items.push({
           id: `bail-urgent-${c.id}`,
-          label: `${c.title} — Statutory bail deadline approaching`,
+          label: `${c.title} — Bail Deadline Approaching (${bail.daysRemaining}d left)`,
           href: `/bail-briefs/${c.id}`,
           level: 'warning',
         })
@@ -128,7 +130,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Topbar />
             <UrgencyTicker items={urgentItems} />
           </div>
-          <main className="flex-1 overflow-y-auto bg-background text-foreground">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background text-foreground">
             <AnimatedPageWrapper>
               {children}
             </AnimatedPageWrapper>
@@ -136,6 +138,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </MobileSidebarProvider>
+      <OfflineBanner />
+      <InstallPrompt />
     </AuthGuard>
   )
 }

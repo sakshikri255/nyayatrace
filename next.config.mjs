@@ -1,3 +1,26 @@
+import withPWA from '@ducanh2912/next-pwa'
+
+const pwaConfig = withPWA({
+  dest: 'public',
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === 'development',
+  workboxOptions: {
+    disableDevLogs: true,
+    runtimeCaching: [
+      {
+        urlPattern: /^\/(?:overview|cases|cause-list|concordance)$/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'page-cache',
+          expiration: { maxEntries: 20, maxAgeSeconds: 86400 },
+        },
+      },
+    ],
+  },
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Compress responses (gzip) — reduces payload on every page load
@@ -23,17 +46,6 @@ const nextConfig = {
       'sonner',
     ],
   },
+}
 
-  webpack(config, { isServer }) {
-    if (isServer) {
-      config.externals.push({
-        '@napi-rs/canvas': 'commonjs @napi-rs/canvas',
-        'tesseract.js': 'commonjs tesseract.js',
-        'better-sqlite3': 'commonjs better-sqlite3',
-      });
-    }
-    return config;
-  },
-};
-
-export default nextConfig;
+export default pwaConfig(nextConfig)

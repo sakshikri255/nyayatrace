@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, LogIn, AlertCircle, Copy, Check } from 'lucide-react'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
-import { loginUser, DEMO_USERS, getSession } from '@/lib/auth'
+import { DEMO_USERS, getSession } from '@/lib/auth'
 
 function LoginContent() {
   const router = useRouter()
@@ -24,22 +24,29 @@ function LoginContent() {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    // small artificial delay so it feels like a real auth call
-    setTimeout(() => {
-      const user = loginUser(email, password)
-      if (!user) {
-        setError('Invalid email or password. Use one of the demo accounts below.')
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const json = await res.json() as { error?: string }
+      if (!res.ok) {
+        setError(json.error ?? 'Invalid email or password. Use one of the demo accounts below.')
         setLoading(false)
         return
       }
       const next = searchParams.get('next') || '/cases'
       router.replace(next)
-    }, 600)
+    } catch {
+      setError('Network error. Please try again.')
+      setLoading(false)
+    }
   }
 
   function fillDemo(demoEmail: string, demoPassword: string) {

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeftIcon, TrendingUpIcon, ScaleIcon, SearchIcon, FileTextIcon } from 'lucide-react'
+import { ArrowLeftIcon, TrendingUpIcon, ScaleIcon, SearchIcon, FileTextIcon, ClockIcon } from 'lucide-react'
 import { getCaseById } from '@/lib/queries/cases'
 import { getDocumentsByCaseId } from '@/lib/queries/documents'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
@@ -52,6 +52,13 @@ export default function CaseDetailPage({ params }: PageProps) {
           All Cases
         </Link>
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/cases/${caseData.id}?tab=chronology`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-teal/40 bg-teal/10 px-2.5 py-1.5 text-xs font-semibold text-teal hover:bg-teal/20 transition-colors shadow-2xs"
+          >
+            <ClockIcon className="w-3.5 h-3.5" />
+            Checkpoints &amp; Chronology
+          </Link>
           <Link
             href={`/case-progress/${caseData.id}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
@@ -117,7 +124,7 @@ export default function CaseDetailPage({ params }: PageProps) {
                 </span>
               )}
               {caseData.createdAt && (
-                <span className="text-sm text-slate-400">
+                <span className="text-sm text-slate-400" suppressHydrationWarning>
                   Filed{' '}
                   {new Date(caseData.createdAt).toLocaleDateString('en-IN', {
                     day: 'numeric',
@@ -161,6 +168,7 @@ export default function CaseDetailPage({ params }: PageProps) {
 
       {/* Tabs */}
       <CaseDetailTabs
+        key={caseData.id}
         caseData={caseData}
         documents={documents}
         findings={findingList}

@@ -145,7 +145,7 @@ export function BailBriefView({ data }: BailBriefViewProps) {
           {/* Print / Export button */}
           <button
             onClick={() => setPrintMode(true)}
-            className="no-print inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            className="no-print inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
           >
             <PrinterIcon className="w-3.5 h-3.5" />
             Export Brief
@@ -153,44 +153,44 @@ export function BailBriefView({ data }: BailBriefViewProps) {
         </div>
 
         {/* Title */}
-        <h1 className="text-xl font-bold text-slate-900 mb-3">{caseRecord.title}</h1>
+        <h1 className="text-xl font-bold text-[var(--section-heading)] mb-3">{caseRecord.title}</h1>
 
         {/* Court + judge metadata */}
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500 mb-3">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--section-subheading)] mb-3">
           {caseRecord.court && (
-            <span><span className="font-medium text-slate-700">Court:</span> {caseRecord.court}</span>
+            <span><span className="font-medium text-[var(--section-heading)]">Court:</span> {caseRecord.court}</span>
           )}
           {caseRecord.judge && (
-            <span><span className="font-medium text-slate-700">Judge:</span> {caseRecord.judge}</span>
+            <span><span className="font-medium text-[var(--section-heading)]">Judge:</span> {caseRecord.judge}</span>
           )}
           <span>
-            <span className="font-medium text-slate-700">Documents:</span> {documents.length}
+            <span className="font-medium text-[var(--section-heading)]">Documents:</span> {documents.length}
           </span>
           <span>
-            <span className="font-medium text-slate-700">Orders:</span> {orders.length}
+            <span className="font-medium text-[var(--section-heading)]">Orders:</span> {orders.length}
           </span>
         </div>
 
         {/* Cross-feature quick links */}
-        <div className="no-print flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-          <span className="text-[11px] font-medium text-slate-400 mr-1">Also view in:</span>
+        <div className="no-print flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--section-card-border)]">
+          <span className="text-[11px] font-medium text-[var(--section-subheading)] mr-1">Also view in:</span>
           <Link
             href={`/cases/${caseRecord.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-2.5 py-1 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
           >
             <BriefcaseIcon className="w-3.5 h-3.5" />
             Case Workspace
           </Link>
           <Link
             href={`/case-progress/${caseRecord.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-2.5 py-1 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
           >
             <TrendingUpIcon className="w-3.5 h-3.5" />
             Case Progress
           </Link>
           <Link
             href={`/verification/${caseRecord.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-2.5 py-1 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
           >
             <SearchIcon className="w-3.5 h-3.5" />
             Verification
@@ -204,7 +204,7 @@ export function BailBriefView({ data }: BailBriefViewProps) {
         onValueChange={(v) => setActiveTab(v as TabId)}
         className="w-full"
       >
-        <TabsList variant="line" className="w-full border-b border-slate-200 rounded-none pb-0 mb-4 h-auto sticky top-0 z-10 bg-white shadow-sm">
+        <TabsList variant="line" className="w-full border-b border-[var(--section-card-border)] rounded-none pb-0 mb-4 h-auto sticky top-0 z-10 bg-[var(--section-card-bg)] shadow-sm">
           <TabsTrigger value="overview">Case Overview</TabsTrigger>
           <TabsTrigger value="orders">
             Judicial Orders
@@ -252,21 +252,21 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                 {/* Next Hearing Widget */}
                 {data.nextHearing && <NextHearingWidget hearing={data.nextHearing} />}
 
-                <div className="bg-white rounded-lg border border-slate-200 p-5">
-                  <h2 className="text-sm font-semibold text-slate-700 mb-3">Case Description</h2>
-                  <p className="text-sm text-slate-600 leading-relaxed">
+                <div className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
+                  <h2 className="text-sm font-semibold text-[var(--section-subheading)] mb-3">Case Description</h2>
+                  <p className="text-sm text-[var(--section-heading)] leading-relaxed">
                     {caseRecord.description ?? 'No description provided.'}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Key Dates — collapsible */}
-                  <div className="bg-white rounded-lg border border-slate-200 p-5">
+                  <div className="bg-[var(--section-card-bg)] rounded-lg border border-[var(--section-card-border)] p-5">
                     <button
                       className="flex items-center justify-between w-full text-left"
                       onClick={() => setKeyDatesCollapsed((v) => !v)}
                     >
-                      <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Key Dates</h2>
+                      <h2 className="text-xs font-semibold text-[var(--section-subheading)] uppercase tracking-wide">Key Dates</h2>
                       {keyDatesCollapsed
                         ? <ChevronDownIcon className="w-4 h-4 text-slate-400" />
                         : <ChevronUpIcon className="w-4 h-4 text-slate-400" />}

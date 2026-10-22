@@ -6,7 +6,14 @@ export const metadata = {
   description: 'IPC ↔ BNS and CrPC ↔ BNSS section concordance matrix',
 }
 
-export default function ConcordancePage() {
+interface Props {
+  searchParams?: { section?: string; law?: string; q?: string }
+}
+
+export default function ConcordancePage({ searchParams }: Props) {
+  // Build an initial query from URL params: ?section=302&law=IPC → "302"
+  const initialQuery = searchParams?.section ?? searchParams?.q ?? ''
+
   return (
     <div className="flex flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto w-full">
       {/* Page header */}
@@ -43,7 +50,7 @@ export default function ConcordancePage() {
       </div>
 
       {/* Matrix */}
-      <ConcordanceMatrix />
+      <ConcordanceMatrix initialQuery={initialQuery} />
     </div>
   )
 }

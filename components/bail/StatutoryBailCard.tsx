@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AlertCircle, Clock, Edit2, ShieldAlert, InfoIcon } from 'lucide-react'
 import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -24,6 +24,7 @@ interface StatutoryBailCardProps {
 }
 
 export function StatutoryBailCard({ caseData, onUpdate, compact = false }: StatutoryBailCardProps) {
+  const [mounted, setMounted] = useState(false)
   const [openDialog, setOpenDialog] = useState(false)
   const [remandDate, setRemandDate] = useState(caseData.remandDate ?? '')
   const [statutoryPeriod, setStatutoryPeriod] = useState(caseData.statutoryPeriodDays ?? 60)
@@ -31,6 +32,10 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
   const [chargesheetDate, setChargesheetDate] = useState(caseData.chargesheetDate ?? '')
   const [applicableLaw, setApplicableLaw] = useState<'crpc' | 'bnss' | 'auto'>(caseData.applicableLaw ?? 'auto')
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const bail = calculateStatutoryBail({
     remandDate: caseData.remandDate,
@@ -75,8 +80,15 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
   const isDelayed = bail.status === 'filed_delayed'
 
   if (compact) {
+    if (!mounted) {
+      return (
+        <div className="h-10 w-full rounded-lg border border-slate-200 bg-white animate-pulse" />
+      )
+    }
+
     return (
       <div
+        suppressHydrationWarning
         className={cn(
           'flex items-center justify-between rounded-lg border p-3 text-xs transition-all',
           isAccrued
@@ -100,6 +112,7 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
             <span className="ml-1 text-slate-500">({bail.statutorySection})</span>
           </div>
         </div>
+
         <Button
           variant="ghost"
           size="sm"
@@ -112,9 +125,19 @@ export function StatutoryBailCard({ caseData, onUpdate, compact = false }: Statu
     )
   }
 
+  if (!mounted) {
+    return (
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm min-h-[140px] animate-pulse">
+        <div className="h-4 w-48 bg-slate-200 rounded mb-2" />
+        <div className="h-3 w-32 bg-slate-100 rounded" />
+      </div>
+    )
+  }
+
   return (
     <>
       <div
+        suppressHydrationWarning
         className={cn(
           'relative overflow-hidden rounded-xl border p-5 transition-all shadow-sm',
           isAccrued

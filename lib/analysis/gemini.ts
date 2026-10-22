@@ -15,8 +15,8 @@ function buildAnalysisInstructions(language: string): string {
   return `Analyze only the supplied extracted legal-document pages. Do not infer guilt, legal eligibility, procedural status, legal sections, court outcomes, or facts not present. Treat allegations and statements as reported content, not established findings. Return JSON with executiveSummary, executiveSources, documentSummaries, and potentialInconsistencies. Every factual statement in the executive summary and each document summary must be supported by an exact verbatim quote in its sources array. A potentialInconsistencies item must contain field, values, a neutral explanation, and at least two exact source quotes from different documentIds; include one only when the discrepancy is supported by those passages. Each source object must contain documentId, pageNumber, and quote copied exactly from supplied text. Each documentSummaries item must contain documentId, apparentType, summary, and sources. Use concise neutral language. If no discrepancies are supported, return an empty potentialInconsistencies array. Do not invent facts or citations. Write all natural-language output fields (executiveSummary, summary, apparentType, explanation) in ${language}. Keep documentId, pageNumber, field, values, and quote values unchanged — those must remain in their original form.`
 }
 
-/** Models to try in order if the configured model fails with 404 */
-const FALLBACK_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-pro-latest']
+/** Models to try in order if the configured model fails with 404 or 503 */
+const FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest']
 
 /** API versions to try in order */
 const API_VERSIONS = ['v1beta', 'v1'] as const
@@ -42,8 +42,8 @@ async function callGeminiAPI(
       return { response, apiVersion, modelUsed: model }
     }
 
-    // If not a 404 (model not found), don't retry with other models
-    if (response.status !== 404) {
+    // Retry on 404 (model not found) or 503 (model overloaded) — hard-fail anything else
+    if (response.status !== 404 && response.status !== 503) {
       const errorBody = await response.text().catch(() => '')
       let errorDetail = ''
       try {
@@ -76,8 +76,8 @@ async function callGeminiAPI(
         return { response, apiVersion, modelUsed: fallbackModel }
       }
 
-      // Only retry on 404
-      if (response.status !== 404) {
+      // Retry on 404 (not found) or 503 (overloaded) — hard-fail anything else
+      if (response.status !== 404 && response.status !== 503) {
         const errorBody = await response.text().catch(() => '')
         let errorDetail = ''
         try {
@@ -104,7 +104,7 @@ export async function generateGeminiAnalysis(documents: DocumentWithPages[], lan
     throw new Error('Gemini is not configured. Set GEMINI_API_KEY on the server and restart NyayaTrace.')
   }
 
-  const model = process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash'
+  const model = process.env.GEMINI_MODEL?.trim() || 'gemini-2.0-flash'
   const pages: Array<{ documentId: number; documentName: string; pageNumber: number; text: string }> = []
   let remainingCharacters = 120_000
 

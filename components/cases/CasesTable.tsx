@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { FileTextIcon, AlertTriangleIcon, EyeIcon, FolderOpenIcon } from 'lucide-react'
+import { FileTextIcon, AlertTriangleIcon, EyeIcon, FolderOpenIcon, ClockIcon } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { CaseStatusBadge, CaseTypeBadge } from './CaseStatusBadge'
 import { DeleteCaseDialog } from './DeleteCaseDialog'
@@ -53,7 +53,7 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
             <th className="py-3 px-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-32">
               Last Activity
             </th>
-            <th className="py-3 px-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-20">
+            <th className="py-3 px-4 text-xs font-semibold text-[var(--table-header-text)] uppercase tracking-wide w-48 text-right">
               Actions
             </th>
           </tr>
@@ -82,9 +82,14 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
                 >
                   {c.title}
                 </Link>
-                {c.court && (
-                  <p className="text-xs text-[var(--section-subheading)] mt-0.5 truncate">{c.court}</p>
-                )}
+                <div className="flex items-center gap-1.5 mt-0.5 text-xs text-[var(--section-subheading)] flex-wrap">
+                  {c.advocate && (
+                    <span className="font-semibold text-[11px] text-teal-800 dark:text-teal-300 bg-teal/10 px-1.5 py-0.2 rounded">
+                      Adv. {c.advocate}
+                    </span>
+                  )}
+                  {c.court && <span className="truncate">{c.court}</span>}
+                </div>
               </td>
 
               {/* Type */}
@@ -100,21 +105,21 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
                     const bail = calculateStatutoryBail(c)
                     if (bail.status === 'accrued') {
                       return (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-600" />
-                          </span>
-                          Default Bail Accrued
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-500 border border-rose-500/20">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
                         </span>
-                      )
-                    }
-                    if (bail.status === 'urgent') {
-                      return (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          {bail.daysRemaining}d to Default Bail
-                        </span>
+                        Default Bail Accrued
+                      </span>
+                    )
+                  }
+                  if (bail.status === 'urgent') {
+                    return (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500 border border-amber-500/20">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        {bail.daysRemaining}d to Default Bail
+                      </span>
                       )
                     }
                     return null
@@ -134,7 +139,7 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
               <td className="py-3 px-4 text-center">
                 <span
                   className={`inline-flex items-center gap-1 ${
-                    c.findingCount > 0 ? 'text-amber-600' : 'text-slate-400'
+                    c.findingCount > 0 ? 'text-amber-500' : 'text-[var(--section-subheading)]'
                   }`}
                 >
                   <AlertTriangleIcon className="w-3.5 h-3.5" />
@@ -144,7 +149,7 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
 
               {/* Last Activity */}
               <td className="py-3 px-4">
-                <span className="text-xs text-[var(--section-subheading)]">
+                <span className="text-xs text-[var(--section-subheading)]" suppressHydrationWarning>
                   {c.updatedAt
                     ? formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true })
                     : '—'}
@@ -152,15 +157,26 @@ export function CasesTable({ cases, onDeleteCase }: CasesTableProps) {
               </td>
 
               {/* Actions */}
-              <td className="py-3 px-4">
-                <div className="flex items-center gap-1.5">
+              <td className="py-3 px-4 text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <Link
+                    href={`/cases/${c.id}?tab=chronology`}
+                    title="View Chronology & Checkpoints for this case"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--section-subheading)] hover:text-teal transition-colors px-2 py-1 rounded border border-[var(--section-card-border)] hover:border-teal/40 hover:bg-teal/5"
+                  >
+                    <ClockIcon className="w-3 h-3 text-teal" />
+                    <span>Chronology</span>
+                  </Link>
+
                   <Link
                     href={`/cases/${c.id}`}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-teal hover:text-teal-light transition-colors px-2 py-1 rounded border border-teal/30 hover:border-teal/60 hover:bg-teal/5"
+                    title="Open Case Record Workspace"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-teal hover:bg-teal-light transition-colors px-2.5 py-1 rounded shadow-xs"
                   >
                     <EyeIcon className="w-3.5 h-3.5" />
-                    View
+                    <span>View</span>
                   </Link>
+
                   <DeleteCaseDialog
                     caseId={c.id}
                     caseNumber={c.caseNumber}

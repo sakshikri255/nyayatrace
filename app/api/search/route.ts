@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { pages, documents, cases, findings } from '@/lib/db/schema'
 import { eq, sql, and } from 'drizzle-orm'
+import Database from 'better-sqlite3'
+import path from 'node:path'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -108,6 +110,63 @@ export async function GET(request: NextRequest) {
         pageNumber: p.pageNumber,
         snippet: extractSnippet(p.extractedText || '', lowerTokens),
       })
+    }
+
+    // 1b. FTS5 search (additive — append results not already in list)
+    if (q.length >= 3) {
+      try {
+        const dbPath = path.join(process.cwd(), 'nyayatrace.db')
+        const rawDb = new Database(dbPath, { readonly: true })
+        const ftsQuery = q.replace(/['"*\-+^()~]/g, ' ').trim() + '*'
+        const ftsRows = rawDb.prepare(`
+          SELECT
+            p.id AS page_id,
+            p.page_number,
+            p.extracted_text,
+            d.id AS doc_id,
+            d.original_name AS doc_name,
+            c.id AS case_id,
+            c.case_number,
+            c.title AS case_title,
+            snippet(pages_fts, 0, '<mark>', '</mark>', '...', 20) AS fts_snippet
+          FROM pages_fts
+          JOIN pages p ON p.id = pages_fts.rowid
+          JOIN documents d ON d.id = p.document_id
+          JOIN cases c ON c.id = d.case_id
+          WHERE pages_fts MATCH ?
+          LIMIT 10
+        `).all(ftsQuery) as Array<{
+          page_id: number
+          page_number: number
+          extracted_text: string | null
+          doc_id: number
+          doc_name: string
+          case_id: number
+          case_number: string
+          case_title: string
+          fts_snippet: string | null
+        }>
+        rawDb.close()
+
+        const existingIds = new Set(results.map((r) => r.id))
+        for (const row of ftsRows) {
+          const id = `page-${row.page_id}`
+          if (existingIds.has(id)) continue
+          results.push({
+            id,
+            type: 'page',
+            caseId: row.case_id,
+            caseNumber: row.case_number,
+            caseTitle: row.case_title,
+            documentId: row.doc_id,
+            documentName: row.doc_name,
+            pageNumber: row.page_number,
+            snippet: row.fts_snippet ?? extractSnippet(row.extracted_text ?? '', lowerTokens),
+          })
+        }
+      } catch {
+        // FTS5 not available or table not yet created — skip silently
+      }
     }
 
     // 2. Search in Findings

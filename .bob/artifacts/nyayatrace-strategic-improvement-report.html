@@ -1,0 +1,611 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NyayaTrace — Strategic Improvement Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+
+  /* Header */
+  .report-header { margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 2px solid #e5e7eb; }
+  .report-header .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #7c5cd8; margin-bottom: 0.4rem; }
+  .report-header h1 { font-size: 22px; font-weight: 700; color: #1f2328; line-height: 1.3; }
+  .report-header .subtitle { font-size: 13px; color: #57606a; margin-top: 0.35rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 1rem; }
+  .meta-item { font-size: 12px; color: #57606a; }
+  .meta-item strong { color: #1f2328; }
+
+  /* Executive Summary */
+  .exec-summary { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; }
+  .exec-summary h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #57606a; margin-bottom: 0.75rem; }
+  .exec-summary p { font-size: 13.5px; color: #1f2328; }
+
+  /* Top 3 callout */
+  .top3 { margin-bottom: 2rem; }
+  .top3-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #57606a; margin-bottom: 0.75rem; }
+  .top3-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+  .top3-card { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.9rem 1rem; }
+  .top3-card .rank { font-size: 11px; font-weight: 700; color: #7c5cd8; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .top3-card .title { font-size: 13px; font-weight: 600; color: #1f2328; line-height: 1.3; }
+  .top3-card .impact { font-size: 12px; color: #57606a; margin-top: 0.35rem; }
+
+  /* Section heading */
+  .section-title { font-size: 16px; font-weight: 700; color: #1f2328; margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+
+  /* Recommendation card */
+  .rec-card { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 1.25rem; overflow: hidden; }
+  .rec-header { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1.25rem; background: #f7f8fa; border-bottom: 1px solid #e5e7eb; }
+  .rec-number { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: #1f2328; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
+  .rec-title-block { flex: 1; }
+  .rec-title-block h3 { font-size: 15px; font-weight: 700; color: #1f2328; line-height: 1.3; }
+  .rec-title-block .tagline { font-size: 12.5px; color: #57606a; margin-top: 0.2rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; flex-shrink: 0; align-items: flex-start; }
+  .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .badge-priority-musthave { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-priority-high { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+  .badge-priority-optional { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+  .badge-complexity-low { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .badge-complexity-medium { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+  .badge-complexity-high { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+  .rec-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .rec-row { display: grid; grid-template-columns: 130px 1fr; gap: 0.5rem; }
+  .rec-label { font-size: 11.5px; font-weight: 700; color: #57606a; text-transform: uppercase; letter-spacing: 0.04em; padding-top: 1px; }
+  .rec-value { font-size: 13px; color: #1f2328; }
+  .rec-value ul { padding-left: 1.1rem; margin-top: 0.2rem; }
+  .rec-value ul li { margin-bottom: 0.2rem; }
+  .tech-tag { display: inline-block; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 11px; font-weight: 500; color: #374151; padding: 1px 6px; margin: 2px 2px 2px 0; }
+
+  /* Roadmap */
+  .roadmap { margin-top: 2rem; }
+  .phase { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 1rem; overflow: hidden; }
+  .phase-header { padding: 0.85rem 1.25rem; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 0.75rem; }
+  .phase-1 .phase-header { background: #1f2328; color: #fff; }
+  .phase-2 .phase-header { background: #1e3a5f; color: #fff; }
+  .phase-3 .phase-header { background: #5b21b6; color: #fff; }
+  .phase-number { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+  .phase-items { padding: 1rem 1.25rem; }
+  .phase-item { display: flex; gap: 0.75rem; margin-bottom: 0.6rem; font-size: 13px; color: #1f2328; }
+  .phase-item:last-child { margin-bottom: 0; }
+  .phase-dot { width: 7px; height: 7px; border-radius: 50%; background: #3b82d4; flex-shrink: 0; margin-top: 6px; }
+  .phase-item strong { font-weight: 600; }
+  .phase-duration { font-size: 11.5px; color: #57606a; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #e5e7eb; }
+
+  /* Footer */
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #57606a; }
+
+  @media (max-width: 580px) {
+    .top3-grid { grid-template-columns: 1fr; }
+    .rec-row { grid-template-columns: 1fr; }
+    .rec-label { padding-bottom: 0; }
+    .badges { margin-top: 0.5rem; }
+    .rec-header { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  
+  <div class="report-header">
+    <div class="eyebrow">Product Strategy Report</div>
+    <h1>NyayaTrace — Strategic Improvement Analysis</h1>
+    <div class="subtitle">10 prioritized recommendations to make NyayaTrace production-ready, innovative, and visually compelling</div>
+    <div class="meta">
+      <div class="meta-item"><strong>Stack:</strong> Next.js 14 · Drizzle ORM · SQLite · Framer Motion · Tesseract.js · Gemini / OpenAI</div>
+      <div class="meta-item"><strong>Domain:</strong> Indian criminal law case management (bail, parole, document verification)</div>
+      <div class="meta-item"><strong>Purpose:</strong> Local legal-record workspace for advocates and clerks</div>
+    </div>
+  </div>
+
+  
+  <div class="exec-summary">
+    <h2>Executive Summary</h2>
+    <p>NyayaTrace is a well-architected, domain-specific legal workspace with genuine differentiators: a three-panel resizable verification workspace, statutory bail countdown logic (CrPC/BNSS auto-detection), an IPC↔BNS concordance matrix, AI-grounded analysis (Gemini/OpenAI), and court-quality document export. The core technical foundation is solid. The gap between "impressive prototype" and "production-grade tool" lies primarily in four areas: <strong>real authentication and multi-user safety</strong>, <strong>workflow automation that reduces manual repetition</strong>, <strong>richer data visualization and timeline storytelling</strong>, and <strong>making AI capabilities more discoverable and interactive</strong>. The recommendations below address those gaps without recommending complexity for its own sake.</p>
+  </div>
+
+  
+  <div class="top3">
+    <div class="top3-title">Three Strongest Opportunities</div>
+    <div class="top3-grid">
+      <div class="top3-card">
+        <div class="rank">🏆 #1 Must-Have</div>
+        <div class="title">Real Authentication &amp; Role-Based Access</div>
+        <div class="impact">The current localStorage-only auth is a single critical blocker for any real deployment or team usage.</div>
+      </div>
+      <div class="top3-card">
+        <div class="rank">🚀 #2 High Impact</div>
+        <div class="title">Interactive Case Timeline Visualization</div>
+        <div class="impact">A scrollable, zoomable SVG/canvas timeline linking hearings, orders, bail deadlines, and compliance events is the missing "aha moment".</div>
+      </div>
+      <div class="top3-card">
+        <div class="rank">💡 #3 Differentiator</div>
+        <div class="title">AI-Powered Draft Application Generator</div>
+        <div class="impact">Automatically drafting bail applications from case data + verified findings closes the loop from "research tool" to "filing tool".</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section-title">All 10 Recommendations — Ranked by Value &amp; Feasibility</div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">1</div>
+      <div class="rec-title-block">
+        <h3>Real Server-Side Authentication &amp; Role-Based Access Control</h3>
+        <div class="tagline">Replace localStorage session with JWT / session cookies; add Advocate vs. Clerk vs. Admin roles</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-musthave">Must-Have</span>
+        <span class="badge badge-complexity-medium">Medium Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">Auth is entirely client-side localStorage. Any user who opens DevTools can impersonate any user. SignUp creates an account that persists nowhere on the server. This is the single biggest blocker for real-world deployment or team demos.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Add a <code>users</code> table to the SQLite schema (hashed passwords via bcrypt). Add a <code>sessions</code> table or use signed JWT HttpOnly cookies. Wrap all <code>/api/*</code> routes and page layouts in a server-side auth check using Next.js middleware. Add three roles: <em>Advocate</em> (full access), <em>Clerk</em> (read-only reports/hearings), <em>Admin</em> (user management). Guard case deletion and AI analysis trigger by role.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">Teams can share the same NyayaTrace instance. The audit log (already in the schema) becomes meaningful — events are attributed to real authenticated users, not "performed_by: string".</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">bcryptjs</span>
+          <span class="tech-tag">jose (JWT)</span>
+          <span class="tech-tag">Next.js middleware.ts</span>
+          <span class="tech-tag">Drizzle users + sessions tables</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Transforms the project from "single-user prototype" to "team-deployable application". Directly unlocks audit trail credibility.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">2</div>
+      <div class="rec-title-block">
+        <h3>Interactive Unified Case Timeline (SVG / Canvas)</h3>
+        <div class="tagline">A single scrollable timeline merging hearings, judicial orders, bail deadlines, custody clock, and compliance events</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-high">High-Value</span>
+        <span class="badge badge-complexity-medium">Medium Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">Case chronology currently lives in three separate places: <em>HearingTimeline</em> in Case Progress, <em>TemporalTimeline</em> in Verification, and <em>MasterChronologyView</em> in Case Progress. These are disconnected views that require tab-switching to get the full picture. The bail countdown and compliance events are never shown alongside hearing history.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Build a new <code>UnifiedCaseTimeline</code> component using a lightweight SVG or <code>d3</code>-style layout. Plot all events on a single horizontal axis: arrest → remand → hearings → orders → bail deadline → parole end. Use color-coded lanes (judicial=blue, statutory=amber, compliance=emerald). Enable hover tooltips showing full event detail. Add a zoom slider (1 month → full case span). Expose this in the Case Workspace, Case Progress, and as a full-screen overlay from a keyboard shortcut.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">An advocate can see the entire procedural history of a case in one glance. The relationship between a delayed chargesheet and an upcoming bail deadline becomes visually self-evident.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">d3 (scale/axis only)</span>
+          <span class="tech-tag">SVG rendering in React</span>
+          <span class="tech-tag">No new DB tables — queries existing hearings + orders + bailConditions</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">The single most visually impressive feature for a demo. Makes the app's purpose immediately legible to any new user.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">3</div>
+      <div class="rec-title-block">
+        <h3>AI-Powered Bail Application Draft Generator</h3>
+        <div class="tagline">Use verified findings + statutory bail calculations to auto-draft a structured bail application, editable before export</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-high">High-Value</span>
+        <span class="badge badge-complexity-medium">Medium Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">The <em>DraftApplicationTab</em> exists in Bail Briefs but appears to be a static template. The verified findings, statutory bail status, hearing chronology, and surety bond data are all already in the DB — but none of them are automatically composed into a draft application. The user must manually write this from scratch or use the generic Word export (which is a fixed HTML template).</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Add a <code>POST /api/cases/[id]/bail-draft/generate</code> endpoint. Feed it: statutory bail status, all verified findings with source citations, hearing list, surety bonds, and parole timeline. If Gemini/OpenAI is configured, use AI to generate natural-language paragraphs. If not, use a deterministic template engine (the way <code>wordExport.ts</code> already works). Render the draft in a rich-text editor (e.g. <code>tiptap</code>) so the advocate can edit, add signature blocks, and then export to PDF or DOCX.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">An advocate can go from "documents uploaded" to "draft application ready for review" in minutes. This closes the workflow loop that currently ends at "here are your findings".</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">tiptap (rich text editor)</span>
+          <span class="tech-tag">Gemini / local template fallback</span>
+          <span class="tech-tag">No new DB schema (uses existing tables)</span>
+          <span class="tech-tag">Enhanced word export</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Converts NyayaTrace from a case-management tool into an end-to-end filing assistant. Strongest portfolio/hackathon differentiator.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">4</div>
+      <div class="rec-title-block">
+        <h3>Contextual AI Chat ("Ask About This Case")</h3>
+        <div class="tagline">A sidebar RAG chat that answers questions grounded in the case's own extracted document text</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-high">High-Value</span>
+        <span class="badge badge-complexity-high">High Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">The AI analysis today is a one-shot batch operation. There is no way to ask follow-up questions like "What does the panchnama say about the date?" or "Which witnesses gave contradictory statements on location?". Users must re-read raw page text manually.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Add a collapsible chat drawer to the Verification Workspace. Each chat message is sent with the extracted page text of the current case (already in the DB) as context. Use the same Gemini/OpenAI integration already present. Enforce the existing grounding rule: AI responses must cite a documentId + pageNumber. Display cited passages as inline quote cards. Store conversation threads per case in a new <code>case_chats</code> table (optional — can be session-only first).</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">Dramatically reduces the time to find a specific fact in large document sets. Makes the AI feel like a knowledgeable assistant rather than a one-click button.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">Gemini or OpenAI (already integrated)</span>
+          <span class="tech-tag">Streaming API response (SSE)</span>
+          <span class="tech-tag">Optional: case_chats table</span>
+          <span class="tech-tag">External API key required</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Highest wow factor for a live demo. Demonstrates responsible AI use (grounded, not generative).</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">5</div>
+      <div class="rec-title-block">
+        <h3>Real-Time Statutory Bail Alert &amp; Notification System</h3>
+        <div class="tagline">Persistent urgency alerts when bail deadlines are ≤10 days away, surfaced on the dashboard and in a dedicated notification center</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-musthave">Must-Have</span>
+        <span class="badge badge-complexity-low">Low Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">The statutory bail countdown logic (<code>calculateStatutoryBail</code>) correctly identifies "urgent" and "accrued" cases. However, this information is only visible if the user navigates to the Bail &amp; Parole section. There is no proactive alert surface. A missed bail deadline has irreversible consequences for an accused — this is the highest-stakes data in the app.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Extend the existing <code>UrgencyTicker</code> component and the dashboard's urgency logic. Add a bell icon in the Topbar that shows a badge count. Clicking it opens a notification panel listing all urgent/accrued cases. Persist a "dismissed" flag per case per day in localStorage (or a DB table). Add an animated pulsing ring on the Sidebar "Bail &amp; Parole" nav item when urgent cases exist. On the Overview dashboard, make the urgency cards link directly to <code>/bail-briefs/[id]</code>.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">The system proactively tells advocates what needs immediate action, rather than requiring them to check every case. Directly prevents a high-stakes procedural miss.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">Topbar notification bell (UI only)</span>
+          <span class="tech-tag">calculateStatutoryBail (already exists)</span>
+          <span class="tech-tag">No new DB tables needed</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Highest safety impact. Low effort relative to value. Makes the existing bail logic far more discoverable.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">6</div>
+      <div class="rec-title-block">
+        <h3>Full-Text Search Across All Document Pages</h3>
+        <div class="tagline">Add SQLite FTS5 full-text search so users can search any extracted word across all documents in all cases</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-high">High-Value</span>
+        <span class="badge badge-complexity-low">Low Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">There is a <code>/api/search</code> route and a <code>CommandPalette</code>, but search appears to cover case numbers and titles only. The <code>pages</code> table contains extracted text for every document page — yet there is no way to search "What cases mention Randhir Singh?" or "Find all pages with the word 'alibi' across all cases". This is the most valuable search capability for a legal research tool.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Add an SQLite FTS5 virtual table (<code>CREATE VIRTUAL TABLE pages_fts USING fts5(extracted_text, content=pages)</code>) via a new migration. Extend the <code>/api/search</code> route to query this table. Surface results in the CommandPalette with document and page number, showing a 120-character snippet with the match highlighted. Clicking a result navigates to <code>/verification/[caseId]</code> and pre-selects the document and page.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">Transforms the CommandPalette from a navigation tool into a research tool. "Find anything, anywhere, instantly" is a compelling capability that saves hours of manual page-by-page scanning.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">SQLite FTS5 (built-in, no extra dep)</span>
+          <span class="tech-tag">New migration script</span>
+          <span class="tech-tag">Enhanced /api/search route</span>
+          <span class="tech-tag">CommandPalette UI update</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Highest ROI improvement. SQLite FTS5 is already available — this is almost entirely a query and UI task, not infrastructure work.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">7</div>
+      <div class="rec-title-block">
+        <h3>Document Processing Status &amp; OCR Quality Dashboard</h3>
+        <div class="tagline">A visual per-document quality map showing which pages extracted poorly, with a one-click re-OCR trigger</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-high">High-Value</span>
+        <span class="badge badge-complexity-low">Low Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">Pages have a <code>quality</code> field ('good' / 'poor' / 'unreadable') and the README warns that OCR output must be manually checked. However, there is no visual surface that shows which pages of which document are poor quality. Users discover this only when they happen to read a page. Poor-quality pages silently degrade AI analysis accuracy.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">In the <code>DocumentPanel</code>, add a miniature page quality bar below each document name — a row of small colored squares (green=good, amber=poor, red=unreadable) corresponding to each page. Hovering a square shows the page number. Clicking a poor/unreadable square opens the viewer on that page. Add a "Re-process page" button (calls a new API route) for individual pages that failed OCR. Show an aggregate quality score ("12/15 pages good") for each document.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">Users can immediately see OCR completeness without opening every page. Re-processing bad pages without re-uploading the entire document saves significant manual work.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">No new DB tables (pages.quality already exists)</span>
+          <span class="tech-tag">New /api/pages/[id]/reprocess route</span>
+          <span class="tech-tag">UI changes to DocumentPanel only</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Directly improves data quality, which improves AI analysis reliability. Makes a currently invisible problem visible and actionable.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">8</div>
+      <div class="rec-title-block">
+        <h3>Cross-Case Legal Section Frequency &amp; Risk Analytics</h3>
+        <div class="tagline">A dashboard view showing which IPC/BNS sections appear most in a case, with direct Concordance Matrix cross-linking</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-high">High-Value</span>
+        <span class="badge badge-complexity-medium">Medium Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">The <code>legal_sections</code> API and <code>ConcordanceMatrix</code> exist but appear disconnected from actual case data. There is no automated detection of which sections are cited in documents. The <code>LegalSectionsTab</code> in the Case Workspace likely requires manual entry. The concordance matrix's power is not connected to live case analysis.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Add a regex-based section extractor that runs during (or after) OCR, identifying patterns like "Section 302 IPC", "u/s 420", "Sec 187 BNSS" in extracted page text and auto-populating the legal sections table. Add a recharts bar chart to the Case Workspace's Overview tab showing section frequency. Each bar links to the Concordance Matrix pre-filtered on that section. Add a severity indicator using the existing bailable/non-bailable metadata already in <code>lib/legal/sections.ts</code>.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">Removes the manual work of identifying which laws apply. Instantly shows whether a case involves predominantly bailable or non-bailable offenses, informing bail strategy.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">Regex pattern library (no external dep)</span>
+          <span class="tech-tag">Run during document processing pipeline</span>
+          <span class="tech-tag">Recharts (already installed)</span>
+          <span class="tech-tag">Link to existing Concordance Matrix</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Closes a significant gap between the concordance matrix (static reference) and actual case data (dynamic). Makes the legal section feature genuinely useful rather than decorative.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">9</div>
+      <div class="rec-title-block">
+        <h3>Animated Cause List with Google Calendar / iCal Export</h3>
+        <div class="tagline">Upgrade the weekly board with drag-and-drop rescheduling and one-click calendar export for upcoming hearings</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-high">High-Value</span>
+        <span class="badge badge-complexity-low">Low Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">The Cause List (Court Diary / Roznamcha) is a read-only weekly board. Advocates need to actually attend these hearings — yet there is no way to export them to a calendar, set a reminder, or quickly reschedule a hearing when a date changes. This is a daily-use workflow that is currently not supported.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Add an "Export Week to Calendar" button that generates an <code>.ics</code> file containing all hearings in the current week view. Each calendar event includes the case number, court, judge, and a deep-link back to the case. Add a "Jump to today" button and a month-view toggle. For rescheduling, add a right-click context menu on a hearing card to change the date (fires a <code>PATCH /api/hearings/[id]</code>). Add Framer Motion card-flip animation when switching between week views.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">Integrates with advocates' existing calendar workflow. An .ics file works with Google Calendar, Outlook, and Apple Calendar without any API key or OAuth setup.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">ics file generation (pure JS, no dep)</span>
+          <span class="tech-tag">PATCH /api/hearings/[id]</span>
+          <span class="tech-tag">Framer Motion (already installed)</span>
+          <span class="tech-tag">No external API needed</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Converts a passive display into an active daily tool. Low complexity for high perceived value in a demo.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="rec-card">
+    <div class="rec-header">
+      <div class="rec-number">10</div>
+      <div class="rec-title-block">
+        <h3>Progressive Web App (PWA) + Offline Mode</h3>
+        <div class="tagline">Make NyayaTrace installable and functional offline for court visits where internet is unreliable</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-priority-optional">Optional Innovation</span>
+        <span class="badge badge-complexity-medium">Medium Complexity</span>
+      </div>
+    </div>
+    <div class="rec-body">
+      <div class="rec-row">
+        <div class="rec-label">Problem</div>
+        <div class="rec-value">Indian court halls frequently have poor or no internet connectivity. An advocate who has uploaded all documents and run analysis cannot access their case notes or bail calculations from their phone in court. The app is entirely server-dependent (SQLite is local, but the Next.js app itself must run).</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Proposed Implementation</div>
+        <div class="rec-value">Add a <code>next-pwa</code> service worker configuration. Cache the case list, hearing calendar, bail brief pages, and report views in the service worker. Use IndexedDB (via <code>idb</code>) to store a read-only snapshot of selected cases. Add an "Add to Home Screen" prompt. For offline editing, queue changes locally and sync when connectivity returns (only for hearing notes and annotations — not OCR or AI analysis). Show a clear "Offline — cached data" banner.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">User Benefit</div>
+        <div class="rec-value">Advocates can reference their case timeline, bail deadline, and hearing notes from their phone in court, without internet. The app becomes part of the courtroom workflow, not just the office workflow.</div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Tech Required</div>
+        <div class="rec-value">
+          <span class="tech-tag">next-pwa or @ducanh2912/next-pwa</span>
+          <span class="tech-tag">idb (IndexedDB wrapper)</span>
+          <span class="tech-tag">Service worker caching strategy</span>
+          <span class="tech-tag">manifest.json (icons + theme)</span>
+        </div>
+      </div>
+      <div class="rec-row">
+        <div class="rec-label">Expected Impact</div>
+        <div class="rec-value">Strong differentiator for real-world deployment story. Moderate complexity but no new infrastructure required.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section-title">Recommended Implementation Roadmap</div>
+  <div class="roadmap">
+
+    <div class="phase phase-1">
+      <div class="phase-header">
+        <span class="phase-number">Phase 1 — Foundation</span>
+        <span>Security, Discovery &amp; Core UX Gaps</span>
+      </div>
+      <div class="phase-items">
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#1 Real Authentication:</strong> Users table, bcrypt passwords, JWT HttpOnly cookies, middleware auth guard, role-based route protection. This must come first — it unblocks all multi-user scenarios.</div></div>
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#5 Statutory Bail Alerts:</strong> Notification bell in Topbar, urgency badges on the sidebar nav item, dismissible alert panel. Builds on existing <code>calculateStatutoryBail</code> with minimal new code.</div></div>
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#6 FTS5 Full-Text Search:</strong> Single migration, extended search API, upgraded CommandPalette results with document snippets. Highest ROI relative to effort.</div></div>
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#7 OCR Quality Dashboard:</strong> Visual page quality map in DocumentPanel, per-page re-process button. Directly improves data quality for all downstream features.</div></div>
+        <div class="phase-duration">Estimated effort: 2–3 weeks for a solo developer</div>
+      </div>
+    </div>
+
+    <div class="phase phase-2">
+      <div class="phase-header">
+        <span class="phase-number">Phase 2 — Intelligence &amp; Visualization</span>
+        <span>Make Data Tell a Story</span>
+      </div>
+      <div class="phase-items">
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#2 Unified Case Timeline:</strong> SVG timeline merging all event types. The most visually impactful single feature. Deploy first on Case Progress page, then add to Case Workspace overlay.</div></div>
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#8 Legal Section Auto-Extraction:</strong> Regex extractor during OCR pipeline, section frequency chart, Concordance Matrix deep-linking. Turns two currently isolated features into a connected workflow.</div></div>
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#9 Cause List Calendar Export:</strong> .ics generation, right-click reschedule, Framer Motion transitions. Low effort, high daily-use value.</div></div>
+        <div class="phase-duration">Estimated effort: 2–3 weeks for a solo developer</div>
+      </div>
+    </div>
+
+    <div class="phase phase-3">
+      <div class="phase-header">
+        <span class="phase-number">Phase 3 — AI &amp; Mobility</span>
+        <span>Ambitious Differentiators</span>
+      </div>
+      <div class="phase-items">
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#3 AI Draft Generator:</strong> <code>/api/cases/[id]/bail-draft/generate</code>, tiptap rich-text editor, template fallback when no AI key, enhanced Word/PDF export. Closes the research-to-filing loop.</div></div>
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#4 Contextual AI Chat:</strong> Streaming Gemini/OpenAI chat drawer in Verification Workspace, grounded citations, session-stored conversation. Highest demo wow factor with responsible AI guardrails.</div></div>
+        <div class="phase-item"><div class="phase-dot"></div><div><strong>#10 PWA + Offline Mode:</strong> Service worker, IndexedDB caching for read views, manifest. Best deployed after all core features are stable.</div></div>
+        <div class="phase-duration">Estimated effort: 3–4 weeks for a solo developer. Requires Gemini/OpenAI API key for AI features.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <p>NyayaTrace Strategic Improvement Report  ·  Made with IBM Bob</p>
+</footer>
+
+</body>
+</html>

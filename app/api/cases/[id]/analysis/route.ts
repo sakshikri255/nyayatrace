@@ -74,6 +74,9 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     runTime >= latestDocumentChange
   )
 
+  const docsWithPages = currentDocuments.map((doc) => getDocumentWithPages(doc.id)).filter((d): d is NonNullable<typeof d> => d !== null)
+  let fallbackKeyEntities: ReturnType<typeof buildCaseSynopsis>['keyEntities'] | null = null
+
   return NextResponse.json({
     current,
     aiProviderConfigured: Boolean(process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
@@ -82,16 +85,25 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
       openai: Boolean(process.env.OPENAI_API_KEY),
     },
     latestRunId: latest?.id ?? null,
-    runs: runs.map((run) => ({
-      ...run,
-      synopsis: parseSynopsis(run.result),
-      findings: db.select({ id: findings.id })
-        .from(findings)
-        .where(eq(findings.analysisRunId, run.id))
-        .all()
-        .map(({ id }) => getFindingWithSources(id))
-        .filter((finding): finding is NonNullable<typeof finding> => finding !== null),
-    })),
+    runs: runs.map((run) => {
+      const synopsis = parseSynopsis(run.result)
+      if (synopsis && (!synopsis.keyEntities || synopsis.keyEntities.length === 0)) {
+        if (!fallbackKeyEntities && caseRecord) {
+          fallbackKeyEntities = buildCaseSynopsis(caseRecord, docsWithPages).keyEntities
+        }
+        synopsis.keyEntities = fallbackKeyEntities || []
+      }
+      return {
+        ...run,
+        synopsis,
+        findings: db.select({ id: findings.id })
+          .from(findings)
+          .where(eq(findings.analysisRunId, run.id))
+          .all()
+          .map(({ id }) => getFindingWithSources(id))
+          .filter((finding): finding is NonNullable<typeof finding> => finding !== null),
+      }
+    }),
   })
 }
 

@@ -10,9 +10,113 @@ import {
   CheckCircle2Icon,
   AlertCircleIcon,
   LoaderIcon,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DocumentRow } from '@/lib/queries/documents'
+
+interface PageQuality {
+  id: number
+  pageNumber: number
+  quality: 'good' | 'poor' | 'unreadable'
+}
+
+const QUALITY_COLORS: Record<string, string> = {
+  good: 'bg-emerald-500',
+  poor: 'bg-amber-400',
+  unreadable: 'bg-red-500',
+}
+
+function PageQualityBar({ docId, processingStatus }: { docId: number; processingStatus: string }) {
+  const [pageQuality, setPageQuality] = useState<PageQuality[] | null>(null)
+  const [reprocessing, setReprocessing] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (processingStatus !== 'complete') return
+    fetch(`/api/documents/${docId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.pages) {
+          setPageQuality(data.pages as PageQuality[])
+        }
+      })
+      .catch(() => {})
+  }, [docId, processingStatus])
+
+  if (!pageQuality || pageQuality.length === 0) return null
+
+  const readable = pageQuality.filter((p) => p.quality === 'good').length
+  const hasUnreadable = pageQuality.some((p) => p.quality === 'unreadable')
+  const displayPages = pageQuality.slice(0, 30)
+  const extra = pageQuality.length - 30
+
+  async function handleReprocess(pageId: number) {
+    setReprocessing(pageId)
+    try {
+      const res = await fetch(`/api/documents/${docId}/reprocess-page`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId }),
+      })
+      if (res.ok) {
+        const updated = await res.json() as PageQuality
+        setPageQuality((prev) => prev ? prev.map((p) => p.id === pageId ? updated : p) : prev)
+        toast.success('Page reprocessed.')
+      } else {
+        toast.error('Reprocess failed.')
+      }
+    } catch {
+      toast.error('Reprocess failed.')
+    } finally {
+      setReprocessing(null)
+    }
+  }
+
+  return (
+    <div className="mt-1.5 px-0">
+      <div className="flex items-center gap-1 mb-1">
+        <span className="text-[10px] text-slate-400">
+          {readable}/{pageQuality.length} pages readable
+        </span>
+        {hasUnreadable && (
+          <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
+        )}
+      </div>
+      <div className="flex items-center flex-wrap gap-0.5">
+        {displayPages.map((p) => (
+          <div key={p.id} className="group relative">
+            <button
+              title={`Page ${p.pageNumber} — ${p.quality}`}
+              className={cn(
+                'w-1.5 h-1.5 rounded-[1px] transition-transform group-hover:scale-150',
+                QUALITY_COLORS[p.quality]
+              )}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (p.quality === 'poor' || p.quality === 'unreadable') {
+                  handleReprocess(p.id)
+                }
+              }}
+            />
+            {(p.quality === 'poor' || p.quality === 'unreadable') && reprocessing !== p.id && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 hidden group-hover:flex items-center gap-1 bg-slate-800 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap pointer-events-none">
+                <RefreshCw className="w-2.5 h-2.5" />
+                Re-process
+              </div>
+            )}
+            {reprocessing === p.id && (
+              <LoaderIcon className="absolute -top-1 -left-0.5 w-2.5 h-2.5 animate-spin text-teal" />
+            )}
+          </div>
+        ))}
+        {extra > 0 && (
+          <span className="text-[10px] text-slate-400 ml-0.5">+{extra}</span>
+        )}
+      </div>
+    </div>
+  )
+}
 
 interface Props {
   caseId: number
@@ -230,6 +334,9 @@ export function DocumentPanel({
                           {statusCfg.label}
                         </span>
                       </div>
+                      {doc.processingStatus === 'complete' && (
+                        <PageQualityBar docId={doc.id} processingStatus={doc.processingStatus} />
+                      )}
                     </div>
                   </button>
                 </li>

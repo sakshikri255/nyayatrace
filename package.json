@@ -11,10 +11,14 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:seed-demo": "tsx lib/db/seed-demo.ts",
+    "db:seed-aditi": "tsx lib/db/seed-aditi-case.ts",
     "db:remove-demo": "tsx lib/db/cleanup-demo-data.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

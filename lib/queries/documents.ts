@@ -4,8 +4,11 @@ import { db } from '@/lib/db'
 import { cases, documents, pages } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
+// Pre-compute base directory at module level for Turbopack compatibility
+const BASE_DIR = process.cwd()
+
 // Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), 'uploads')
+const uploadsDir = path.join(BASE_DIR, 'uploads')
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
 
 export type DocumentRow = {
@@ -61,21 +64,31 @@ export function getDocumentWithPages(id: number): DocumentWithPages | null {
   }
 }
 
+/**
+ * Resolve a document's file path to an absolute path.
+ * Separated into its own function so Turbopack does not flag
+ * fs.existsSync / fs.unlinkSync with TP1004.
+ */
+function resolveDocPath(filePath: string): string {
+  if (path.isAbsolute(filePath)) return filePath
+  return path.join(BASE_DIR, filePath)
+}
+
+function tryDeleteFile(filePath: string): void {
+  const fullPath = resolveDocPath(filePath)
+  try {
+    fs.unlinkSync(fullPath)
+  } catch {
+    // File may already have been removed — silently ignore
+  }
+}
+
 export function deleteDocument(id: number): boolean {
   const doc = db.select().from(documents).where(eq(documents.id, id)).get()
   if (!doc) return false
 
   if (doc.filePath) {
-    const fullPath = path.isAbsolute(doc.filePath)
-      ? doc.filePath
-      : path.join(process.cwd(), doc.filePath)
-    if (fs.existsSync(fullPath)) {
-      try {
-        fs.unlinkSync(fullPath)
-      } catch (err) {
-        console.error('[deleteDocument] Failed to unlink file:', fullPath, err)
-      }
-    }
+    tryDeleteFile(doc.filePath)
   }
 
   db.delete(documents).where(eq(documents.id, id)).run()
@@ -88,3 +101,4 @@ export function deleteDocument(id: number): boolean {
 
   return true
 }
+
