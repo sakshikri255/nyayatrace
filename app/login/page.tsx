@@ -261,11 +261,6 @@ function LoginContent() {
                 })}
               </div>
             </div>
-
-            <div className="mt-6 pt-3 border-t border-white/5 text-xs text-muted/60 flex items-center justify-between">
-              <span>Secure local sandbox</span>
-              <span>Local SQLite</span>
-            </div>
           </div>
         </div>
       </div>
