@@ -30,6 +30,16 @@ import { logoutUser, setSession, DEMO_USERS, type UserRecord } from '@/lib/auth'
 import { useSession } from '@/hooks/useSession'
 import { getAvatar } from '@/lib/avatars'
 
+const PROFILE_KEY = 'nyayatrace_profile'
+function readStoredAvatarId(): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY)
+    if (!raw) return undefined
+    return (JSON.parse(raw) as { avatarId?: string }).avatarId
+  } catch { return undefined }
+}
+
 const NAV_ITEMS = [
   { label: 'Overview', href: '/overview', icon: LayoutDashboard },
   { label: 'Cases', href: '/cases', icon: Briefcase },
@@ -48,11 +58,27 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [hasUrgentBail, setHasUrgentBail] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [storedAvatarId, setStoredAvatarId] = useState<string | undefined>(undefined)
   const pathname = usePathname()
   const router = useRouter()
   const session = useSession()
   const { mobileOpen, setMobileOpen } = useMobileSidebar()
   const profileRef = useRef<HTMLDivElement>(null)
+
+  // Keep storedAvatarId in sync with nyayatrace_profile localStorage
+  useEffect(() => {
+    setStoredAvatarId(readStoredAvatarId())
+    function onStorage(e: StorageEvent) {
+      if (e.key === PROFILE_KEY) setStoredAvatarId(readStoredAvatarId())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  // Also refresh when session changes (same-tab save fires SESSION_CHANGE_EVENT)
+  useEffect(() => {
+    setStoredAvatarId(readStoredAvatarId())
+  }, [session])
 
   const checkAlerts = useCallback(async () => {
     try {
@@ -116,7 +142,7 @@ export function Sidebar() {
     }
   }
 
-  const avatar = getAvatar(session?.avatarId)
+  const avatar = getAvatar(session?.avatarId ?? storedAvatarId)
 
   return (
     <TooltipProvider delay={0}>
