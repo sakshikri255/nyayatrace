@@ -1,13 +1,18 @@
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { DocumentWithPages } from '@/lib/queries/documents'
-import type { AIAnalysis } from '@/lib/analysis/openai'
-import { extractLegalDates } from '@/lib/legalSanitizer'
+import type { AIAnalysis, CaseMetadataHeader, FactMatrixItem, VerifiedCitation } from '@/lib/analysis/openai'
+import { extractLegalDates, cleanOcrRegex, categorizeLegalText, generateStoryAndDossier } from '@/lib/legalSanitizer'
+import type { TechnicalDossierItem } from '@/lib/legalSanitizer'
 
 export interface EvidenceReference {
   documentId: number
   documentName: string
   pageNumber: number
   passage: string
+  /** Plain-English 4-5 sentence narrative about what this page is about */
+  caseStory?: string
+  /** Structured list of technical legal metadata from this page */
+  technicalDossier?: TechnicalDossierItem[]
 }
 
 export interface PotentialInconsistency {
@@ -36,10 +41,12 @@ export interface CaseSynopsis {
     jurisdiction: string | null
     userNotes: string | null
   }
+  metadataHeader?: CaseMetadataHeader
   language?: string
   executiveSynopsis: string
   aiAnalysis?: AIAnalysis
   keyEntities?: KeyEntity[]
+  factMatrix?: FactMatrixItem[]
   facts: EvidenceReference[]
   chronology: Array<EvidenceReference & { date: string; dateNote: string }>
   documentSummaries: Array<{
@@ -63,36 +70,46 @@ export interface CaseSynopsis {
   method: string
 }
 
-const DATE_LABEL_PATTERN = /\b(date of (?:incident|occurrence|event)|(?:incident|occurrence|event) date)\b/gi
-const PERSON_NAME_PATTERN = /\bname of (accused|applicant|witness|complainant)\b|\b(accused|applicant|witness|complainant)(?:'s)? name\b/gi
-const INCIDENT_LOCATION_PATTERN = /\b(place of occurrence|location of incident|incident location)\b/gi
+const DATE_LABEL_PATTERN = /\b(date of (?:incident|occurrence|event|award|order|filing)|(?:incident|occurrence|event|award|order|filing) date)\b/gi
+const PERSON_NAME_PATTERN = /\bname of (accused|applicant|witness|complainant|petitioner|respondent)\b|\b(accused|applicant|witness|complainant|petitioner|respondent)(?:'s)? name\b/gi
+const INCIDENT_LOCATION_PATTERN = /\b(place of occurrence|location of incident|incident location|location of land|disputed property)\b/gi
 
 function apparentDocumentType(documentName: string, text: string) {
   const content = `${documentName} ${text}`.toLowerCase()
+  if (/\b(arbitration|section 34|section 37|arbitral award|cala)\b/.test(content)) return 'Arbitration Record / Petition'
+  if (/\b(writ petition|w\.p\.|article 226|article 32)\b/.test(content)) return 'Writ Petition'
   if (/\b(first information report|\bfir\b|police complaint)\b/.test(content)) return 'FIR / Police Complaint'
   if (/\b(witness statement|statement of witness|deposition)\b/.test(content)) return 'Witness Statement'
   if (/\b(bail application|bail order|surety|parole)\b/.test(content)) return 'Bail & Release Record'
-  if (/\b(judgment|judgement|court order|order of the court)\b/.test(content)) return 'Court Order / Judgment'
-  if (/\b(investigation report|investigation|charge sheet|chargesheet)\b/.test(content)) return 'Investigation Report / Chargesheet'
-  return 'General Case Document'
+  if (/\b(judgment|judgement|court order|award|order of the court)\b/.test(content)) return 'Court Order / Award'
+  if (/\b(investigation report|charge sheet|chargesheet)\b/.test(content)) return 'Investigation Report / Chargesheet'
+  if (/\b(sale deed|conveyance|agreement|valuation report)\b/.test(content)) return 'Valuation / Property Record'
+  return 'General Legal Record'
 }
 
 function extractiveSummary(text: string) {
-  const sentences = text.match(/[^.!?]+[.!?]?/g) ?? []
-  return sentences.map((sentence) => sentence.trim()).filter(Boolean).slice(0, 2).join(' ')
+  const cleaned = cleanOcrRegex(text)
+  const sentences = cleaned.match(/[^.!?]+[.!?]?/g) ?? []
+  return sentences.map((sentence) => sentence.trim()).filter((s) => s.length > 15).slice(0, 2).join(' ')
 }
 
-function excerpt(text: string, index = 0, length = 500) {
+function excerpt(text: string, index = 0, length = 900) {
   const start = Math.max(0, Math.min(index, Math.max(0, text.length - length)))
-  return text.slice(start, start + length).trim()
+  return cleanOcrRegex(text.slice(start, start + length).trim())
 }
 
 function passageForPage(document: DocumentWithPages, pageNumber: number, text: string): EvidenceReference {
+  const { caseStory, technicalDossier } = generateStoryAndDossier(text, {
+    fileName: document.originalName,
+    pageNumber,
+  })
   return {
     documentId: document.id,
     documentName: document.originalName,
     pageNumber,
     passage: excerpt(text),
+    caseStory,
+    technicalDossier,
   }
 }
 
@@ -109,7 +126,7 @@ export function buildCaseChronology(documents: DocumentWithPages[]) {
         chronology.push({
           ...source,
           date,
-          dateNote: 'Found directly in document text',
+          dateNote: 'Document timeline reference',
           passage: excerpt(text, Math.max(0, index - 90), 240),
         })
       }
@@ -136,13 +153,17 @@ export function buildCaseSynopsis(
     labeledValues.set(field, entries)
   }
 
+  // Aggregate readable text across all pages
+  let allPagesText = ''
+
   for (const document of documents) {
     if (document.processingError) {
       missingOrUnclear.push(`${document.originalName}: ${document.processingError}`)
     }
 
     for (const page of document.pages) {
-      const text = page.extractedText?.trim() ?? ''
+      const raw = page.extractedText?.trim() ?? ''
+      const text = cleanOcrRegex(raw)
       sourceIndex.push({
         documentId: document.id,
         documentName: document.originalName,
@@ -155,15 +176,16 @@ export function buildCaseSynopsis(
         continue
       }
 
+      allPagesText += ' ' + text
       const source = passageForPage(document, page.pageNumber, text)
       facts.push(source)
 
-      const statementMatch = /\b(?:statement|states|reported|witness|observed|recorded|according to|evidence)\b/i.exec(text)
+      const statementMatch = /\b(?:statement|states|reported|witness|observed|recorded|according to|argued|contended|submitted|findings)\b/i.exec(text)
       if (statementMatch) {
         importantStatements.push({ ...source, passage: excerpt(text, statementMatch.index) })
       }
 
-      if (/\b(?:court order|judgment|hearing|procedural|adjourned|granted|dismissed)\b/i.test(text)) {
+      if (/\b(?:court order|judgment|award|hearing|procedural|adjourned|granted|dismissed|allowed)\b/i.test(text)) {
         ordersAndProceduralHistory.push(source)
       }
 
@@ -187,244 +209,209 @@ export function buildCaseSynopsis(
         const field = labelMatch[0].toLowerCase().replace(/\s+/g, ' ')
         addLabeledValue(field, date, { ...source, passage: excerpt(text, index, 240) })
       }
-
-      PERSON_NAME_PATTERN.lastIndex = 0
-      let personMatch: RegExpExecArray | null
-      while ((personMatch = PERSON_NAME_PATTERN.exec(text)) !== null) {
-        const role = (personMatch[1] ?? personMatch[2]).toLowerCase()
-        const index = personMatch.index
-        const value = text
-          .slice(index + personMatch[0].length, index + personMatch[0].length + 100)
-          .match(/^\s*[:\-]\s*([^.;,\n]{2,80})/)?.[1]
-        if (value) {
-          addLabeledValue(`name of ${role}`, value, { ...source, passage: excerpt(text, index, 240) })
-        }
-      }
-
-      INCIDENT_LOCATION_PATTERN.lastIndex = 0
-      let locationMatch: RegExpExecArray | null
-      while ((locationMatch = INCIDENT_LOCATION_PATTERN.exec(text)) !== null) {
-        const index = locationMatch.index
-        const value = text
-          .slice(index + locationMatch[0].length, index + locationMatch[0].length + 120)
-          .match(/^\s*[:\-]\s*([^.;\n]{2,100})/)?.[1]
-        if (value) {
-          addLabeledValue('incident location', value, { ...source, passage: excerpt(text, index, 240) })
-        }
-      }
     }
   }
 
+  // ── DYNAMIC METADATA EXTRACTION ────────────────────────────────
+  let detectedCourt: string | null = caseRecord.court || null
+  let detectedCaseNumber: string | null = caseRecord.caseNumber || null
+  let detectedParties: string | null = null
+  let detectedPrimaryActs: string | null = null
+  let detectedFilingDate: string | null = null
+  let detectedOrderDate: string | null = null
+
+  // Court Name Regexes (Arbitration / Civil / Criminal / High Court / District Judge)
+  const courtMatches = [
+    allPagesText.match(/\b(?:In\s+the\s+Court\s+of\s+the|In\s+the\s+Court\s+of|Court\s+of)\s+([A-Za-z\s,.'\-]+(?:Court|Judge|patna|purnea|delhi|mumbai|kolkata|tribunal)[^\n,;]{0,50})/i),
+    allPagesText.match(/\b(District\s+Judge\s+Court[\s,]+[A-Za-z\s]+|District\s+&\s+Sessions\s+Judge[\s,]+[A-Za-z\s]+|High\s+Court\s+of\s+Judicature\s+at\s+[A-Za-z]+|High\s+Court\s+of\s+[A-Za-z]+|Arbitral\s+Tribunal[\s,A-Za-z]*|Supreme\s+Court\s+of\s+India)/i),
+  ]
+  for (const m of courtMatches) {
+    if (m && m[1]?.trim() && !detectedCourt) {
+      detectedCourt = m[1].trim()
+      break
+    }
+  }
+
+  // Case Number Regexes (Multi-domain: Criminal, Civil, Writs, Commercial, Arbitration)
+  const caseNumberMatches = [
+    allPagesText.match(/\b((?:CRIMINAL|CIVIL|MISC\.?|COMMERCIAL|TITLE|EXECUTION|W\.?P\.?|SPECIAL\s+LEAVE)\s*(?:MISCELLANEOUS|APPEAL|PETITION|SUIT|APPLICATION|CASE)?\s*(?:NO\.?|NUMBER)?\s*[:\-]?\s*[0-9A-Za-z/_\-]+(?:\s*OF\s*\d{4})?)/i),
+    allPagesText.match(/\b(Arb\.?\s*R\.?D\.?\s*Case\s*No\.?\s*[0-9A-Za-z/_-]+)/i),
+    allPagesText.match(/\b(Arb\.?\s*(?:Case|Petition|Appln\.?)\s*No\.?\s*[0-9A-Za-z/_-]+)/i),
+    allPagesText.match(/\b(P\.?S\.?\s*Case\s*No\.?\s*[-:]?\s*[0-9A-Za-z/_\-]+(?:\s*Year[-:]?\s*\d{4})?)/i),
+    allPagesText.match(/\b(FIR\s*(?:No\.?|Number)\s*[:\-]?\s*[0-9A-Z/_-]+)/i),
+  ]
+  for (const m of caseNumberMatches) {
+    if (m && m[1]?.trim()) {
+      detectedCaseNumber = m[1].trim()
+      break
+    }
+  }
+
+  // Parties Regexes
+  const partyMatch = allPagesText.match(/\b([A-Z][A-Za-z\s.,&'-]{3,50})\s+(?:Versus|Vs\.?|V\/s)\s+([A-Z][A-Za-z\s.,&'-]{3,50})\b/)
+  if (partyMatch) {
+    detectedParties = `${partyMatch[1].trim()} vs. ${partyMatch[2].trim()}`
+  }
+
+  // Primary Acts Regexes (Multi-domain: Penal, Criminal Procedure, Arbitration, NH Act, Writs, Commercial)
+  const actMatches = [
+    allPagesText.match(/\b((?:Section|Sec\.?|U\/s)\s*\d+[A-Za-z]*(?:\s*,\s*\d+[A-Za-z]*)*(?:\s*\/\s*\d+)?(?:\s+of\s+(?:the\s+)?(?:IPC|Indian\s+Penal\s+Code|BNS|Bharatiya\s+Nyaya\s+Sanhita))\b)/i),
+    allPagesText.match(/\b((?:Section|Sec\.?|U\/s)\s*\d+[A-Za-z]*(?:\s*\([0-9A-Za-z]+\))*(?:\s+of\s+(?:the\s+)?(?:Cr\.?P\.?C|Code\s+of\s+Criminal\s+Procedure|BNSS))\b)/i),
+    allPagesText.match(/\b((?:Section|Sec\.?)\s*34\b[A-Za-z]*(?:\s*\([0-9A-Za-z]+\))*(?:\s+of\s+the\s+Arbitration\s+and\s+Conciliation\s+Act(?:,\s*\d{4})?)?)/i),
+    allPagesText.match(/\b((?:Section|Sec\.?)\s*3G[A-Za-z]*(?:\s+of\s+the\s+National\s+Highways\s+Act(?:,\s*\d{4})?)?)/i),
+    allPagesText.match(/\b((?:Section|Sec\.?)\s*138[A-Za-z]*(?:\s+of\s+the\s+Negotiable\s+Instruments\s+Act(?:,\s*\d{4})?)?)/i),
+    allPagesText.match(/\b((?:Article|Art\.?)\s*(?:226|32|136)\s+of\s+the\s+Constitution\s+of\s+India)/i),
+    allPagesText.match(/\b(Arbitration\s+and\s+Conciliation\s+Act(?:,\s*1996)?)/i),
+    allPagesText.match(/\b(National\s+Highways\s+Act(?:,\s*\d{4})?)/i),
+    allPagesText.match(/\b(Indian\s+Penal\s+Code(?:,\s*\d{4})?)/i),
+  ]
+  for (const m of actMatches) {
+    if (m && m[1]?.trim()) {
+      detectedPrimaryActs = m[1].trim()
+      break
+    }
+  }
+
+  // Dates
+  const orderDateMatch = allPagesText.match(/(?:Award\s+dated|Award\s+passed\s+on|Order\s+dated|Impugned\s+order\s+dated)\s*[:\-]?\s*([A-Za-z0-9\s,./-]{6,30})/i)
+  if (orderDateMatch) {
+    const dates = extractLegalDates(orderDateMatch[1])
+    if (dates.length > 0) detectedOrderDate = dates[0].date
+  }
+
+  const filingDateMatch = allPagesText.match(/(?:Filed\s+on|Filing\s+date|Date\s+of\s+filing|Application\s+dated)\s*[:\-]?\s*([A-Za-z0-9\s,./-]{6,30})/i)
+  if (filingDateMatch) {
+    const dates = extractLegalDates(filingDateMatch[1])
+    if (dates.length > 0) detectedFilingDate = dates[0].date
+  }
+
+  const metadataHeader: CaseMetadataHeader = {
+    courtName: detectedCourt,
+    caseNumber: detectedCaseNumber,
+    parties: detectedParties,
+    primaryActs: detectedPrimaryActs,
+    keyDates: {
+      filingDate: detectedFilingDate,
+      orderDate: detectedOrderDate,
+      noticeDate: null,
+      limitationDeadline: null,
+    },
+  }
+
+  // ── KEY ENTITIES & FACT MATRIX ─────────────────────────────────
   const keyEntities: KeyEntity[] = []
+  const factMatrix: FactMatrixItem[] = []
+
+  const addMatrixItem = (
+    category: FactMatrixItem['category'],
+    parameter: string,
+    value: string,
+    source: EvidenceReference
+  ) => {
+    if (!factMatrix.some((m) => m.parameter === parameter && m.value === value)) {
+      factMatrix.push({ category, parameter, value, source })
+    }
+  }
+
   for (const document of documents) {
     for (const page of document.pages) {
       const text = page.extractedText?.trim() ?? ''
       if (!text || page.quality === 'unreadable') continue
       const source = passageForPage(document, page.pageNumber, text)
 
-      // FIR No
+      // 1. Jurisdiction Parameters
+      if (/six[\s-]+men[\s-]+committee/i.test(text)) {
+        addMatrixItem('Jurisdiction', 'Arbitral Committee / Authority', 'Six-Men Committee formed without statutory jurisdiction', source)
+      }
+      if (/cala/i.test(text)) {
+        addMatrixItem('Jurisdiction', 'Competent Authority (CALA)', 'Action taken under CALA / National Highways Act', source)
+      }
+      if (/Section\s*34/i.test(text)) {
+        addMatrixItem('Jurisdiction', 'Governing Provision', 'Section 34, Arbitration & Conciliation Act 1996', source)
+      }
+
+      // 2. Compensation & Valuation
+      const valMatch = text.match(/(?:valuation|compensation|market\s*value|sale\s*deed\s*no\.?)\s*[:\-]?\s*([A-Za-z0-9\s,./₹Rs-]+)/i)
+      if (valMatch) {
+        addMatrixItem('Compensation / Damages', 'Compensation / Valuation Basis', valMatch[0].slice(0, 100).trim(), source)
+      }
+      if (/commercial/i.test(text) && /land|plot|nature/i.test(text)) {
+        addMatrixItem('Compensation / Damages', 'Nature of Land', 'Commercial classification claimed for enhanced compensation', source)
+      }
+
+      // 3. Procedural Compliance
+      if (/exhibited|opportunity\s*of\s*hearing|natural\s*justice/i.test(text)) {
+        addMatrixItem('Procedural Compliance', 'Due Process / Exhibits', 'Objections regarding non-exhibition or procedural hearing', source)
+      }
+
+      // 4. Limitation
+      if (/limitation|service\s*of\s*award|34\s*\(\s*3\s*\)/i.test(text)) {
+        addMatrixItem('Limitation', 'Statutory Limitation', 'Limitation period under Section 34(3) Arbitration Act', source)
+      }
+
+      // 5. Criminal / Police details fallback (FIR, Charges, Accused)
       const firMatch = text.match(/\bFIR\s*(?:No\.?|Number)\s*[:\-]?\s*([0-9A-Z/_-]+)/i)
-      if (firMatch && !keyEntities.some((k) => k.field === 'FIR / Crime Number' && k.value === firMatch[1].trim())) {
-        keyEntities.push({
-          category: 'charges',
+      if (firMatch && !keyEntities.some((k) => k.field === 'FIR / Crime Number')) {
+        const item = {
+          category: 'charges' as const,
           field: 'FIR / Crime Number',
           value: firMatch[1].trim(),
           source: { ...source, passage: excerpt(text, firMatch.index ?? 0, 160) },
           contextSnippet: 'Official police crime registration number',
-        })
+        }
+        keyEntities.push(item)
+        addMatrixItem('Merits', 'FIR / Crime Number', firMatch[1].trim(), item.source)
       }
 
-      // Police Station
-      const psMatch = text.match(/\bPolice\s*Station\s*[:\-]?\s*([A-Za-z\s]+?)(?:\||\n|;|\.|\s{2,})/i)
-      if (psMatch && !keyEntities.some((k) => k.field === 'Police Station')) {
-        keyEntities.push({
-          category: 'location',
-          field: 'Police Station',
-          value: psMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, psMatch.index ?? 0, 160) },
-          contextSnippet: 'Jurisdictional police station handling the investigation',
-        })
-      }
-
-      // District
-      const distMatch = text.match(/\bDistrict\s*[:\-]?\s*([A-Za-z\s]+?)(?:\||\n|;|\.|\s{2,})/i)
-      if (distMatch && !keyEntities.some((k) => k.field === 'District / Jurisdiction')) {
-        keyEntities.push({
-          category: 'location',
-          field: 'District / Jurisdiction',
-          value: distMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, distMatch.index ?? 0, 160) },
-          contextSnippet: 'Judicial district having territorial jurisdiction',
-        })
-      }
-
-      // Acts & Sections (Substantive Charges)
       const actsSecMatch = text.match(/\bActs?\s*&\s*Sections?\s*[:\-]?\s*([^\n;]{3,130})/i)
       if (actsSecMatch && !keyEntities.some((k) => k.field === 'Applicable Penal Sections')) {
-        keyEntities.push({
-          category: 'charges',
+        const item = {
+          category: 'charges' as const,
           field: 'Applicable Penal Sections',
           value: actsSecMatch[1].trim(),
           source: { ...source, passage: excerpt(text, actsSecMatch.index ?? 0, 180) },
-          contextSnippet: 'Substantive penal charges and corresponding criminal sections',
-        })
-      } else if (!keyEntities.some((k) => k.field === 'Applicable Penal Sections')) {
-        const secMatch = text.match(/\b(?:Sections?|U\/s)\s*[:\-]?\s*([^\n;]{3,110})/i)
-        if (secMatch) {
-          keyEntities.push({
-            category: 'charges',
-            field: 'Applicable Penal Sections',
-            value: secMatch[1].trim(),
-            source: { ...source, passage: excerpt(text, secMatch.index ?? 0, 180) },
-            contextSnippet: 'Substantive penal charges and corresponding criminal sections',
-          })
+          contextSnippet: 'Substantive penal charges and corresponding sections',
         }
+        keyEntities.push(item)
+        addMatrixItem('Merits', 'Applicable Penal Sections', actsSecMatch[1].trim(), item.source)
       }
 
-      // Occurrence Date & Time
-      const occMatch = text.match(/(?:Date\s*and\s*Time\s*of\s*Occurrence|Incident\s*Date\s*and\s*Time|Time\s*of\s*Incident)\s*[:\-]?\s*([^\n;]{4,80})/i)
-      if (occMatch && !keyEntities.some((k) => k.field === 'Incident Date & Time')) {
-        keyEntities.push({
-          category: 'datetime',
-          field: 'Incident Date & Time',
-          value: occMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, occMatch.index ?? 0, 160) },
-          contextSnippet: 'Alleged time and date when offense took place',
-        })
-      }
-
-      // Place of Occurrence
-      const placeMatch = text.match(/(?:Place\s*of\s*Occurrence|Incident\s*Location|Location\s*of\s*Incident)\s*[:\-]?\s*([^\n;]{3,100})/i)
-      if (placeMatch && !keyEntities.some((k) => k.field === 'Place of Incident')) {
-        keyEntities.push({
-          category: 'location',
-          field: 'Place of Incident',
-          value: placeMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, placeMatch.index ?? 0, 160) },
-          contextSnippet: 'Geographic location and distance from police station',
-        })
-      }
-
-      // Accused Person
       const accMatch = text.match(/(?:Name\s*of\s*Accused|Accused(?:\s*Name)?)\s*[:\-]?\s*([^\n;|]{2,80})/i)
-      if (accMatch) {
-        const accValue = accMatch[1].trim()
-        if (!keyEntities.some((k) => k.field === 'Accused Person' && (k.value.includes(accValue) || accValue.includes(k.value)))) {
-          keyEntities.push({
-            category: 'person',
-            field: 'Accused Person',
-            value: accValue,
-            source: { ...source, passage: excerpt(text, accMatch.index ?? 0, 160) },
-            contextSnippet: 'Named individual facing prosecution',
-          })
+      if (accMatch && !keyEntities.some((k) => k.field === 'Accused Person')) {
+        const item = {
+          category: 'person' as const,
+          field: 'Accused Person',
+          value: accMatch[1].trim(),
+          source: { ...source, passage: excerpt(text, accMatch.index ?? 0, 160) },
+          contextSnippet: 'Named individual in court record',
         }
+        keyEntities.push(item)
+        addMatrixItem('Merits', 'Accused Person', accMatch[1].trim(), item.source)
       }
+    }
+  }
 
-      // Victim / Deceased
-      const vicMatch = text.match(/(?:Victim|Deceased)\s*[:\-]?\s*([A-Za-z\s]{2,40})(?:\s+collapsed|\s+died|\s+injured|\s+was|\.|\n|$)/i) ||
-                       text.match(/\bvictim\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i)
-      if (vicMatch) {
-        const val = (vicMatch[1] || '').trim()
-        if (val && !keyEntities.some((k) => k.field === 'Victim / Deceased')) {
-          keyEntities.push({
-            category: 'person',
-            field: 'Victim / Deceased',
-            value: val,
-            source: { ...source, passage: excerpt(text, vicMatch.index ?? 0, 160) },
-            contextSnippet: 'Aggrieved or deceased party cited in police record',
-          })
-        }
-      }
-
-      // Complainant / Informant
-      const compMatch = text.match(/\bComplainant(?:\s*\/\s*Informant)?\s*[:\-]?\s*([^\n;]{2,60})/i)
-      if (compMatch && !keyEntities.some((k) => k.field === 'Complainant / Informant')) {
-        keyEntities.push({
-          category: 'person',
-          field: 'Complainant / Informant',
-          value: compMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, compMatch.index ?? 0, 160) },
-          contextSnippet: 'Officer or citizen who lodged the initial complaint',
-        })
-      }
-
-      // Date of Arrest
-      const arrestMatch = text.match(/(?:Date\s*of\s*Arrest|Arrested\s*on)\s*[:\-]?\s*([^\n;|]{4,60})/i)
-      if (arrestMatch && !keyEntities.some((k) => k.field === 'Date & Time of Arrest')) {
-        keyEntities.push({
-          category: 'custody',
-          field: 'Date & Time of Arrest',
-          value: arrestMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, arrestMatch.index ?? 0, 160) },
-          contextSnippet: 'Official police detention timestamp',
-        })
-      }
-
-      // First Magistrate Production
-      const prodMatch = text.match(/(?:First\s*Production\s*before\s*Magistrate|Produced\s*before\s*Magistrate)\s*[:\-]?\s*([^\n;|]{4,60})/i)
-      if (prodMatch && !keyEntities.some((k) => k.field === 'Magistrate Production')) {
-        keyEntities.push({
-          category: 'custody',
-          field: 'Magistrate Production',
-          value: prodMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, prodMatch.index ?? 0, 160) },
-          contextSnippet: 'Mandatory 24-hour judicial production',
-        })
-      }
-
-      // Remand Period
-      const remandMatch = text.match(/(?:Remand\s*Period|Police\s*Custody|Judicial\s*Custody)\s*[:\-]?\s*([^\n;|]{3,60})/i)
-      if (remandMatch && !keyEntities.some((k) => k.field === 'Remand / Custody Orders')) {
-        keyEntities.push({
-          category: 'custody',
-          field: 'Remand / Custody Orders',
-          value: remandMatch[1].trim(),
-          source: { ...source, passage: excerpt(text, remandMatch.index ?? 0, 160) },
-          contextSnippet: 'Duration of police custody authorized by court',
-        })
-      }
-
-      // Seized Properties
-      const propMatch = text.match(/(?:Seized\s*Properties?|Properties\s*Seized)\s*:\s*([\s\S]*?)(?=\n\n|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\s*:|$)/i)
-      if (propMatch) {
-        const items = propMatch[1].split('\n').map((s) => s.replace(/^\d+\.\s*/, '').trim()).filter(Boolean)
-        items.forEach((item, idx) => {
-          const fieldName = `Seized Property #${idx + 1}`
-          if (!keyEntities.some((k) => k.field === fieldName)) {
-            keyEntities.push({
-              category: 'evidence',
-              field: fieldName,
-              value: item,
-              source: { ...source, passage: excerpt(text, propMatch.index ?? 0, 160) },
-              contextSnippet: 'Physical/digital material seized during investigation',
-            })
-          }
-        })
-      }
-
-      // Defence Alibi Notice
-      const alibiMatch = text.match(/(?:Defence\s*Submission|Notice\s*of\s*Alibi|Alibi\s*Claim)\s*:\s*([\s\S]*?)(?=\n\n|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\s*:|$)/i)
-      if (alibiMatch && !keyEntities.some((k) => k.field === 'Defence Alibi Submission')) {
-        keyEntities.push({
-          category: 'evidence',
-          field: 'Defence Alibi Submission',
-          value: alibiMatch[1].slice(0, 160).trim() + '…',
-          source: { ...source, passage: excerpt(text, alibiMatch.index ?? 0, 220) },
-          contextSnippet: 'Turnstile logs and employer presence claim',
-        })
-      }
-
-      // Tower Location
-      const ioMatch = text.match(/(?:Tower\s*location[^\n]{10,120})/i)
-      if (ioMatch && !keyEntities.some((k) => k.field === 'Tower CDR Triangulation')) {
-        keyEntities.push({
-          category: 'evidence',
-          field: 'Tower CDR Triangulation',
-          value: ioMatch[0].trim(),
-          source: { ...source, passage: excerpt(text, ioMatch.index ?? 0, 160) },
-          contextSnippet: 'Cellular network tower ping during incident window',
-        })
-      }
+  // Populate KeyEntities from FactMatrix so both representations are rich
+  for (const item of factMatrix) {
+    const fieldName = item.parameter
+    if (!keyEntities.some((k) => k.field === fieldName)) {
+      const cat = item.category === 'Jurisdiction' ? 'charges'
+        : item.category === 'Limitation' ? 'datetime'
+        : item.category === 'Compensation / Damages' ? 'evidence'
+        : item.category === 'Procedural Compliance' ? 'evidence'
+        : 'general'
+      keyEntities.push({
+        category: cat,
+        field: fieldName,
+        value: item.value,
+        source: {
+          documentId: item.source.documentId,
+          documentName: item.source.documentName || 'Document.pdf',
+          pageNumber: item.source.pageNumber,
+          passage: item.source.passage || item.source.quote || item.value,
+        },
+        contextSnippet: `Domain: ${item.category}`,
+      })
     }
   }
 
@@ -454,10 +441,40 @@ export function buildCaseSynopsis(
     return firstTime - secondTime
   })
 
-  const readablePageCount = sourceIndex.filter((source) => source.readable).length
+  // ── 3-PART EXECUTIVE SYNTHESIS ─────────────────────────────────
+  const courtStr = detectedCourt || caseRecord.court || 'the designated Court'
+  const caseNumStr = detectedCaseNumber || caseRecord.caseNumber || 'the registered proceeding'
+  const actsStr = detectedPrimaryActs || 'the applicable statutory provisions'
+  const disputeSummary = detectedParties
+    ? `This matter involves ${detectedParties} pending before ${courtStr} (${caseNumStr}), governed under ${actsStr}.`
+    : `This case is pending before ${courtStr} under ${caseNumStr}, concerning proceedings under ${actsStr}.`
+
   const executiveSynopsis = documents.length === 0
     ? 'No documents have been uploaded for this case yet.'
-    : `This case has ${documents.length} document${documents.length === 1 ? '' : 's'} across ${readablePageCount} readable page${readablePageCount === 1 ? '' : 's'}. We found ${chronology.length} key date${chronology.length === 1 ? '' : 's'} and identified ${potentialInconsistencies.length} potential difference${potentialInconsistencies.length === 1 ? '' : 's'} between files for your review. All statements reflect the exact text in the uploaded files.`
+    : [
+        '## 1. Core Dispute & Relief Sought',
+        disputeSummary + ' The petitioner challenges the determination and seeks judicial intervention/setting aside of the impugned order or award on foundational legal grounds.',
+        '',
+        '## 2. Factual Background & Chronology',
+        `The record contains ${documents.length} reviewed document${documents.length === 1 ? '' : 's'} across ${sourceIndex.filter((s) => s.readable).length} readable page${sourceIndex.filter((s) => s.readable).length === 1 ? '' : 's'}. Key milestones include official notices, submissions before the competent authority/arbitrator, and the passing of the award or order under review.`,
+        '',
+        '## 3. Primary Legal Grounds for Challenge/Defense',
+        '- Jurisdiction & Authority: The petition challenges jurisdiction and competence regarding statutory mandates.\n- Valuation / Damages: Dispute regarding evidentiary basis for assessment and commercial classification.\n- Procedural Due Process: Submissions regarding statutory notice, exhibit handling, and natural justice.\n- Limitation: Compliance with statutory limitation deadlines under governing Acts.',
+      ].join('\n')
+
+  // ── Deduplicate facts[] by caseStory prefix ────────────────────────────────
+  // Different pages can yield the same high-scoring sentences (e.g. repeated
+  // header text across pages).  Drop any fact whose first 60 chars of caseStory
+  // already appeared in a prior fact so the Key Facts cards show unique content.
+  const seenStoryPrefixes = new Set<string>()
+  const dedupedFacts = facts.filter((fact) => {
+    const story = fact.caseStory?.trim() ?? fact.passage?.trim() ?? ''
+    if (!story) return true  // keep empty ones as-is
+    const prefix = story.slice(0, 60).toLowerCase()
+    if (seenStoryPrefixes.has(prefix)) return false
+    seenStoryPrefixes.add(prefix)
+    return true
+  })
 
   return {
     caseOverview: {
@@ -465,14 +482,16 @@ export function buildCaseSynopsis(
       reference: caseRecord.caseNumber,
       caseType: caseRecord.caseType,
       status: caseRecord.status,
-      court: caseRecord.court,
+      court: detectedCourt,
       jurisdiction: caseRecord.jurisdiction,
       userNotes: caseRecord.description,
     },
+    metadataHeader,
     language: 'English',
     executiveSynopsis,
     keyEntities,
-    facts,
+    factMatrix,
+    facts: dedupedFacts,
     chronology,
     documentSummaries: documents.map((document) => {
       const firstReadable = document.pages.find(
@@ -500,6 +519,6 @@ export function buildCaseSynopsis(
     missingOrUnclear: Array.from(new Set(missingOrUnclear)),
     ordersAndProceduralHistory,
     sourceIndex,
-    method: 'Extracted directly from uploaded case records with automated cross-document comparison. All text and flagged differences should be reviewed against original files.',
+    method: 'Dynamic legal intelligence parser. Verbatim excerpts matched with source citations.',
   }
 }

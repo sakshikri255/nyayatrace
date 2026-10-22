@@ -50,7 +50,14 @@ const config: Config = {
           dark: "#0F766E",
         },
         muted: "#94A3B8",
-        "border-dark": "#334155",
+                "border-dark": "#334155",
+        // Legal Dashboard custom tokens
+        "theme-bg-card": "var(--bg-card)",
+        "theme-bg-subtle": "var(--bg-subtle)",
+        "theme-text-primary": "var(--text-primary)",
+        "theme-text-secondary": "var(--text-secondary)",
+        "theme-border-subtle": "var(--border-subtle)",
+        "theme-border-color": "var(--border-color)",
         // shadcn/ui CSS variable colours
         card: {
           DEFAULT: "hsl(var(--card))",

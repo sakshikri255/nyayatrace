@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 import { createCanvas } from '@napi-rs/canvas'
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import Tesseract from 'tesseract.js'
+import { cleanOcrRegex, isCorruptedText } from '@/lib/legalSanitizer'
 
 GlobalWorkerOptions.workerSrc = pathToFileURL(
   path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.mjs')
@@ -107,23 +108,50 @@ async function processPage(
 ): Promise<PageResult> {
   const pageStart = Date.now()
 
-  const content = await page.getTextContent()
-  let text: string = content.items
-    .map((item: { str?: string }) => item.str ?? '')
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  const content = await page.getTextContent({ includeMarkedContent: false } as Parameters<typeof page.getTextContent>[0])
+
+  // Reconstruct paragraph structure from the raw text items.
+  // pdfjs gives us each text span with a transform matrix; items that are on a new
+  // line have a different Y coordinate from the previous item.  We preserve those
+  // line breaks so that downstream OCR cleanup and story extraction can work
+  // on meaningful units rather than one flat blob.
+  type TextItem = { str?: string; transform?: number[]; hasEOL?: boolean }
+  const items = content.items as TextItem[]
+  let text = ''
+  let prevY: number | null = null
+
+  for (const item of items) {
+    const str = item.str ?? ''
+    if (!str) continue
+    const y = item.transform ? Math.round(item.transform[5]) : null
+
+    if (prevY !== null && y !== null && Math.abs(y - prevY) > 2) {
+      // Significant vertical gap → new line
+      text += '\n'
+    } else if (text.length > 0 && !text.endsWith(' ') && !text.endsWith('\n')) {
+      text += ' '
+    }
+
+    text += str
+    if (item.hasEOL) text += '\n'
+    if (y !== null) prevY = y
+  }
+
+  text = text.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
 
   let detected = detectScriptFromText(text)
-  let quality: PageResult['quality'] = text ? 'good' : 'unreadable'
+  let quality: PageResult['quality'] = 'good'
 
-  if (text) {
+  const cleanedEmbedded = cleanOcrRegex(text)
+  const isEmbeddedCorrupt = isCorruptedText(cleanedEmbedded)
+
+  if (cleanedEmbedded && !isEmbeddedCorrupt) {
     console.log(
       `[OCR] Page ${pageNumber}/${totalPages}: embedded text extracted ` +
       `(${text.length} chars, script: ${detected}) in ${Date.now() - pageStart}ms`,
     )
     page.cleanup()
-    return { pageNumber, text, quality, detectedLanguage: detected }
+    return { pageNumber, text: cleanedEmbedded, quality: 'good', detectedLanguage: detected }
   }
 
   // Scanned page — run Tesseract with its own dedicated worker
@@ -136,7 +164,7 @@ async function processPage(
     worker = await createSafeTesseractWorker(ocrLang)
 
     if (worker) {
-      const viewport = page.getViewport({ scale: 1.5 })
+      const viewport = page.getViewport({ scale: 2.0 })
       const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height))
       const context = canvas.getContext('2d')
 
@@ -152,9 +180,15 @@ async function processPage(
       )
 
       const result = await Promise.race([ocrPromise, timeoutPromise])
-      text = result.data.text.trim()
+      const rawOcr = result.data.text.trim()
+      text = cleanOcrRegex(rawOcr)
       detected = detectScriptFromText(text)
-      quality = text ? (result.data.confidence < 45 ? 'poor' : 'good') : 'unreadable'
+      const isCorrupt = isCorruptedText(text)
+      quality = !text || text.length < 15
+        ? 'unreadable'
+        : isCorrupt || result.data.confidence < 45
+          ? 'poor'
+          : 'good'
       console.log(
         `[OCR] Page ${pageNumber}/${totalPages}: OCR done in ${Date.now() - pageStart}ms — ` +
         `confidence: ${result.data.confidence.toFixed(1)}%, chars: ${text.length}, ` +

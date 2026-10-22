@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { buildCaseChronology, buildCaseSynopsis } from '@/lib/analysis/synopsis'
 import { generateAIAnalysis } from '@/lib/analysis/openai'
 import { generateGeminiAnalysis } from '@/lib/analysis/gemini'
+import { generateGroqAnalysis } from '@/lib/analysis/groq'
+import { generateOpenRouterAnalysis } from '@/lib/analysis/openrouter'
+import { generateOllamaAnalysis } from '@/lib/analysis/ollama'
 import { db } from '@/lib/db'
 import { analysisRuns, documents, findings, findingSources, pages } from '@/lib/db/schema'
 import { getCaseById } from '@/lib/queries/cases'
@@ -81,10 +84,13 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 
   return NextResponse.json({
     current,
-    aiProviderConfigured: Boolean(process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
+    aiProviderConfigured: Boolean(process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_MODEL),
     aiProviders: {
       gemini: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
       openai: Boolean(process.env.OPENAI_API_KEY),
+      groq: Boolean(process.env.GROQ_API_KEY),
+      openrouter: Boolean(process.env.OPENROUTER_API_KEY),
+      ollama: Boolean(process.env.OLLAMA_BASE_URL || process.env.OLLAMA_MODEL),
     },
     latestRunId: latest?.id ?? null,
     runs: runs.map((run) => {
@@ -113,16 +119,27 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const body = await request.json().catch(() => null)
   const useAi = body?.useAi === true
-  const aiProvider = body?.aiProvider === 'openai' ? 'openai' : 'gemini'
+  const rawProvider: string = typeof body?.aiProvider === 'string' ? body.aiProvider : 'gemini'
+  const aiProvider = (['gemini', 'openai', 'groq', 'openrouter', 'ollama'] as const).includes(rawProvider as never)
+    ? (rawProvider as 'gemini' | 'openai' | 'groq' | 'openrouter' | 'ollama')
+    : 'gemini'
   const language: string = typeof body?.language === 'string' && body.language.trim() ? body.language.trim() : 'English'
   const providerConfigured = aiProvider === 'gemini'
     ? Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)
-    : Boolean(process.env.OPENAI_API_KEY)
+    : aiProvider === 'openai'
+      ? Boolean(process.env.OPENAI_API_KEY)
+      : aiProvider === 'groq'
+        ? Boolean(process.env.GROQ_API_KEY)
+        : aiProvider === 'ollama'
+          ? Boolean(process.env.OLLAMA_BASE_URL || process.env.OLLAMA_MODEL)
+          : Boolean(process.env.OPENROUTER_API_KEY)
+  const providerName = aiProvider === 'gemini' ? 'Gemini' : aiProvider === 'openai' ? 'OpenAI' : aiProvider === 'groq' ? 'Groq' : aiProvider === 'ollama' ? 'Ollama' : 'OpenRouter'
+  const providerEnvVar = aiProvider === 'gemini' ? 'GEMINI_API_KEY' : aiProvider === 'openai' ? 'OPENAI_API_KEY' : aiProvider === 'groq' ? 'GROQ_API_KEY' : aiProvider === 'ollama' ? 'OLLAMA_BASE_URL' : 'OPENROUTER_API_KEY'
   if (useAi && !providerConfigured) {
     return NextResponse.json({
-      error: aiProvider === 'gemini'
-        ? 'Gemini is not configured. Set GEMINI_API_KEY in the server environment and restart NyayaTrace.'
-        : 'OpenAI is not configured. Set OPENAI_API_KEY in the server environment and restart NyayaTrace.',
+      error: aiProvider === 'ollama'
+        ? `Ollama is not configured. Set OLLAMA_BASE_URL=http://localhost:11434 and OLLAMA_MODEL=llama3 in your environment, run "ollama serve", and pull the model with "ollama pull llama3".`
+        : `${providerName} is not configured. Set ${providerEnvVar} in the server environment and restart NyayaTrace.`,
     }, { status: 503 })
   }
 
@@ -176,8 +193,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       engine: !useAi
         ? 'local-extract-v1'
         : aiProvider === 'gemini'
-          ? `gemini:${process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash'}[lang:${language}]`
-          : `openai:${process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini'}[lang:${language}]`,
+          ? `gemini:${process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash'}[lang:${language}]`
+          : aiProvider === 'groq'
+            ? `groq:${process.env.GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile'}[lang:${language}]`
+            : aiProvider === 'openrouter'
+              ? `openrouter:${process.env.OPENROUTER_MODEL?.trim() || 'openai/gpt-4o-mini'}[lang:${language}]`
+              : aiProvider === 'ollama'
+                ? `ollama:${process.env.OLLAMA_MODEL?.trim() || 'llama3'}[lang:${language}]`
+                : `openai:${process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini'}[lang:${language}]`,
       createdAt: new Date().toISOString(),
     }).returning().get()
   } catch (cause) {
@@ -206,12 +229,58 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       synopsis.language = language
       synopsis.aiAnalysis = aiProvider === 'gemini'
         ? await generateGeminiAnalysis(loadedDocuments, language)
-        : await generateAIAnalysis(loadedDocuments, language)
+        : aiProvider === 'groq'
+          ? await generateGroqAnalysis(loadedDocuments, language)
+          : aiProvider === 'openrouter'
+            ? await generateOpenRouterAnalysis(loadedDocuments, language)
+            : aiProvider === 'ollama'
+              ? await generateOllamaAnalysis(loadedDocuments, language)
+              : await generateAIAnalysis(loadedDocuments, language)
       // When a non-English language is chosen, promote the AI's translated
       // executiveSummary into the main executiveSynopsis field so the primary
       // synopsis text is actually rendered in the chosen language.
-      if (language !== 'English' && synopsis.aiAnalysis.executiveSummary) {
+      // Merge AI Metadata Header, Fact Matrix, and Verified Citations
+      if (synopsis.aiAnalysis.metadataHeader) {
+        synopsis.metadataHeader = {
+          ...synopsis.metadataHeader,
+          ...synopsis.aiAnalysis.metadataHeader,
+          courtName: synopsis.aiAnalysis.metadataHeader.courtName || synopsis.metadataHeader?.courtName || null,
+          caseNumber: synopsis.aiAnalysis.metadataHeader.caseNumber || synopsis.metadataHeader?.caseNumber || null,
+          parties: synopsis.aiAnalysis.metadataHeader.parties || synopsis.metadataHeader?.parties || null,
+          primaryActs: synopsis.aiAnalysis.metadataHeader.primaryActs || synopsis.metadataHeader?.primaryActs || null,
+          keyDates: {
+            ...synopsis.metadataHeader?.keyDates,
+            ...synopsis.aiAnalysis.metadataHeader.keyDates,
+          },
+        }
+      }
+      if (synopsis.aiAnalysis.executiveSummary) {
         synopsis.executiveSynopsis = synopsis.aiAnalysis.executiveSummary
+      }
+      if (synopsis.aiAnalysis.factMatrix && synopsis.aiAnalysis.factMatrix.length > 0) {
+        synopsis.factMatrix = [...(synopsis.factMatrix || []), ...synopsis.aiAnalysis.factMatrix]
+      }
+      if (synopsis.aiAnalysis.verifiedCitations && synopsis.aiAnalysis.verifiedCitations.length > 0) {
+        // Back-propagate AI-generated narratives into the corresponding local facts so the
+        // Facts & Timeline tab shows the rich AI passage, not the local regex story.
+        for (const citation of synopsis.aiAnalysis.verifiedCitations) {
+          const existing = synopsis.facts.find(
+            (f) => f.documentId === citation.documentId && f.pageNumber === citation.pageNumber
+          )
+          if (existing) {
+            // Replace the locally-generated caseStory with the AI narrative
+            existing.caseStory = citation.passage
+          } else {
+            // Page not yet in facts (e.g. covered by AI but not local extraction) — add it
+            synopsis.facts.push({
+              documentId: citation.documentId,
+              documentName: citation.documentName || 'Document.pdf',
+              pageNumber: citation.pageNumber,
+              passage: citation.passage,
+              caseStory: citation.passage,
+            })
+          }
+        }
       }
       const localInconsistencies = synopsis.potentialInconsistencies
       const localKeys = new Set(localInconsistencies.map((issue) =>

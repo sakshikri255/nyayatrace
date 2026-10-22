@@ -193,6 +193,49 @@ html {
     --table-header-text: #64748B;
     --table-row-text: #1E293B;
     --table-row-hover: rgba(14, 148, 136, 0.04);
+
+    /* ── NyayaTrace Legal Dashboard Theme Variables (Light Mode) ── */
+    --bg-page: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --bg-card-muted: #F8FAFC;
+    --bg-subtle: #F1F5F9;
+    --bg-hover: #F8FAFC;
+    --text-primary: #0F172A; /* slate-900 / dark charcoal */
+    --text-secondary: #475569; /* slate-600 */
+    --text-muted: #64748B;
+    --border-color: #E2E8F0;
+    --border-subtle: #E2E8F0;
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+
+    /* Category Badges (Light Mode) */
+    --badge-jurisdiction-bg: #FEE2E2;
+    --badge-jurisdiction-text: #991B1B;
+    --badge-jurisdiction-border: #FECACA;
+
+    --badge-compensation-bg: #FEF3C7;
+    --badge-compensation-text: #92400E;
+    --badge-compensation-border: #FDE68A;
+
+    --badge-procedural-bg: #DBEAFE;
+    --badge-procedural-text: #1E40AF;
+    --badge-procedural-border: #BFDBFE;
+
+    --badge-limitation-bg: #D1FAE5;
+    --badge-limitation-text: #065F46;
+    --badge-limitation-border: #A7F3D0;
+
+    --badge-merits-bg: #F3E8FF;
+    --badge-merits-text: #6B21A8;
+    --badge-merits-border: #E9D5FF;
+
+    --badge-general-bg: #F1F5F9;
+    --badge-general-text: #475569;
+    --badge-general-border: #E2E8F0;
+
+    /* Statutory Highlights (Light Mode) */
+    --highlight-statutory-bg: #FEF08A;
+    --highlight-statutory-text: #451A03;
+    --highlight-statutory-border: #FDE047;
   }
 
   /* ── Dark mode — matches overview page midnight theme ───────── */
@@ -238,6 +281,49 @@ html {
     --table-header-text: #94A3B8;
     --table-row-text: #CBD5E1;
     --table-row-hover: rgba(14, 148, 136, 0.07);
+
+    /* ── NyayaTrace Legal Dashboard Theme Variables (Dark Mode) ─── */
+    --bg-page: #05070B;
+    --bg-card: #0B0F17;
+    --bg-card-muted: #111827;
+    --bg-subtle: #161E2E;
+    --bg-hover: #161E2E;
+    --text-primary: #F8FAFC; /* slate-50 */
+    --text-secondary: #94A3B8; /* slate-400 */
+    --text-muted: #94A3B8;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --card-shadow: none;
+
+    /* Category Badges (Dark Mode) */
+    --badge-jurisdiction-bg: #450A0A;
+    --badge-jurisdiction-text: #FCA5A5;
+    --badge-jurisdiction-border: rgba(252, 165, 165, 0.25);
+
+    --badge-compensation-bg: #451A03;
+    --badge-compensation-text: #FCD34D;
+    --badge-compensation-border: rgba(252, 211, 77, 0.25);
+
+    --badge-procedural-bg: #172554;
+    --badge-procedural-text: #93C5FD;
+    --badge-procedural-border: rgba(147, 197, 253, 0.25);
+
+    --badge-limitation-bg: #064E3B;
+    --badge-limitation-text: #6EE7B7;
+    --badge-limitation-border: rgba(110, 231, 183, 0.25);
+
+    --badge-merits-bg: #3B0764;
+    --badge-merits-text: #D8B4FE;
+    --badge-merits-border: rgba(216, 180, 254, 0.25);
+
+    --badge-general-bg: #1E293B;
+    --badge-general-text: #CBD5E1;
+    --badge-general-border: rgba(255, 255, 255, 0.12);
+
+    /* Statutory Highlights (Dark Mode) */
+    --highlight-statutory-bg: #FEF08A;
+    --highlight-statutory-text: #451A03;
+    --highlight-statutory-border: #FDE047;
   }
 
   * {

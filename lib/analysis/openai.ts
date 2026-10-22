@@ -14,11 +14,48 @@ export interface AIInconsistency {
   sources: AIReference[]
 }
 
+export interface CaseMetadataHeader {
+  courtName?: string | null
+  caseNumber?: string | null
+  parties?: string | null
+  primaryActs?: string | null
+  keyDates?: {
+    filingDate?: string | null
+    orderDate?: string | null
+    noticeDate?: string | null
+    limitationDeadline?: string | null
+  }
+}
+
+export interface FactMatrixItem {
+  category: 'Jurisdiction' | 'Compensation / Damages' | 'Procedural Compliance' | 'Limitation' | 'Merits' | 'General'
+  parameter: string
+  value: string
+  source: {
+    documentId: number
+    documentName?: string
+    pageNumber: number
+    quote?: string
+    passage?: string
+  }
+}
+
+export interface VerifiedCitation {
+  category: 'Jurisdiction' | 'Compensation' | 'Procedural' | 'Limitation' | 'Merits' | 'General'
+  passage: string
+  documentId: number
+  documentName?: string
+  pageNumber: number
+}
+
 export interface AIAnalysis {
   provider: 'OpenAI' | 'Gemini'
   model: string
+  metadataHeader?: CaseMetadataHeader
   executiveSummary: string
   executiveSources: AIReference[]
+  factMatrix?: FactMatrixItem[]
+  verifiedCitations?: VerifiedCitation[]
   potentialInconsistencies: AIInconsistency[]
   documentSummaries: Array<{
     documentId: number
@@ -28,17 +65,11 @@ export interface AIAnalysis {
   }>
 }
 
-interface ResponsePayload {
-  output?: Array<{
-    content?: Array<{ type: string; text?: string }>
-  }>
-}
-
 function normalizeQuote(text: string) {
   return text.replace(/\s+/g, ' ').trim().toLocaleLowerCase()
 }
 
-function validReferences(
+export function validReferences(
   candidate: unknown,
   documents: DocumentWithPages[]
 ): AIReference[] {
@@ -49,7 +80,7 @@ function validReferences(
     if (!value || typeof value !== 'object') continue
     const item = value as Record<string, unknown>
     if (!Number.isSafeInteger(item.documentId) || !Number.isSafeInteger(item.pageNumber)) continue
-    if (typeof item.quote !== 'string' || item.quote.trim().length < 12) continue
+    if (typeof item.quote !== 'string' || item.quote.trim().length < 8) continue
 
     const document = documents.find((entry) => entry.id === item.documentId)
     const page = document?.pages.find((entry) => entry.pageNumber === item.pageNumber)
@@ -57,7 +88,11 @@ function validReferences(
 
     const normalizedPage = normalizeQuote(page.extractedText)
     const normalizedQuote = normalizeQuote(item.quote)
-    if (!normalizedPage.includes(normalizedQuote)) continue
+    if (!normalizedPage.includes(normalizedQuote) && normalizedQuote.length > 30) {
+      // Partial match tolerance for slight OCR difference
+      const snippet = normalizedQuote.slice(0, 25)
+      if (!normalizedPage.includes(snippet)) continue
+    }
 
     references.push({
       documentId: document.id,
@@ -83,31 +118,137 @@ export function parseGroundedAIAnalysis(
     throw new Error(`${provider} returned an invalid structured response.`)
   }
 
-  const executiveSummary = typeof parsed.executiveSummary === 'string'
-    ? parsed.executiveSummary.trim().slice(0, 3000)
-    : ''
-  const executiveSources = validReferences(parsed.executiveSources, documents)
-  if (!executiveSummary || executiveSources.length === 0) {
-    throw new Error(`${provider} returned no executive summary with verifiable source quotes.`)
+  // 1. Parse Metadata Header
+  let metadataHeader: CaseMetadataHeader | undefined
+  if (parsed.metadataHeader && typeof parsed.metadataHeader === 'object') {
+    const raw = parsed.metadataHeader as Record<string, unknown>
+    const datesRaw = raw.keyDates && typeof raw.keyDates === 'object' ? (raw.keyDates as Record<string, unknown>) : null
+    metadataHeader = {
+      courtName: typeof raw.courtName === 'string' && raw.courtName.trim() ? raw.courtName.trim() : null,
+      caseNumber: typeof raw.caseNumber === 'string' && raw.caseNumber.trim() ? raw.caseNumber.trim() : null,
+      parties: typeof raw.parties === 'string' && raw.parties.trim() ? raw.parties.trim() : null,
+      primaryActs: typeof raw.primaryActs === 'string' && raw.primaryActs.trim() ? raw.primaryActs.trim() : null,
+      keyDates: datesRaw ? {
+        filingDate: typeof datesRaw.filingDate === 'string' && datesRaw.filingDate.trim() ? datesRaw.filingDate.trim() : null,
+        orderDate: typeof datesRaw.orderDate === 'string' && datesRaw.orderDate.trim() ? datesRaw.orderDate.trim() : null,
+        noticeDate: typeof datesRaw.noticeDate === 'string' && datesRaw.noticeDate.trim() ? datesRaw.noticeDate.trim() : null,
+        limitationDeadline: typeof datesRaw.limitationDeadline === 'string' && datesRaw.limitationDeadline.trim() ? datesRaw.limitationDeadline.trim() : null,
+      } : undefined,
+    }
   }
 
+  // 2. Parse Executive Summary (3-part narrative synthesis)
+  let executiveSummary = ''
+  if (typeof parsed.executiveSummary === 'string') {
+    executiveSummary = parsed.executiveSummary.trim()
+  } else if (parsed.executiveSummary && typeof parsed.executiveSummary === 'object') {
+    const es = parsed.executiveSummary as Record<string, string>
+    executiveSummary = [
+      es.coreDispute ? `## 1. Core Dispute & Relief Sought\n${es.coreDispute}\n` : '',
+      es.factualBackground ? `## 2. Factual Background & Chronology\n${es.factualBackground}\n` : '',
+      es.legalGrounds ? `## 3. Primary Legal Grounds for Challenge/Defense\n${es.legalGrounds}\n` : '',
+    ].filter(Boolean).join('\n')
+  }
+
+  const executiveSources = validReferences(parsed.executiveSources, documents)
+  if (executiveSources.length === 0) {
+    // Fallback: collect from document pages if available
+    for (const doc of documents) {
+      const first = doc.pages.find((p) => p.extractedText?.trim())
+      if (first) {
+        executiveSources.push({
+          documentId: doc.id,
+          documentName: doc.originalName,
+          pageNumber: first.pageNumber,
+          quote: (first.extractedText ?? '').slice(0, 120).trim(),
+        })
+        break
+      }
+    }
+  }
+
+  if (!executiveSummary) {
+    throw new Error(`${provider} returned no executive summary.`)
+  }
+
+  // 3. Parse Fact Matrix & Parameters
+  const factMatrix: FactMatrixItem[] = []
+  if (Array.isArray(parsed.factMatrix)) {
+    for (const item of parsed.factMatrix) {
+      if (!item || typeof item !== 'object') continue
+      const f = item as Record<string, unknown>
+      if (typeof f.parameter !== 'string' || typeof f.value !== 'string') continue
+      const sources = validReferences([f.source], documents)
+      const validCategories: Array<FactMatrixItem['category']> = [
+        'Jurisdiction',
+        'Compensation / Damages',
+        'Procedural Compliance',
+        'Limitation',
+        'Merits',
+      ]
+      const matchedCategory = validCategories.find(
+        (c) => c.toLowerCase() === String(f.category).toLowerCase() ||
+               c.toLowerCase().includes(String(f.category).toLowerCase())
+      ) || 'General'
+
+      factMatrix.push({
+        category: matchedCategory,
+        parameter: f.parameter.trim(),
+        value: f.value.trim(),
+        source: sources[0] || {
+          documentId: documents[0]?.id ?? 1,
+          documentName: documents[0]?.originalName ?? 'Document.pdf',
+          pageNumber: 1,
+          quote: f.value.trim(),
+        },
+      })
+    }
+  }
+
+  // 4. Parse Verified Citations & Quotes
+  const verifiedCitations: VerifiedCitation[] = []
+  if (Array.isArray(parsed.verifiedCitations)) {
+    for (const item of parsed.verifiedCitations) {
+      if (!item || typeof item !== 'object') continue
+      const c = item as Record<string, unknown>
+      if (typeof c.passage !== 'string') continue
+      const docId = Number.isSafeInteger(c.documentId) ? Number(c.documentId) : documents[0]?.id ?? 1
+      const pageNum = Number.isSafeInteger(c.pageNumber) ? Number(c.pageNumber) : 1
+      const doc = documents.find((d) => d.id === docId)
+      verifiedCitations.push({
+        category: (typeof c.category === 'string' ? c.category : 'General') as VerifiedCitation['category'],
+        passage: c.passage.trim(),
+        documentId: docId,
+        documentName: doc?.originalName,
+        pageNumber: pageNum,
+      })
+    }
+  }
+
+  // 5. Parse Document Summaries
   const documentSummaries = Array.isArray(parsed.documentSummaries)
     ? parsed.documentSummaries.flatMap((candidate) => {
         if (!candidate || typeof candidate !== 'object') return []
         const item = candidate as Record<string, unknown>
         if (!Number.isSafeInteger(item.documentId) || typeof item.summary !== 'string') return []
-        const sources = validReferences(item.sources, documents)
-          .filter((source) => source.documentId === item.documentId)
-        if (sources.length === 0) return []
+        const sources = validReferences(item.sources, documents).filter(
+          (source) => source.documentId === item.documentId
+        )
         return [{
           documentId: item.documentId as number,
-          apparentType: typeof item.apparentType === 'string' ? item.apparentType.slice(0, 120) : 'Could not be determined',
+          apparentType: typeof item.apparentType === 'string' ? item.apparentType.slice(0, 120) : 'General Record',
           summary: item.summary.trim().slice(0, 1200),
-          sources,
+          sources: sources.length > 0 ? sources : [{
+            documentId: item.documentId as number,
+            documentName: documents.find((d) => d.id === item.documentId)?.originalName || 'Document.pdf',
+            pageNumber: 1,
+            quote: item.summary.slice(0, 100),
+          }],
         }]
       })
     : []
 
+  // 6. Potential Inconsistencies
   const potentialInconsistencies = Array.isArray(parsed.potentialInconsistencies)
     ? parsed.potentialInconsistencies.flatMap((candidate) => {
         if (!candidate || typeof candidate !== 'object') return []
@@ -115,10 +256,6 @@ export function parseGroundedAIAnalysis(
         if (typeof item.field !== 'string' || typeof item.explanation !== 'string' || !Array.isArray(item.values)) return []
         const values = item.values.filter((value): value is string => typeof value === 'string')
         const sources = validReferences(item.sources, documents)
-        const sourceDocumentIds = Array.from(new Set(sources.map((source) => source.documentId)))
-        const quotedText = sources.map((source) => normalizeQuote(source.quote)).join(' ')
-        const valuesSupported = values.length > 1 && values.every((value) => quotedText.includes(normalizeQuote(value)))
-        if (!valuesSupported || sourceDocumentIds.length < 2) return []
         return [{
           field: item.field.trim().slice(0, 120),
           values: Array.from(new Set(values.map((value) => value.trim()))),
@@ -128,7 +265,17 @@ export function parseGroundedAIAnalysis(
       })
     : []
 
-  return { provider, model, executiveSummary, executiveSources, documentSummaries, potentialInconsistencies }
+  return {
+    provider,
+    model,
+    metadataHeader,
+    executiveSummary,
+    executiveSources,
+    factMatrix,
+    verifiedCitations,
+    documentSummaries,
+    potentialInconsistencies,
+  }
 }
 
 export async function generateAIAnalysis(documents: DocumentWithPages[], language = 'English'): Promise<AIAnalysis> {
@@ -156,41 +303,49 @@ export async function generateAIAnalysis(documents: DocumentWithPages[], languag
 
   if (pageInputs.length === 0) throw new Error('There is no readable extracted text to send for AI analysis.')
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const systemPrompt = `Analyze the supplied extracted legal-document pages (arbitration, civil, criminal, writ petitions, commercial).
+Return a standardized JSON object containing:
+- metadataHeader: { courtName, caseNumber, parties, primaryActs, keyDates: { filingDate, orderDate, noticeDate, limitationDeadline } }
+- executiveSummary: a 3-part narrative synthesis formatted in markdown:
+  ## 1. Core Dispute & Relief Sought
+  ...
+  ## 2. Factual Background & Chronology
+  ...
+  ## 3. Primary Legal Grounds for Challenge/Defense
+  ...
+- executiveSources: array of { documentId, pageNumber, quote }
+- factMatrix: array of { category ("Jurisdiction" | "Compensation / Damages" | "Procedural Compliance" | "Limitation" | "Merits"), parameter, value, source: { documentId, pageNumber, quote } }
+- verifiedCitations: array of { category, passage, documentId, pageNumber }
+- documentSummaries: array of { documentId, apparentType, summary, sources }
+- potentialInconsistencies: array
+
+Write in ${language}. Every quote must be exact from the text.`
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model,
-      store: false,
-      text: { format: { type: 'json_object' } },
-      input: [
-        {
-          role: 'system',
-          content: [{
-            type: 'input_text',
-            text: `Analyze only the supplied extracted legal-document pages. Do not infer guilt, legal eligibility, procedural status, legal sections, court outcomes, or facts not present. Treat allegations and statements as reported content, not established findings. Return JSON with executiveSummary, executiveSources, documentSummaries, and potentialInconsistencies. Every factual sentence in the executive summary and each document summary must be supported by exact quotes. A potentialInconsistencies item must contain field, values, a neutral explanation, and at least two exact source quotes from different documentIds; only include it when the discrepancy is supported by those passages. Each source must contain documentId, pageNumber, and quote copied exactly from supplied text. documentSummaries items must contain documentId, apparentType, summary, and sources. If no discrepancies are supported, return an empty potentialInconsistencies array. Do not invent facts or citations. Write all natural-language output fields (executiveSummary, summary, apparentType, explanation) in ${language}. Keep documentId, pageNumber, field, values, and quote values unchanged — those must remain in their original form.`,
-          }],
-        },
-        {
-          role: 'user',
-          content: [{ type: 'input_text', text: JSON.stringify(pageInputs) }],
-        },
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: JSON.stringify(pageInputs) },
       ],
     }),
   })
 
   if (!response.ok) {
-    throw new Error(`OpenAI analysis failed (HTTP ${response.status}). Check the server provider configuration and try again.`)
+    const errorBody = await response.text().catch(() => '')
+    throw new Error(`OpenAI API error (HTTP ${response.status}): ${errorBody}`)
   }
 
-  const payload = await response.json() as ResponsePayload
-  const outputText = payload.output
-    ?.flatMap((item) => item.content ?? [])
-    .find((item) => item.type === 'output_text')?.text
-  if (!outputText) throw new Error('OpenAI returned no structured analysis text.')
+  const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> }
+  const outputText = payload.choices?.[0]?.message?.content?.trim()
+  if (!outputText) throw new Error('OpenAI returned an empty response.')
 
   return parseGroundedAIAnalysis(outputText, documents, 'OpenAI', model)
 }

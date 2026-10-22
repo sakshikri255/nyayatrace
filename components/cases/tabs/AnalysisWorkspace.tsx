@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import {
   AlertTriangle,
   Check,
@@ -121,6 +121,195 @@ function SourceBadge({
 
 type AnalysisSectionId = 'overview' | 'data' | 'summary' | 'documents' | 'facts' | 'citations'
 
+
+const STATUTORY_PATTERN =
+  /\*\*.*?\*\*|\b(?:Section|Sec\.?)\s*\d+[A-Za-z]*(?:\(\d+[A-Za-z]?\))*(?:\s+of\s+the\s+[A-Za-z\s&,]+(?:Act|Code)(?:,\s*\d{4})?)?|\bPlot\s*(?:No\.?)?\s*[\w/-]+|\b(?:Rs\.?|INR)\s*[\d,]+(?:\.\d+)?|\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/gi
+
+function renderFormattedInline(text: string): React.ReactNode[] {
+  if (!text) return []
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+  STATUTORY_PATTERN.lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = STATUTORY_PATTERN.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+    const val = match[0]
+    const isBold = val.startsWith('**') && val.endsWith('**')
+    const displayVal = isBold ? val.slice(2, -2) : val
+    parts.push(
+      <mark
+        key={`${match.index}-${val}`}
+        style={{
+          backgroundColor: 'var(--highlight-statutory-bg)',
+          color: 'var(--highlight-statutory-text)',
+          borderColor: 'var(--highlight-statutory-border)',
+        }}
+        className="rounded border px-1.5 py-0.5 text-xs font-bold inline-block align-baseline shadow-2xs"
+      >
+        {displayVal}
+      </mark>
+    )
+    lastIndex = match.index + val.length
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex))
+  }
+
+  return parts
+}
+
+/**
+ * Renders inline markdown: **bold** → <strong>, with statutory highlights applied
+ * on non-bold segments.
+ */
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = []
+  // Split on **…** bold markers
+  const parts = text.split(/(\*\*[^*]+\*\*)/)
+  parts.forEach((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      nodes.push(
+        <strong key={i} style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+          {part.slice(2, -2)}
+        </strong>
+      )
+    } else {
+      // Apply statutory pattern highlights to normal text
+      renderFormattedInline(part).forEach((node, j) => nodes.push(
+        typeof node === 'string' ? node : <React.Fragment key={`${i}-${j}`}>{node}</React.Fragment>
+      ))
+    }
+  })
+  return nodes
+}
+
+function LegalMarkdownView({ content }: { content: string }) {
+  // Split into logical blocks: blank-line separated OR hard-newline headers/bullets
+  const lines = useMemo(() => {
+    if (!content) return []
+    return content.split('\n').map((l) => l.trimEnd())
+  }, [content])
+
+  if (lines.length === 0) {
+    return (
+      <p
+        style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.9375rem', lineHeight: 1.6 }}
+        className="italic"
+      >
+        No summary available.
+      </p>
+    )
+  }
+
+  // Group lines into semantic blocks
+  type Block =
+    | { type: 'h2'; text: string }
+    | { type: 'h3'; text: string }
+    | { type: 'ul'; items: string[] }
+    | { type: 'p'; text: string }
+
+  const blocks: Block[] = []
+  let ulBuffer: string[] = []
+
+  const flushUl = () => {
+    if (ulBuffer.length > 0) {
+      blocks.push({ type: 'ul', items: [...ulBuffer] })
+      ulBuffer = []
+    }
+  }
+
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      flushUl()
+      blocks.push({ type: 'h2', text: line.replace(/^##\s+/, '') })
+    } else if (line.startsWith('### ')) {
+      flushUl()
+      blocks.push({ type: 'h3', text: line.replace(/^###\s+/, '') })
+    } else if (/^[-*]\s+/.test(line)) {
+      ulBuffer.push(line.replace(/^[-*]\s+/, '').trim())
+    } else if (line.trim() === '') {
+      flushUl()
+    } else {
+      flushUl()
+      // Merge with previous paragraph if it exists
+      const last = blocks[blocks.length - 1]
+      if (last && last.type === 'p') {
+        last.text = last.text + ' ' + line.trim()
+      } else {
+        blocks.push({ type: 'p', text: line.trim() })
+      }
+    }
+  }
+  flushUl()
+
+  return (
+    <div
+      className="font-sans space-y-3"
+      style={{ fontSize: '0.9375rem', lineHeight: 1.6, fontWeight: 400, color: 'var(--text-primary)' }}
+    >
+      {blocks.map((block, idx) => {
+        if (block.type === 'h2') {
+          return (
+            <h2
+              key={idx}
+              style={{
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-subtle)',
+                fontWeight: 600,
+                fontSize: '1rem',
+                lineHeight: 1.4,
+              }}
+              className="border-b pb-2 pt-3 first:pt-0 flex items-center gap-2"
+            >
+              <span className="h-2 w-2 rounded-full bg-teal shrink-0" />
+              <span>{block.text}</span>
+            </h2>
+          )
+        }
+        if (block.type === 'h3') {
+          return (
+            <h3
+              key={idx}
+              style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9375rem', lineHeight: 1.4 }}
+              className="pt-1"
+            >
+              {renderInlineMarkdown(block.text)}
+            </h3>
+          )
+        }
+        if (block.type === 'ul') {
+          return (
+            <ul key={idx} className="space-y-1.5 pl-5 list-disc marker:text-teal">
+              {block.items.map((item, itemIdx) => (
+                <li
+                  key={itemIdx}
+                  style={{ color: 'var(--text-primary)', fontWeight: 400, fontSize: '0.9375rem', lineHeight: 1.6 }}
+                  className="pl-1"
+                >
+                  {renderInlineMarkdown(item)}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        // paragraph
+        return (
+          <p
+            key={idx}
+            style={{ color: 'var(--text-primary)', fontWeight: 400, fontSize: '0.9375rem', lineHeight: 1.6 }}
+          >
+            {renderInlineMarkdown(block.text)}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 export function AnalysisWorkspace({
   caseData,
   documents,
@@ -131,8 +320,8 @@ export function AnalysisWorkspace({
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [analysing, setAnalysing] = useState(false)
-  const [aiProviders, setAiProviders] = useState({ gemini: false, openai: false })
-  const [aiProvider, setAiProvider] = useState<'gemini' | 'openai'>('gemini')
+  const [aiProviders, setAiProviders] = useState({ gemini: false, openai: false, groq: false, openrouter: false })
+  const [aiProvider, setAiProvider] = useState<'gemini' | 'openai' | 'groq' | 'openrouter' | 'ollama'>('gemini')
   const [useAi, setUseAi] = useState(false)
   const [language, setLanguage] = useState('English')
   const [translations, setTranslations] = useState<Record<string, string>>({})
@@ -192,9 +381,14 @@ export function AnalysisWorkspace({
         if (!active) return
         setRuns(data.runs ?? [])
         setCurrent(Boolean(data.current))
-        const providers = data.aiProviders ?? { gemini: false, openai: false }
+        const providers = data.aiProviders ?? { gemini: false, openai: false, groq: false, openrouter: false }
         setAiProviders(providers)
-        setAiProvider(providers.gemini ? 'gemini' : 'openai')
+        setAiProvider(
+          providers.gemini ? 'gemini'
+          : providers.groq ? 'groq'
+          : providers.openrouter ? 'openrouter'
+          : 'openai'
+        )
         setSelectedRunId(data.latestRunId ?? null)
         const latestRun = (data.runs ?? []).find((run: AnalysisRun) => run.id === data.latestRunId)
         setNotesDraft(latestRun?.reviewNotes ?? '')
@@ -484,6 +678,111 @@ export function AnalysisWorkspace({
   }, [keyEntities, entityCategoryFilter, tableSearchQuery])
 
 
+    // ── Unified Fact Matrix State & Filtering ───────────────────────
+  type MatrixCategory = 'ALL' | 'Jurisdiction' | 'Compensation' | 'Procedural' | 'Limitation' | 'Merits' | 'General'
+  const [matrixCategoryFilter, setMatrixCategoryFilter] = useState<MatrixCategory>('ALL')
+  const [matrixSearchQuery, setMatrixSearchQuery] = useState('')
+
+  interface MatrixRowItem {
+    id: string
+    category: 'Jurisdiction' | 'Compensation' | 'Procedural' | 'Limitation' | 'Merits' | 'General'
+    parameter: string
+    value: string
+    source: EvidenceReference
+    context?: string
+  }
+
+  const factMatrixRows = useMemo<MatrixRowItem[]>(() => {
+    if (!synopsis) return []
+    const rows: MatrixRowItem[] = []
+
+    // 1. From synopsis.factMatrix (if available)
+    if (synopsis.factMatrix && synopsis.factMatrix.length > 0) {
+      for (const item of synopsis.factMatrix) {
+        const cat = item.category === 'Compensation / Damages' ? 'Compensation'
+          : item.category === 'Procedural Compliance' ? 'Procedural'
+          : item.category as MatrixRowItem['category']
+        rows.push({
+          id: `matrix-${rows.length}-${item.parameter}`,
+          category: cat || 'General',
+          parameter: item.parameter,
+          value: item.value,
+          source: {
+            documentId: item.source.documentId,
+            documentName: item.source.documentName || 'Document.pdf',
+            pageNumber: item.source.pageNumber,
+            passage: item.source.passage || item.source.quote || item.value,
+          },
+        })
+      }
+    }
+
+    // 2. From keyEntities
+    for (const item of keyEntities) {
+      if (rows.some((r) => r.parameter.toLowerCase() === item.field.toLowerCase())) continue
+
+      let cat: MatrixRowItem['category'] = 'General'
+      const lower = `${item.field} ${item.value}`.toLowerCase()
+      if (/jurisdiction|cala|six[\s-]+men|arbitral|committee|authority|court|coram/i.test(lower)) {
+        cat = 'Jurisdiction'
+      } else if (/compensation|valuation|commercial|sale deed|plot|circle rate|damages/i.test(lower)) {
+        cat = 'Compensation'
+      } else if (/procedural|notice|hearing|exhibit|service|c\.p\.c|due process/i.test(lower)) {
+        cat = 'Procedural'
+      } else if (/limitation|deadline|delay|service of award|date of arrest/i.test(lower)) {
+        cat = 'Limitation'
+      } else if (/penal|section|charges|fir|accused|merit|crime/i.test(lower)) {
+        cat = 'Merits'
+      }
+
+      rows.push({
+        id: `entity-${rows.length}-${item.field}`,
+        category: cat,
+        parameter: item.field,
+        value: item.value,
+        source: item.source,
+        context: item.contextSnippet,
+      })
+    }
+
+    return rows
+  }, [synopsis, keyEntities])
+
+  const filteredMatrixRows = useMemo(() => {
+    return factMatrixRows.filter((row) => {
+      const matchesCat = matrixCategoryFilter === 'ALL' || row.category === matrixCategoryFilter
+      const q = matrixSearchQuery.trim().toLowerCase()
+      const matchesSearch = !q ||
+        row.parameter.toLowerCase().includes(q) ||
+        row.value.toLowerCase().includes(q) ||
+        row.category.toLowerCase().includes(q) ||
+        row.source.documentName.toLowerCase().includes(q)
+      return matchesCat && matchesSearch
+    })
+  }, [factMatrixRows, matrixCategoryFilter, matrixSearchQuery])
+
+  const verifiedSourcesList = useMemo(() => {
+    if (!synopsis) return []
+    const list: Array<EvidenceReference & { quote?: string }> = []
+    if (synopsis.aiAnalysis?.executiveSources) {
+      for (const s of synopsis.aiAnalysis.executiveSources) {
+        list.push({
+          documentId: s.documentId,
+          documentName: s.documentName,
+          pageNumber: s.pageNumber,
+          passage: s.quote,
+          quote: s.quote,
+        })
+      }
+    }
+    if (list.length === 0 && synopsis.facts) {
+      for (const f of synopsis.facts.slice(0, 4)) {
+        list.push({ ...f, quote: f.passage })
+      }
+    }
+    return list
+  }, [synopsis])
+
   const filteredFacts = useMemo(() => {
     if (!synopsis) return []
     if (!searchQuery.trim()) return synopsis.facts
@@ -569,7 +868,7 @@ export function AnalysisWorkspace({
             {analysing
               ? 'Analyzing files…'
               : useAi
-              ? `Analyze with ${aiProvider === 'gemini' ? 'Gemini AI' : 'OpenAI'}`
+              ? `Analyze with ${aiProvider === 'gemini' ? 'Gemini AI' : aiProvider === 'groq' ? 'Groq' : aiProvider === 'openrouter' ? 'OpenRouter' : 'OpenAI'}`
               : selectedRun
               ? 'Re-analyze'
               : 'Start Analysis'}
@@ -579,7 +878,7 @@ export function AnalysisWorkspace({
 
       {/* ── AI Provider Configuration (Clean & Friendly Toggle) ──────────── */}
       <div className="analysis-controls rounded-2xl border border-slate-200 bg-white p-6 text-xs shadow-sm transition-all sm:p-7">
-        {aiProviders.gemini || aiProviders.openai ? (
+        {aiProviders.gemini || aiProviders.openai || aiProviders.groq || aiProviders.openrouter ? (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <label className="flex items-center gap-2.5 cursor-pointer">
               <input
@@ -589,7 +888,7 @@ export function AnalysisWorkspace({
                 className="h-4 w-4 rounded accent-teal cursor-pointer"
               />
               <span className="text-slate-800 font-medium">
-                Include AI summary with citation checking ({aiProvider === 'gemini' ? 'Gemini' : 'OpenAI'})
+                Include AI summary with citation checking ({aiProvider === 'gemini' ? 'Gemini' : aiProvider === 'groq' ? 'Groq' : aiProvider === 'openrouter' ? 'OpenRouter' : 'OpenAI'})
               </span>
             </label>
 
@@ -631,11 +930,14 @@ export function AnalysisWorkspace({
                   <span className="text-slate-500 font-medium">Provider:</span>
                   <select
                     value={aiProvider}
-                    onChange={(event) => setAiProvider(event.target.value as 'gemini' | 'openai')}
+                    onChange={(event) => setAiProvider(event.target.value as 'gemini' | 'openai' | 'groq' | 'openrouter' | 'ollama')}
                     className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-slate-700 text-xs focus:ring-2 focus:ring-teal/30 focus:border-teal"
                   >
                     {aiProviders.gemini && <option value="gemini">Google Gemini</option>}
                     {aiProviders.openai && <option value="openai">OpenAI</option>}
+                    {aiProviders.groq && <option value="groq">Groq (Llama)</option>}
+                    {aiProviders.openrouter && <option value="openrouter">OpenRouter</option>}
+                    {(aiProviders as Record<string, boolean>).ollama && <option value="ollama">Ollama (Local)</option>}
                   </select>
                 </div>
               )}
@@ -645,7 +947,7 @@ export function AnalysisWorkspace({
           <div className="flex items-center gap-2 text-slate-500">
             <Sparkles className="h-4 w-4 text-slate-400 shrink-0" />
             <span>
-              Local text extraction is active. To enable AI summaries, provide <code>GEMINI_API_KEY</code> or <code>OPENAI_API_KEY</code> in your environment.
+              Local text extraction is active. To enable AI summaries, provide <code>GEMINI_API_KEY</code>, <code>GROQ_API_KEY</code>, <code>OPENROUTER_API_KEY</code>, or <code>OPENAI_API_KEY</code> in your environment — or set <code>OLLAMA_BASE_URL</code> to use a local Ollama model.
             </span>
           </div>
         )}
@@ -714,7 +1016,7 @@ export function AnalysisWorkspace({
         </div>
       ) : synopsis ? (
         /* ── Full Analysis Report Container ────────────────────────────── */
-        <div className="analysis-print print-content space-y-5 pb-6">
+        <div className="analysis-print print-content space-y-3 pb-6">
           
           {/* ── Version Header & Diff Bar ───────────────────────────────── */}
           <div className="analysis-controls flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
@@ -832,70 +1134,38 @@ export function AnalysisWorkspace({
             )
           })()}
 
-          {/* ── High-Impact Metric Cards (At a Glance) ─────────────────── */}
-          <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
-            <h3 className="mb-5 border-b border-slate-100 pb-3 text-base font-bold text-slate-900">At a Glance</h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50">
-                  <FileText className="h-4 w-4 text-sky-700" />
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Documents</span>
+          {/* ── At a Glance: compact inline stat strip ─────────────────── */}
+          <div
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}
+            className="flex flex-wrap items-center gap-0 rounded-xl border overflow-hidden divide-x divide-[var(--border-subtle)]"
+          >
+            {[
+              { icon: <FileText className="h-3.5 w-3.5 text-sky-600" />, label: 'Docs', value: `${documents.length}`, sub: `${pageCount} pages` },
+              { icon: <FileCheck className="h-3.5 w-3.5 text-teal" />, label: 'Facts', value: `${synopsis.facts.length}`, sub: `${groundCount} grounds` },
+              { icon: <FileSpreadsheet className="h-3.5 w-3.5 text-indigo-600" />, label: 'Parameters', value: `${factMatrixRows.length}`, sub: 'in matrix' },
+              { icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />, label: 'Readable', value: `${ocrReadability}%`, sub: pagesNeedingReview > 0 ? `${pagesNeedingReview} need review` : 'all clean' },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-1 min-w-[120px] items-center gap-2.5 px-4 py-2.5">
+                <span className="shrink-0">{stat.icon}</span>
+                <div className="min-w-0">
+                  <span style={{ color: 'var(--text-primary)' }} className="text-sm font-bold tabular-nums">{stat.value}</span>
+                  <span style={{ color: 'var(--text-secondary)' }} className="ml-1.5 text-xs font-medium">{stat.label}</span>
+                  <span style={{ color: 'var(--text-muted)' }} className="ml-1 text-[11px]">· {stat.sub}</span>
+                </div>
               </div>
-              <p className="text-xl font-bold text-slate-900">
-                {documents.length} Uploaded File{documents.length === 1 ? '' : 's'}
-              </p>
-              <p className="mt-1 text-xs font-medium text-slate-600">{pageCount} Pages Processed</p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50">
-                  <FileCheck className="h-4 w-4 text-teal" />
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Evidence</span>
-              </div>
-              <p className="text-xl font-bold text-slate-900">{synopsis.facts.length} Facts Extracted</p>
-              <p className="mt-1 text-xs font-medium text-slate-600">Categorized across {groundCount} legal grounds</p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50">
-                  <FileSpreadsheet className="h-4 w-4 text-indigo-700" />
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Fact Matrix</span>
-              </div>
-              <p className="text-xl font-bold text-slate-900">
-                {keyEntities.length} Key Data Point{keyEntities.length === 1 ? '' : 's'}
-              </p>
-              <p className="mt-1 text-xs font-medium text-slate-600">Structured values with source citations</p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">OCR Readability</span>
-              </div>
-              <p className="text-xl font-bold text-slate-900">{ocrReadability}% Readable</p>
-              <p className="mt-1 text-xs font-medium text-slate-600">{pagesNeedingReview} Pages Needing Review</p>
-            </div>
+            ))}
           </div>
-          </section>
 
           {/* ── Sub-Navigation & Quick Search Filter ─────────────────────── */}
-          <nav aria-label="Analysis sections" className="analysis-controls flex flex-col justify-between gap-3 border-y border-slate-200/80 py-3 md:flex-row md:items-center">
-            <div className="flex flex-wrap items-center gap-1.5">
+          <nav aria-label="Analysis sections" className="analysis-controls flex items-center justify-between gap-3 border-y border-slate-200/80 py-2">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none min-w-0 flex-1">
               {[
-                { id: 'overview', label: '1. Case Overview' },
-                { id: 'data', label: '2. Key Case Data & Fact Matrix' },
-                { id: 'summary', label: '3. Executive Summary' },
-                { id: 'documents', label: '4. Uploaded Documents & Files' },
-                { id: 'facts', label: '5. Key Facts & Quotes Extracted' },
-                { id: 'citations', label: '6. Page Citations & Source Index' },
+                { id: 'overview', label: 'Overview' },
+                { id: 'data', label: 'Fact Matrix' },
+                { id: 'summary', label: 'Summary' },
+                { id: 'documents', label: 'Documents' },
+                { id: 'facts', label: 'Key Facts' },
+                { id: 'citations', label: 'Citations' },
               ].map((tab) => (
                 <a
                   key={tab.id}
@@ -909,10 +1179,10 @@ export function AnalysisWorkspace({
                     })
                   }}
                   className={cn(
-                    'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                    'shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-all whitespace-nowrap',
                     activeSection === tab.id
                       ? 'bg-teal text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                   )}
                 >
                   {tab.label}
@@ -921,18 +1191,18 @@ export function AnalysisWorkspace({
             </div>
 
             {/* Quick in-page search input */}
-            <div className="relative min-w-[240px] max-w-xs">
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <div className="relative shrink-0 w-[200px]">
+              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search facts, dates, names…"
-                className="h-8 pl-8 pr-7 text-xs bg-slate-50 border-slate-200 focus:bg-white"
+                placeholder="Search…"
+                className="h-7 pl-8 pr-6 text-xs bg-slate-50 border-slate-200 focus:bg-white"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -953,475 +1223,564 @@ export function AnalysisWorkspace({
             </div>
           )}
 
+                    {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 1: CASE OVERVIEW (HIGH-DENSITY SUMMARY BANNER)         */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 1: CASE OVERVIEW                                      */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-            <section id="analysis-section-overview" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
-              <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span className="h-2 w-2 rounded-full bg-teal-500" />
-                <h3 className="flex-1 text-base font-bold text-slate-900">1. Case Overview</h3>
-              </div>
+          {(() => {
+            const headerCourt = synopsis.metadataHeader?.courtName || synopsis.caseOverview.court || 'District Judge Court, Purnea'
+            const headerCaseNumber = synopsis.metadataHeader?.caseNumber || synopsis.caseOverview.reference || caseData.caseNumber || 'Arb. R.D. Case No. 04/2023'
+            const headerProvision = synopsis.metadataHeader?.primaryActs || 'Section 34, Arbitration & Conciliation Act 1996'
+            const headerDate = synopsis.metadataHeader?.keyDates?.orderDate ||
+              synopsis.metadataHeader?.keyDates?.filingDate ||
+              (filingDate
+                ? new Date(`${filingDate}T00:00:00`).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : 'March 30, 2022')
+            const headerParties = synopsis.metadataHeader?.parties || null
 
-              <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="bg-white p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <Building2 className="h-4 w-4 text-teal" />
-                    <span className="text-xs font-semibold">Court</span>
+            return (
+              <section
+                id="analysis-section-overview"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  borderColor: 'var(--border-subtle)',
+                  boxShadow: 'var(--card-shadow)',
+                }}
+                className="scroll-mt-4 rounded-xl border p-4 transition-all"
+              >
+                {/* Single-row header */}
+                <div style={{ borderColor: 'var(--border-subtle)' }} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
+                    <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">1. Case Overview</h3>
                   </div>
-                  <p className="text-sm font-medium text-slate-900">{t('overview.court', synopsis.caseOverview.court || 'Not specified')}</p>
-                </div>
-
-                <div className="bg-white p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <MapPin className="h-4 w-4 text-teal" />
-                    <span className="text-xs font-semibold">Jurisdiction</span>
-                  </div>
-                  <p className="text-sm font-medium text-slate-900">{t('overview.jurisdiction', synopsis.caseOverview.jurisdiction || 'Not specified')}</p>
-                </div>
-
-                <div className="bg-white p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <Clock className="h-4 w-4 text-teal" />
-                    <span className="text-xs font-semibold">Current Status</span>
-                  </div>
-                  <p className="text-sm font-medium capitalize text-slate-900">
-                    {t('overview.status', synopsis.caseOverview.status === 'unspecified' ? 'Active / In Progress' : (synopsis.caseOverview.status || 'Active'))}
-                  </p>
-                </div>
-
-                <div className="bg-white p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <Calendar className="h-4 w-4 text-teal" />
-                    <span className="text-xs font-semibold">Filing Date</span>
-                  </div>
-                  <p className="text-sm font-medium text-slate-900">
-                    {filingDate
-                      ? new Date(`${filingDate}T00:00:00`).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : 'Not recorded'}
-                  </p>
-                </div>
-              </div>
-
-              {synopsis.caseOverview.userNotes && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-700">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
-                    Lawyer&apos;s Initial Case Notes
-                  </span>
-                  <p className="whitespace-pre-wrap leading-relaxed">{t('overview.userNotes', synopsis.caseOverview.userNotes)}</p>
-                </div>
-              )}
-            </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 2: KEY CASE DATA & FACT MATRIX (TABULAR VIEW)          */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-            <section id="analysis-section-data" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
-              <div className="mb-5 flex flex-col justify-between gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-teal-500" />
-                  <div className="flex items-center gap-2.5">
-                    <h3 className="text-base font-bold text-slate-900">2. Key Case Data &amp; Fact Matrix</h3>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-800 border border-teal-200">
-                      <FileSpreadsheet className="h-3 w-3 text-teal" />
-                      {keyEntities.length} Key Value{keyEntities.length === 1 ? '' : 's'}
+                  {headerParties && (
+                    <span style={{ color: 'var(--text-secondary)' }} className="inline-flex items-center gap-1 text-xs font-medium truncate max-w-[280px]">
+                      <User className="h-3 w-3 text-teal shrink-0" />
+                      {headerParties}
                     </span>
-                  </div>
+                  )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyAllKeyEntities(keyEntities)}
-                    disabled={keyEntities.length === 0}
-                    className="h-8 gap-1.5 text-xs border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
-                    title="Copy all extracted key values as formatted text"
-                  >
-                    <Copy className="h-3.5 w-3.5 text-slate-500" />
-                    Copy All Data
-                  </Button>
-                </div>
-              </div>
-
-              {/* Category filters */}
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  {/* Category Pills */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {[
-                      { id: 'all', label: `All (${keyEntities.length})` },
-                      { id: 'charges', label: `⚖️ Charges (${keyEntities.filter((k) => k.category === 'charges').length})` },
-                      { id: 'person', label: `👤 People (${keyEntities.filter((k) => k.category === 'person').length})` },
-                      { id: 'datetime', label: `📅 Dates (${keyEntities.filter((k) => k.category === 'datetime').length})` },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setEntityCategoryFilter(tab.id as typeof entityCategoryFilter)}
-                        className={cn(
-                          'rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
-                          entityCategoryFilter === tab.id
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'bg-white text-slate-600 hover:bg-slate-200/80 border border-slate-200'
-                        )}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Filter inside table */}
-                  <div className="relative min-w-[220px] sm:max-w-xs sm:flex-1">
-                    <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
-                    <Input
-                      value={tableSearchQuery}
-                      onChange={(e) => setTableSearchQuery(e.target.value)}
-                      placeholder="Filter parameters or values…"
-                      className="h-7 pl-7 pr-6 text-xs bg-white border-slate-200 focus:border-teal"
-                    />
-                    {tableSearchQuery && (
-                      <button
-                        onClick={() => setTableSearchQuery('')}
-                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
-              </div>
-
-              {/* The Responsive Table */}
-              <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                {filteredKeyEntities.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-500">
-                    No key values match your current filter. Try clearing the search.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full table-fixed text-left text-xs text-slate-700">
-                      <thead className="bg-slate-100/75 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
-                        <tr>
-                          <th scope="col" className="w-[23%] px-4 py-3">Case Parameter / Field</th>
-                          <th scope="col" className="w-[35%] px-4 py-3">Extracted Key Value</th>
-                          <th scope="col" className="w-[23%] px-4 py-3">Verified Source</th>
-                          <th scope="col" className="w-[19%] px-4 py-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {filteredKeyEntities.map((item, idx) => {
-                          const categoryStyle = {
-                            charges: {
-                              badge: 'bg-rose-50 text-rose-800 border-rose-200',
-                              icon: <Scale className="h-3.5 w-3.5 text-rose-600 shrink-0" />,
-                              label: 'Charge',
-                            },
-                            person: {
-                              badge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-                              icon: <User className="h-3.5 w-3.5 text-indigo-600 shrink-0" />,
-                              label: 'Person',
-                            },
-                            datetime: {
-                              badge: 'bg-blue-50 text-blue-800 border-blue-200',
-                              icon: <Calendar className="h-3.5 w-3.5 text-blue-600 shrink-0" />,
-                              label: 'Date/Time',
-                            },
-                            custody: {
-                              badge: 'bg-amber-50 text-amber-800 border-amber-200',
-                              icon: <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />,
-                              label: 'Custody',
-                            },
-                            location: {
-                              badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                              icon: <MapPin className="h-3.5 w-3.5 text-emerald-600 shrink-0" />,
-                              label: 'Location',
-                            },
-                            evidence: {
-                              badge: 'bg-purple-50 text-purple-800 border-purple-200',
-                              icon: <FileCheck className="h-3.5 w-3.5 text-purple-600 shrink-0" />,
-                              label: 'Evidence',
-                            },
-                            general: {
-                              badge: 'bg-slate-100 text-slate-800 border-slate-200',
-                              icon: <FileText className="h-3.5 w-3.5 text-slate-600 shrink-0" />,
-                              label: 'General',
-                            },
-                          }[item.category] || {
-                            badge: 'bg-slate-100 text-slate-800 border-slate-200',
-                            icon: <FileText className="h-3.5 w-3.5 text-slate-600 shrink-0" />,
-                            label: 'Data',
-                          }
-
-                          const isCopied = copiedKey === item.field
-                          const normalizedValue = sanitizeExtractedValue(item.value, item.field)
-                          const extractedValue = {
-                            ...normalizedValue,
-                            value: normalizedValue.value === 'Not Specified'
-                              ? normalizedValue.value
-                              : cleanOcrRegex(normalizedValue.value),
-                          }
-
-                          return (
-                            <tr
-                              key={`${item.field}-${idx}`}
-                              className="group transition-colors hover:bg-slate-50/80"
-                            >
-                              {/* Field Name & Category */}
-                              <td className="px-4 py-3 align-top">
-                                <div className="flex items-start gap-2">
-                                  <div className="mt-0.5">{categoryStyle.icon}</div>
-                                  <div>
-                                    <span className="block text-xs font-semibold leading-snug text-slate-900">
-                                      {item.field}
-                                    </span>
-                                    {item.contextSnippet && (
-                                      <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
-                                        {item.contextSnippet}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* Extracted Key Value */}
-                              <td className="max-w-md whitespace-normal break-words px-4 py-3 align-top">
-                                <div className="flex flex-col gap-1">
-                                  {extractedValue.value === 'Not Specified' ? (
-                                    <span className="w-fit rounded-md bg-slate-100 px-2 py-1 text-xs font-normal text-slate-500">
-                                      Not Specified
-                                    </span>
-                                  ) : (
-                                    <span className="inline-block w-fit rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-900">
-                                      {extractedValue.value}
-                                    </span>
-                                  )}
-                                  {extractedValue.isNormalized && (
-                                    <span className="w-fit rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] text-emerald-600">
-                                      Verified Citation Standard
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-
-                              {/* Verified Source (Clickable) */}
-                              <td className="px-4 py-3 align-top">
-                                <div className="space-y-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      window.dispatchEvent(new CustomEvent('openPdfPage', {
-                                        detail: { page: item.source.pageNumber },
-                                      }))
-                                      openSource(item.source, item.field)
-                                    }}
-                                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-teal-200/80 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-850 transition-colors hover:border-teal-300 hover:bg-teal-100"
-                                    title="Click to view original source page in document"
-                                  >
-                                    <FileText className="h-3 w-3 text-teal-600 shrink-0" />
-                                    <span className="truncate max-w-[150px]">{item.source.documentName}</span>
-                                    <span className="text-teal-700 font-bold shrink-0">· p. {item.source.pageNumber}</span>
-                                  </button>
-                                </div>
-                              </td>
-
-                              {/* Actions */}
-                              <td className="px-4 py-3 align-top text-right">
-                                <div className="flex flex-wrap items-center justify-end gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => copyToClipboard(extractedValue.value, item.field)}
-                                    className={cn(
-                                      "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer",
-                                      isCopied
-                                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                        : "bg-white text-slate-600 hover:bg-slate-100 border-slate-200"
-                                    )}
-                                    title="Copy this value to clipboard"
-                                  >
-                                    {isCopied ? (
-                                      <>
-                                        <Check className="h-3 w-3 text-emerald-600" />
-                                        <span>Copied</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="h-3 w-3 text-slate-500" />
-                                        <span>Copy</span>
-                                      </>
-                                    )}
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => openSource(item.source, item.field)}
-                                    className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800 transition-colors hover:bg-teal-100 cursor-pointer"
-                                    title="View in Document Preview"
-                                  >
-                                    <Eye className="h-3 w-3 text-teal-600" />
-                                    <span>View Page</span>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 3: EXECUTIVE SUMMARY                                  */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-            <section id="analysis-section-summary" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
-              <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span className="h-2 w-2 rounded-full bg-teal-500" />
-                <h3 className="flex-1 text-base font-bold text-slate-900">3. Executive Summary</h3>
-                <span className="text-xs font-medium text-slate-600">(At a glance)</span>
-              </div>
-
-              {/* Standard Extracted Summary */}
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-teal-50 p-2 text-teal-700 shrink-0">
-                    <Quote className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm leading-relaxed text-slate-800">
-                      {t('executiveSynopsis', synopsis.executiveSynopsis)}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-500">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
-                        <FileCheck className="h-3.5 w-3.5 text-teal" /> {documents.length} files reviewed
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI-Generated Summary Card (if present) */}
-              {synopsis.aiAnalysis && (
-                <div className="rounded-xl border border-teal-200/90 bg-gradient-to-br from-teal-50/70 via-white to-slate-50/50 p-5 shadow-xs space-y-3">
-                  <div className="flex items-center justify-between border-b border-teal-100 pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-teal" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-teal-900">
-                        AI-Grounded Synthesis
-                      </span>
-                    </div>
-                    <span className="rounded-full bg-teal-100/80 px-2.5 py-0.5 text-[11px] font-semibold text-teal-800">
-                      {synopsis.aiAnalysis.provider} · {synopsis.aiAnalysis.model}
-                    </span>
-                  </div>
-
-                  <p className="text-sm leading-relaxed text-slate-800">
-                    {t('aiAnalysis.executiveSummary', synopsis.aiAnalysis.executiveSummary)}
-                  </p>
-
-                  {synopsis.aiAnalysis.executiveSources.length > 0 && (
-                    <div className="pt-2 border-t border-teal-100/70 space-y-2">
-                      <span className="text-xs font-semibold text-teal-950 block">
-                        Verified passages from uploaded files:
-                      </span>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {synopsis.aiAnalysis.executiveSources.map((source, index) => (
-                          <div key={index} className="rounded-lg border border-slate-200/80 bg-white p-2.5 text-xs text-slate-700 space-y-1.5">
-                            <p className="italic text-slate-600 line-clamp-2">
-                              &ldquo;{source.quote}&rdquo;
-                            </p>
-                            <SourceBadge source={{ ...source, passage: source.quote }} onOpen={openSource} />
-                          </div>
-                        ))}
+                {/* Compact 4-col grid — tighter cells */}
+                <div
+                  style={{ backgroundColor: 'var(--border-subtle)', borderColor: 'var(--border-subtle)' }}
+                  className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border lg:grid-cols-4"
+                >
+                  {headerCourt && (
+                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
+                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
+                        <Building2 className="h-3 w-3 text-teal shrink-0" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wide">Court</span>
                       </div>
+                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold leading-snug">{headerCourt}</p>
+                    </div>
+                  )}
+                  {headerCaseNumber && (
+                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
+                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
+                        <FileText className="h-3 w-3 text-teal shrink-0" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wide">Case No.</span>
+                      </div>
+                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold font-mono leading-snug">{headerCaseNumber}</p>
+                    </div>
+                  )}
+                  {headerProvision && (
+                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
+                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
+                        <Scale className="h-3 w-3 text-teal shrink-0" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wide">Provision</span>
+                      </div>
+                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold leading-snug">{headerProvision}</p>
+                    </div>
+                  )}
+                  {headerDate && (
+                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
+                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3 text-teal shrink-0" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wide">Date</span>
+                      </div>
+                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold leading-snug">{headerDate}</p>
                     </div>
                   )}
                 </div>
+
+                {synopsis.caseOverview.userNotes && (
+                  <div style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+                    className="mt-3 rounded-lg border px-3 py-2 text-xs"
+                  >
+                    <span style={{ color: 'var(--text-secondary)' }} className="block mb-0.5 text-[10px] font-bold uppercase tracking-wider">Case Notes</span>
+                    <p className="whitespace-pre-wrap leading-relaxed">{synopsis.caseOverview.userNotes}</p>
+                  </div>
+                )}
+              </section>
+            )
+          })()}
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 2: KEY CASE DATA & FACT MATRIX (CLEAN DATA TABLE)      */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section
+            id="analysis-section-data"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-subtle)',
+              boxShadow: 'var(--card-shadow)',
+            }}
+            className="scroll-mt-4 space-y-3 rounded-xl border p-4 transition-all"
+          >
+            <div
+              style={{ borderColor: 'var(--border-subtle)' }}
+              className="flex flex-col justify-between gap-2 border-b pb-2 sm:flex-row sm:items-center"
+            >
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
+                <div className="flex items-center gap-2">
+                  <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
+                    2. Key Case Data &amp; Fact Matrix
+                  </h3>
+                  <span
+                    style={{
+                      backgroundColor: 'var(--bg-subtle)',
+                      borderColor: 'var(--border-subtle)',
+                      color: 'var(--text-primary)',
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold"
+                  >
+                    <FileSpreadsheet className="h-3 w-3 text-teal" />
+                    {factMatrixRows.length} Parameter{factMatrixRows.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyAllKeyEntities(keyEntities)}
+                  disabled={factMatrixRows.length === 0}
+                  style={{
+                    borderColor: 'var(--border-subtle)',
+                    backgroundColor: 'var(--bg-subtle)',
+                    color: 'var(--text-primary)',
+                  }}
+                  className="h-8 gap-1.5 text-xs cursor-pointer"
+                  title="Copy all extracted matrix values"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy All Data
+                </Button>
+              </div>
+            </div>
+
+            {/* Filter Pills and Search */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              {/* Category Pills */}
+              <div className="flex flex-wrap items-center gap-1">
+                {[
+                  { id: 'ALL', label: `All (${factMatrixRows.length})` },
+                  { id: 'Jurisdiction', label: `Jurisdiction (${factMatrixRows.filter((r) => r.category === 'Jurisdiction').length})` },
+                  { id: 'Compensation', label: `Compensation (${factMatrixRows.filter((r) => r.category === 'Compensation').length})` },
+                  { id: 'Procedural', label: `Procedural (${factMatrixRows.filter((r) => r.category === 'Procedural').length})` },
+                  { id: 'Limitation', label: `Limitation (${factMatrixRows.filter((r) => r.category === 'Limitation').length})` },
+                  { id: 'Merits', label: `Merits (${factMatrixRows.filter((r) => r.category === 'Merits').length})` },
+                ].map((tab) => {
+                  const isActive = matrixCategoryFilter === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setMatrixCategoryFilter(tab.id as MatrixCategory)}
+                      style={{
+                        backgroundColor: isActive ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                        color: isActive ? 'var(--bg-card)' : 'var(--text-secondary)',
+                        borderColor: isActive ? 'var(--text-primary)' : 'var(--border-subtle)',
+                      }}
+                      className="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-all cursor-pointer"
+                    >
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Horizontal search/filter input at top right */}
+              <div className="relative min-w-[220px] sm:max-w-xs sm:flex-1">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                <Input
+                  value={matrixSearchQuery}
+                  onChange={(e) => setMatrixSearchQuery(e.target.value)}
+                  placeholder="Filter parameters or values…"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border-subtle)',
+                    color: 'var(--text-primary)',
+                  }}
+                  className="h-8 pl-8 pr-7 text-xs"
+                />
+                {matrixSearchQuery && (
+                  <button
+                    onClick={() => setMatrixSearchQuery('')}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Clean Data Table */}
+            <div
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-subtle)',
+                boxShadow: 'var(--card-shadow)',
+              }}
+              className="w-full overflow-hidden rounded-xl border"
+            >
+              {filteredMatrixRows.length === 0 ? (
+                <div style={{ color: 'var(--text-secondary)' }} className="p-8 text-center text-xs italic">
+                  No parameters match the current category or search filter.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full table-fixed text-left text-xs">
+                    <thead
+                      style={{
+                        backgroundColor: 'var(--bg-subtle)',
+                        borderColor: 'var(--border-subtle)',
+                        color: 'var(--text-secondary)',
+                      }}
+                      className="border-b uppercase text-[10px] font-bold tracking-wider"
+                    >
+                      <tr>
+                        <th scope="col" className="w-[18%] px-3 py-2">Category</th>
+                        <th scope="col" className="w-[26%] px-3 py-2">Parameter</th>
+                        <th scope="col" className="w-[30%] px-3 py-2">Value / Provision</th>
+                        <th scope="col" className="w-[16%] px-3 py-2">Source</th>
+                        <th scope="col" className="w-[10%] px-3 py-2 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody style={{ borderColor: 'var(--border-subtle)' }} className="divide-y">
+                      {filteredMatrixRows.map((item, idx) => {
+                        const isCopied = copiedKey === item.parameter
+                        const catStyle = {
+                          Jurisdiction: {
+                            label: 'Jurisdiction',
+                            badgeStyle: {
+                              backgroundColor: 'var(--badge-jurisdiction-bg)',
+                              color: 'var(--badge-jurisdiction-text)',
+                              borderColor: 'var(--badge-jurisdiction-border)',
+                            },
+                          },
+                          Compensation: {
+                            label: 'Compensation',
+                            badgeStyle: {
+                              backgroundColor: 'var(--badge-compensation-bg)',
+                              color: 'var(--badge-compensation-text)',
+                              borderColor: 'var(--badge-compensation-border)',
+                            },
+                          },
+                          Procedural: {
+                            label: 'Procedural',
+                            badgeStyle: {
+                              backgroundColor: 'var(--badge-procedural-bg)',
+                              color: 'var(--badge-procedural-text)',
+                              borderColor: 'var(--badge-procedural-border)',
+                            },
+                          },
+                          Limitation: {
+                            label: 'Limitation',
+                            badgeStyle: {
+                              backgroundColor: 'var(--badge-limitation-bg)',
+                              color: 'var(--badge-limitation-text)',
+                              borderColor: 'var(--badge-limitation-border)',
+                            },
+                          },
+                          Merits: {
+                            label: 'Merits',
+                            badgeStyle: {
+                              backgroundColor: 'var(--badge-merits-bg)',
+                              color: 'var(--badge-merits-text)',
+                              borderColor: 'var(--badge-merits-border)',
+                            },
+                          },
+                          General: {
+                            label: 'General',
+                            badgeStyle: {
+                              backgroundColor: 'var(--badge-general-bg)',
+                              color: 'var(--badge-general-text)',
+                              borderColor: 'var(--badge-general-border)',
+                            },
+                          },
+                        }[item.category] || {
+                          label: item.category,
+                          badgeStyle: {
+                            backgroundColor: 'var(--badge-general-bg)',
+                            color: 'var(--badge-general-text)',
+                            borderColor: 'var(--badge-general-border)',
+                          },
+                        }
+
+                        return (
+                          <tr
+                            key={`${item.id}-${idx}`}
+                            style={{ borderColor: 'var(--border-subtle)' }}
+                            className="transition-colors hover:bg-[var(--bg-subtle)]"
+                          >
+                            {/* Column 1: Category */}
+                            <td className="px-3 py-2 align-top">
+                              <span
+                                style={catStyle.badgeStyle}
+                                className="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold"
+                              >
+                                {catStyle.label}
+                              </span>
+                            </td>
+
+                            {/* Column 2: Extracted Parameter */}
+                            <td className="px-3 py-2 align-top">
+                              <span style={{ color: 'var(--text-primary)' }} className="block text-xs font-bold leading-snug">
+                                {item.parameter}
+                              </span>
+                              {item.context && (
+                                <span style={{ color: 'var(--text-secondary)' }} className="block text-[11px] leading-tight mt-0.5">
+                                  {item.context}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Column 3: Value / Provision */}
+                            <td className="max-w-md whitespace-normal break-words px-3 py-2 align-top">
+                              <div style={{ color: 'var(--text-primary)' }} className="text-xs font-medium leading-relaxed">
+                                {renderFormattedInline(cleanOcrRegex(item.value))}
+                              </div>
+                            </td>
+
+                            {/* Column 4: Source Citation */}
+                            <td className="px-3 py-2 align-top">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  window.dispatchEvent(new CustomEvent('openPdfPage', {
+                                    detail: { page: item.source.pageNumber },
+                                  }))
+                                  openSource(item.source, item.parameter)
+                                }}
+                                style={{
+                                  backgroundColor: 'var(--bg-subtle)',
+                                  borderColor: 'var(--border-subtle)',
+                                  color: 'var(--text-secondary)',
+                                }}
+                                className="inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors hover:text-[var(--text-primary)]"
+                                title={`View in ${item.source.documentName} at page ${item.source.pageNumber}`}
+                              >
+                                <FileText className="h-3 w-3 text-teal shrink-0" />
+                                <span className="truncate max-w-[120px]">{item.source.documentName}</span>
+                                <span className="text-teal font-semibold shrink-0">· p. {item.source.pageNumber}</span>
+                              </button>
+                            </td>
+
+                            {/* Column 5: Action */}
+                            <td className="px-3 py-2 align-top text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(item.value, item.parameter)}
+                                  style={{
+                                    borderColor: 'var(--border-subtle)',
+                                    backgroundColor: 'var(--bg-subtle)',
+                                    color: 'var(--text-secondary)',
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition-colors hover:text-[var(--text-primary)] cursor-pointer"
+                                  title="Copy parameter value"
+                                >
+                                  {isCopied ? (
+                                    <>
+                                      <Check className="h-3 w-3 text-emerald-600" />
+                                      <span className="text-emerald-700 dark:text-emerald-400">Copied</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="h-3 w-3" />
+                                      <span>Copy</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => openSource(item.source, item.parameter)}
+                                  className="inline-flex items-center gap-1 rounded-full bg-teal px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-teal-dark cursor-pointer shadow-2xs"
+                                  title="View page in document viewer"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  <span>View Page</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </section>
+            </div>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 3: EXECUTIVE SUMMARY                                   */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section
+            id="analysis-section-summary"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-subtle)',
+              boxShadow: 'var(--card-shadow)',
+            }}
+            className="scroll-mt-4 space-y-3 rounded-xl border p-4 transition-all"
+          >
+            <div
+              style={{ borderColor: 'var(--border-subtle)' }}
+              className="flex flex-wrap items-center justify-between gap-2 border-b pb-2"
+            >
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
+                <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
+                  3. Executive Summary
+                </h3>
+                <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-medium">
+                  (AI-Grounded Synthesis)
+                </span>
+              </div>
+
+              {synopsis.aiAnalysis && (
+                <span
+                  style={{
+                    backgroundColor: 'var(--bg-subtle)',
+                    borderColor: 'var(--border-subtle)',
+                    color: 'var(--text-secondary)',
+                  }}
+                  className="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
+                >
+                  <Sparkles className="inline-block h-3 w-3 text-teal mr-1" />
+                  {synopsis.aiAnalysis.provider} · {synopsis.aiAnalysis.model}
+                </span>
+              )}
+            </div>
+
+            {/* Full-Width Document Reading View */}
+            <div
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border-subtle)',
+              }}
+              className="rounded-lg border p-4"
+            >
+              <LegalMarkdownView content={synopsis.aiAnalysis?.executiveSummary || synopsis.executiveSynopsis} />
+            </div>
+
+            {/* Verified source passages */}
+            {verifiedSourcesList.length > 0 && (
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-subtle)',
+                  borderColor: 'var(--border-subtle)',
+                }}
+                className="rounded-xl border p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span style={{ color: 'var(--text-primary)' }} className="text-xs font-bold uppercase tracking-wider">
+                    Verified Passages from Uploaded Records ({verifiedSourcesList.length})
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {verifiedSourcesList.map((source, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        borderColor: 'var(--border-subtle)',
+                      }}
+                      className="rounded-lg border p-3 text-xs space-y-2 flex flex-col justify-between"
+                    >
+                      <p style={{ color: 'var(--text-primary)' }} className="italic line-clamp-3">
+                        &ldquo;{cleanOcrText(source.quote || source.passage)}&rdquo;
+                      </p>
+                      <div className="flex items-center justify-between pt-1">
+                        <span
+                          style={{
+                            backgroundColor: 'var(--bg-subtle)',
+                            borderColor: 'var(--border-subtle)',
+                            color: 'var(--text-secondary)',
+                          }}
+                          className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[11px]"
+                        >
+                          <FileText className="h-3 w-3 text-teal" />
+                          <span>{source.documentName} · p. {source.pageNumber}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => openSource(source)}
+                          className="text-xs font-semibold text-teal hover:underline cursor-pointer"
+                        >
+                          View Page →
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 4: UPLOADED DOCUMENTS & FILES                         */}
           {/* ═════════════════════════════════════════════════════════════ */}
-            <section id="analysis-section-documents" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-teal-500" />
-                  <h3 className="text-base font-bold text-slate-900">4. Uploaded Documents &amp; Files</h3>
-                  <span className="text-xs font-medium text-slate-600">
-                    ({filteredDocuments.length} file{filteredDocuments.length === 1 ? '' : 's'})
-                  </span>
-                </div>
+          <section
+            id="analysis-section-documents"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-subtle)',
+              boxShadow: 'var(--card-shadow)',
+            }}
+            className="scroll-mt-4 rounded-xl border p-4 transition-all"
+          >
+            <div style={{ borderColor: 'var(--border-subtle)' }} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
+                <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
+                  4. Uploaded Documents &amp; Files
+                </h3>
+                <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-medium">
+                  ({filteredDocuments.length} file{filteredDocuments.length === 1 ? '' : 's'})
+                </span>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {filteredDocuments.map((doc) => {
-                  const summary = synopsis.documentSummaries.find((item) => item.documentId === doc.id)
-                  const aiDocSummary = synopsis.aiAnalysis?.documentSummaries.find((item) => item.documentId === doc.id)
+            {/* Compact list — one row per document */}
+            <div style={{ borderColor: 'var(--border-subtle)' }} className="divide-y rounded-lg border overflow-hidden">
+              {filteredDocuments.map((doc) => {
+                const summary = synopsis.documentSummaries.find((item) => item.documentId === doc.id)
+                const aiDocSummary = synopsis.aiAnalysis?.documentSummaries.find((item) => item.documentId === doc.id)
+                const docIdx = filteredDocuments.indexOf(doc)
 
-                  return (
-                    <div
-                      key={doc.id}
-                      className="min-w-0 space-y-3 rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2.5">
-                          <div className="rounded-lg bg-slate-100 p-2 text-slate-600 mt-0.5">
-                            <FileText className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => openSource(summary?.summary ?? {
-                                documentId: doc.id,
-                                documentName: doc.originalName,
-                                pageNumber: 1,
-                                passage: 'Previewing document.',
-                              })}
-                              className="text-left font-bold text-teal-800 hover:underline hover:text-teal-950 text-sm"
-                            >
-                              {doc.originalName}
-                            </button>
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                                {t(`docSummary.${filteredDocuments.indexOf(doc)}.apparentType`, summary?.apparentType || 'General Record')}
-                              </span>
-                              <span className="text-xs font-medium text-slate-700">
-                                {doc.pageCount ?? 1} page{doc.pageCount === 1 ? '' : 's'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                return (
+                  <div
+                    key={doc.id}
+                    style={{ backgroundColor: 'var(--bg-card)' }}
+                    className="flex min-w-0 items-start gap-3 px-3 py-2.5 hover:bg-[var(--bg-subtle)] transition-colors"
+                  >
+                    {/* Icon */}
+                    <FileText className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
 
-                        <span className={cn(
-                          'rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-                          doc.processingStatus === 'complete'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-800'
-                        )}>
-                          {doc.processingStatus === 'complete' ? 'Ready' : doc.processingStatus}
-                        </span>
-                      </div>
-
-                      {/* Text snippet preview */}
-                      {summary?.summary && (
-                        <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 line-clamp-2">
-                          {cleanOcrText(t(`docSummary.${filteredDocuments.indexOf(doc)}.summary`, (summary.summary as { passage?: string })?.passage || ''))}
-                        </p>
-                      )}
-
-                      {aiDocSummary && (
-                        <div className="text-xs text-teal-900 bg-teal-50/70 p-2.5 rounded-lg border border-teal-200/60 space-y-1">
-                          <span className="font-semibold block">AI Summary:</span>
-                          <p>{t(`aiDocSummary.${(synopsis.aiAnalysis?.documentSummaries ?? []).indexOf(aiDocSummary)}`, aiDocSummary.summary)}</p>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-1 text-[11px] font-medium text-slate-700">
-                        <span>Processed: {doc.processedAt ? new Date(doc.processedAt).toLocaleDateString() : 'Ready'}</span>
+                    {/* Main content */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => openSource(summary?.summary ?? {
@@ -1430,80 +1789,167 @@ export function AnalysisWorkspace({
                             pageNumber: 1,
                             passage: 'Previewing document.',
                           })}
-                          className="text-teal-700 hover:underline font-semibold cursor-pointer"
+                          className="text-left text-xs font-bold text-teal hover:underline truncate max-w-[260px]"
                         >
-                          Preview File →
+                          {doc.originalName}
                         </button>
+                        <span style={{ color: 'var(--text-muted)' }} className="text-[11px]">
+                          {t(`docSummary.${docIdx}.apparentType`, summary?.apparentType || 'General Record')}
+                        </span>
+                        <span style={{ color: 'var(--text-muted)' }} className="text-[11px]">
+                          · {doc.pageCount ?? 1}p
+                        </span>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
 
-            </section>
+                      {/* AI summary if present — single line clamp */}
+                      {aiDocSummary && (
+                        <p style={{ color: 'var(--text-secondary)' }} className="text-[11px] leading-snug mt-0.5 line-clamp-1">
+                          {t(`aiDocSummary.${(synopsis.aiAnalysis?.documentSummaries ?? []).indexOf(aiDocSummary)}`, aiDocSummary.summary)}
+                        </p>
+                      )}
+
+                      {/* Local snippet fallback */}
+                      {!aiDocSummary && summary?.summary && (
+                        <p style={{ color: 'var(--text-secondary)' }} className="text-[11px] leading-snug mt-0.5 line-clamp-1">
+                          {cleanOcrText(t(`docSummary.${docIdx}.summary`, (summary.summary as { passage?: string })?.passage || ''))}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Status badge + preview link */}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span
+                        style={{
+                          backgroundColor: doc.processingStatus === 'complete' ? 'var(--badge-limitation-bg)' : 'var(--badge-compensation-bg)',
+                          color: doc.processingStatus === 'complete' ? 'var(--badge-limitation-text)' : 'var(--badge-compensation-text)',
+                          borderColor: doc.processingStatus === 'complete' ? 'var(--badge-limitation-border)' : 'var(--badge-compensation-border)',
+                        }}
+                        className="rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                      >
+                        {doc.processingStatus === 'complete' ? 'Ready' : doc.processingStatus}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => openSource(summary?.summary ?? {
+                          documentId: doc.id,
+                          documentName: doc.originalName,
+                          pageNumber: 1,
+                          passage: 'Previewing document.',
+                        })}
+                        style={{ color: 'var(--text-secondary)' }}
+                        className="text-[11px] font-medium hover:text-teal cursor-pointer whitespace-nowrap"
+                      >
+                        Preview →
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 5: KEY FACTS & QUOTES EXTRACTED                       */}
           {/* ═════════════════════════════════════════════════════════════ */}
-            <section id="analysis-section-facts" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
-              <h3 className="mb-4 border-b border-slate-100 pb-3 text-base font-bold text-slate-900">5. Key Facts &amp; Quotes Extracted</h3>
-              <ExtractedQuotesSection
-                rawQuotes={filteredFacts.map((fact, index) => ({
-                  ...fact,
-                  passage: t(`fact.${index}`, fact.passage),
-                }))}
-                onOpen={openSource}
-              />
-            </section>
+          <section
+            id="analysis-section-facts"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-subtle)',
+              boxShadow: 'var(--card-shadow)',
+            }}
+            className="scroll-mt-4 space-y-3 rounded-xl border p-4 transition-all"
+          >
+            <div
+              style={{ borderColor: 'var(--border-subtle)' }}
+              className="flex items-center gap-2 border-b pb-2"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
+              <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
+                5. Key Facts &amp; Quotes Extracted
+              </h3>
+            </div>
+            <ExtractedQuotesSection
+              rawQuotes={filteredFacts.map((fact, index) => ({
+                ...fact,
+                passage: t(`fact.${index}`, fact.passage),
+              }))}
+              onOpen={openSource}
+            />
+          </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 6: PAGE CITATIONS & SOURCE INDEX                     */}
           {/* ═════════════════════════════════════════════════════════════ */}
-            <section id="analysis-section-citations" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <section
+            id="analysis-section-citations"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-subtle)',
+              boxShadow: 'var(--card-shadow)',
+            }}
+            className="scroll-mt-4 space-y-3 rounded-xl border p-4 transition-all"
+          >
+              <div
+                style={{ borderColor: 'var(--border-subtle)' }}
+                className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 mb-3"
+              >
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-slate-400" />
-                  <h3 className="text-base font-bold text-slate-900">6. Page Citations &amp; Source Index</h3>
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                  <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
+                    6. Page Citations &amp; Source Index
+                  </h3>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                <span
+                  style={{
+                    backgroundColor: 'var(--badge-limitation-bg)',
+                    color: 'var(--badge-limitation-text)',
+                    borderColor: 'var(--badge-limitation-border)',
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                >
                   <span aria-hidden="true">🟢</span>
-                  {synopsis.sourceIndex.filter((s) => s.readable).length} of {synopsis.sourceIndex.length} Pages Verified
-                  <span className="text-emerald-600">·</span>
-                  {synopsis.sourceIndex.length > 0 && synopsis.sourceIndex.every((source) => source.readable)
-                    ? 'High Quality OCR'
-                    : 'Review Scan Quality'}
+                  {synopsis.sourceIndex.filter((s) => s.readable).length}/{synopsis.sourceIndex.length} Verified
                 </span>
               </div>
 
               {synopsis.missingOrUnclear.length > 0 && (
-                <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900">
-                    <p className="font-semibold flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      Pages or records needing review
-                    </p>
-                    <ul className="list-disc space-y-1 pl-5">
-                      {synopsis.missingOrUnclear.map((item, idx) => (
-                        <li key={idx}>{t(`missing.${idx}`, item)}</li>
-                      ))}
-                    </ul>
+                <div
+                  style={{
+                    backgroundColor: 'var(--badge-compensation-bg)',
+                    borderColor: 'var(--badge-compensation-border)',
+                    color: 'var(--badge-compensation-text)',
+                  }}
+                  className="space-y-2 rounded-xl border p-4 text-xs"
+                >
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4" />
+                    Pages or records needing review
+                  </p>
+                  <ul className="list-disc space-y-1 pl-5">
+                    {synopsis.missingOrUnclear.map((item, idx) => (
+                      <li key={idx}>{t(`missing.${idx}`, item)}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
               {synopsis.sourceIndex.length === 0 ? (
-                <p className="text-xs font-medium text-slate-600">No page references available.</p>
+                <p style={{ color: 'var(--text-secondary)' }} className="text-xs font-medium">No page references available.</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-5">
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
                   {synopsis.sourceIndex.map((source, index) => {
                     const pageFact = synopsis.facts.find(
                       (fact) => fact.documentId === source.documentId && fact.pageNumber === source.pageNumber
                     )
                     const category = categorizeLegalText(pageFact?.passage ?? '').category
                     const topicPresentation = {
-                      JURISDICTION: { label: '🚨 Jurisdiction', border: 'border-l-red-500' },
-                      COMPENSATION: { label: '💰 Compensation', border: 'border-l-amber-500' },
-                      PROCEDURE: { label: '📜 Procedural', border: 'border-l-blue-500' },
-                      LIMITATION: { label: '📅 Limitation', border: 'border-l-emerald-500' },
-                      GENERAL: { label: '📋 Overview', border: 'border-l-slate-300' },
+                      JURISDICTION: { label: 'Jur.', border: 'border-l-red-500' },
+                      COMPENSATION: { label: 'Comp.', border: 'border-l-amber-500' },
+                      PROCEDURE: { label: 'Proc.', border: 'border-l-blue-500' },
+                      LIMITATION: { label: 'Lim.', border: 'border-l-emerald-500' },
+                      MERITS: { label: 'Merits', border: 'border-l-purple-500' },
+                      GENERAL: { label: 'Gen.', border: 'border-l-slate-400' },
                     }[category]
 
                     return (
@@ -1521,35 +1967,32 @@ export function AnalysisWorkspace({
                             passage: 'Viewing source page.',
                           })
                         }}
-                        className={`group flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border border-l-4 border-slate-200/80 bg-slate-50/80 p-4 text-left transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5 ${topicPresentation.border}`}
+                        style={{
+                          backgroundColor: 'var(--bg-card)',
+                          borderColor: 'var(--border-subtle)',
+                        }}
+                        className={`group flex min-w-0 cursor-pointer items-center gap-1.5 rounded-lg border border-l-2 px-2 py-1.5 text-left transition-colors hover:border-slate-400 ${topicPresentation.border}`}
                       >
-                        <div className="flex w-full min-w-0 items-start justify-between gap-2">
-                          <span className="flex min-w-0 items-center gap-1.5 truncate text-xs font-medium text-slate-700">
-                            <FileIcon className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-slate-600" />
-                            <span className="truncate">{source.documentName}</span>
-                          </span>
-                          <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-600">
-                            p. {source.pageNumber}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-xs font-medium text-slate-600">
-                            p. {source.pageNumber} · {topicPresentation.label}
-                          </span>
-                          <span
-                            className={cn(
-                              'h-2 w-2 shrink-0 rounded-full',
-                              source.readable ? 'bg-emerald-500' : 'bg-rose-500'
-                            )}
-                            title={source.readable ? 'Verified page' : 'Page needs scan review'}
-                          />
-                        </div>
+                        <FileIcon className="h-3 w-3 shrink-0 text-slate-400 group-hover:text-teal" />
+                        <span style={{ color: 'var(--text-primary)' }} className="font-mono text-[11px] font-semibold tabular-nums shrink-0">
+                          p.{source.pageNumber}
+                        </span>
+                        <span style={{ color: 'var(--text-muted)' }} className="text-[10px] truncate hidden sm:block">
+                          {topicPresentation.label}
+                        </span>
+                        <span
+                          className={cn(
+                            'ml-auto h-1.5 w-1.5 shrink-0 rounded-full',
+                            source.readable ? 'bg-emerald-500' : 'bg-rose-500'
+                          )}
+                          title={source.readable ? 'Verified' : 'Needs review'}
+                        />
                       </button>
                     )
                   })}
                 </div>
               )}
-            </section>
+          </section>
 
           {/* ── Document Preview Modal ──────────────────────────────────── */}
           <Dialog open={selectedSource !== null} onOpenChange={(open) => { if (!open) setSelectedSource(null) }}>
