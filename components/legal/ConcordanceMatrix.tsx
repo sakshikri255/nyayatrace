@@ -69,7 +69,6 @@ function SectionCard({
   highlighted: boolean
 }) {
   const isNonBailable = item.bailable === 'Non-Bailable'
-  const isProcedure = item.category === 'procedure'
   const [copied, setCopied] = useState(false)
 
   function handleCopy() {
@@ -88,20 +87,18 @@ function SectionCard({
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'group relative flex flex-col justify-between rounded-xl border p-5 transition-all duration-200 text-sm shadow-xs hover:shadow-lg',
-        isProcedure
-          ? 'bg-sky-50/70 dark:bg-sky-950/25 border-sky-200/90 dark:border-sky-900/40 hover:border-sky-400 hover:shadow-sky-500/10'
-          : isNonBailable
-          ? 'bg-rose-50/70 dark:bg-rose-950/25 border-rose-200/90 dark:border-rose-900/40 hover:border-rose-400 hover:shadow-rose-500/10'
-          : 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-200/90 dark:border-emerald-900/40 hover:border-emerald-400 hover:shadow-emerald-500/10',
+        'group relative flex flex-col justify-between rounded-xl border p-5 transition-all duration-200 text-sm',
+        'bg-white dark:bg-[#0B0F17] border-slate-200/90 dark:border-white/10',
+        'shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_0_rgba(15,23,42,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)]',
+        'hover:border-teal/40 hover:shadow-md hover:shadow-teal/5',
         highlighted ? 'ring-2 ring-teal border-teal shadow-md shadow-teal/10 scale-[1.01]' : ''
       )}
     >
       <div>
         {/* ── Top Header: Old Law ↔ New Law Conversion Banner + Badges ── */}
-        <div className="flex flex-wrap items-start justify-between gap-3 mb-3.5 pb-3.5 border-b border-black/5 dark:border-white/10">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-3.5 pb-3.5 border-b border-slate-100 dark:border-white/10">
           {/* Side-by-Side Dual Code conversion chip */}
-          <div className="inline-flex items-center gap-2 rounded-lg bg-white/90 dark:bg-muted/40 p-1 border border-black/5 dark:border-white/10 shadow-2xs">
+          <div className="inline-flex items-center gap-2 rounded-lg bg-slate-50 dark:bg-white/5 p-1 border border-slate-200 dark:border-white/10 shadow-2xs">
             <span className="font-mono text-xs font-bold text-[var(--section-heading)] bg-navy/80 text-gold-light dark:text-gold-champagne px-2 py-0.5 rounded shadow-2xs">
               IPC {item.ipcSection}
             </span>
@@ -131,7 +128,7 @@ function SectionCard({
               {item.bailable}
             </span>
 
-            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-white/90 dark:bg-muted/30 text-[var(--section-subheading)] border-black/5 dark:border-white/10">
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-slate-100/80 dark:bg-white/5 text-[var(--section-subheading)] border-slate-200 dark:border-white/10">
               {item.cognizable}
             </span>
 
@@ -163,7 +160,7 @@ function SectionCard({
         </h3>
 
         {/* ── Key Statutory Elements Dossier ── */}
-        <div className="rounded-lg bg-white/85 dark:bg-muted/30 border-l-3 border-teal/70 p-3 mb-3 border border-black/5 dark:border-white/10 shadow-2xs">
+        <div className="rounded-lg bg-slate-50/80 dark:bg-white/[0.03] border-l-3 border-teal/70 p-3 mb-3 border-t border-r border-b border-slate-200/80 dark:border-white/10">
           <p className="text-xs text-[var(--section-subheading)] leading-relaxed font-sans">
             {item.keyElements}
           </p>
@@ -171,8 +168,8 @@ function SectionCard({
       </div>
 
       {/* ── Metadata Grid: Punishment & Triable By ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-black/5 dark:border-white/10">
-        <div className="flex items-start gap-2 bg-white/85 dark:bg-muted/20 rounded-md p-2 border border-black/5 dark:border-white/10 shadow-2xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-slate-100 dark:border-white/10">
+        <div className="flex items-start gap-2 bg-slate-50/70 dark:bg-white/[0.03] rounded-md p-2 border border-slate-200/70 dark:border-white/10">
           <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
           <div className="min-w-0">
             <p className="text-xs text-[var(--section-subheading)] leading-tight">
@@ -182,7 +179,7 @@ function SectionCard({
           </div>
         </div>
 
-        <div className="flex items-start gap-2 bg-white/85 dark:bg-muted/20 rounded-md p-2 border border-black/5 dark:border-white/10 shadow-2xs">
+        <div className="flex items-start gap-2 bg-slate-50/70 dark:bg-white/[0.03] rounded-md p-2 border border-slate-200/70 dark:border-white/10">
           <Gavel className="h-3.5 w-3.5 text-teal shrink-0 mt-0.5" />
           <div className="min-w-0">
             <p className="text-xs text-[var(--section-subheading)] leading-tight">
