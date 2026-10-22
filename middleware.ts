@@ -23,11 +23,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Public page routes
+  // Auth pages: redirect already-logged-in users to /overview
   if (
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
-    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/reset-password')
+  ) {
+    const token = request.cookies.get(SESSION_COOKIE)?.value
+    if (token) {
+      return NextResponse.redirect(new URL('/overview', request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // Other public assets
+  if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/icons') ||
