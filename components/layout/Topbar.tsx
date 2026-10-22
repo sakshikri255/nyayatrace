@@ -372,24 +372,28 @@ export function Topbar() {
             aria-expanded={profileOpen}
             aria-label="User menu"
             className={cn(
-              'flex items-center gap-2 rounded-lg border border-border bg-card p-1 sm:px-2.5 sm:py-1 text-left transition-all hover:bg-accent',
-              profileOpen && 'border-teal/50 bg-teal/5 ring-2 ring-teal/20'
+              'group flex items-center gap-2.5 rounded-lg border border-teal/30 bg-teal/[0.04] hover:bg-teal/[0.09] p-1 sm:pl-1.5 sm:pr-2.5 sm:py-1 text-left transition-all duration-200 shadow-xs hover:border-teal/55 hover:shadow-sm hover:shadow-teal/10 cursor-pointer',
+              profileOpen && 'border-teal bg-teal/10 ring-2 ring-teal/25 shadow-sm'
             )}
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-navy text-[11px] font-bold text-white">
+            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-teal-600 via-teal-700 to-navy text-[11px] font-bold text-white shadow-xs ring-1 ring-teal-300/30">
               {initials}
+              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-1.5 ring-background" />
             </div>
 
-            <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-semibold text-foreground leading-none truncate max-w-[120px]">
+            <div className="hidden sm:flex flex-col text-left min-w-0">
+              <span className="text-xs font-semibold text-foreground group-hover:text-teal-light transition-colors leading-none truncate max-w-[125px]">
                 {session?.name || 'Advocate'}
               </span>
-              <span className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5 truncate max-w-[120px]">
+              <span className="text-[10px] text-teal-600 dark:text-teal-300 font-medium leading-tight mt-0.5 truncate max-w-[125px]">
                 {session?.role || 'Senior Advocate'}
               </span>
             </div>
 
-            <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown className={cn(
+              'hidden sm:block h-3.5 w-3.5 text-teal/60 group-hover:text-teal transition-transform duration-200',
+              profileOpen && 'rotate-180 text-teal'
+            )} />
           </button>
 
           {profileOpen && (
