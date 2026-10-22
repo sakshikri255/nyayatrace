@@ -13,7 +13,6 @@ import { OverviewTab } from './tabs/OverviewTab'
 import { DocumentsTab } from './tabs/DocumentsTab'
 import { FindingsTab } from './tabs/FindingsTab'
 import { HearingsTab } from './tabs/HearingsTab'
-import { BriefTab } from './tabs/BriefTab'
 import { ReportTab } from './tabs/ReportTab'
 import { MasterChronologyView } from '@/components/progress/MasterChronologyView'
 import { AnalysisWorkspace } from './tabs/AnalysisWorkspace'
@@ -35,7 +34,6 @@ type TabId =
   | 'findings'
   | 'sections'
   | 'hearings'
-  | 'brief'
   | 'report'
 
 const tabVariants: Variants = {
@@ -68,7 +66,6 @@ export function CaseDetailTabs({
           'findings',
           'sections',
           'hearings',
-          'brief',
           'report',
         ].includes(tabParam)
       ) {
@@ -93,7 +90,6 @@ export function CaseDetailTabs({
       { id: 'findings', label: 'Findings', count: findings.length, badgeClassName: 'text-amber-700 bg-amber-50 border border-amber-200' },
       { id: 'sections', label: 'Legal Sections' },
       { id: 'hearings', label: 'Hearings', count: hearings.length },
-      { id: 'brief', label: 'Brief' },
       { id: 'report', label: 'Report' },
     ]
 
@@ -191,9 +187,6 @@ export function CaseDetailTabs({
               chartData={hearingChartData}
               caseTitle={caseData.title}
             />
-          )}
-          {activeTab === 'brief' && (
-            <BriefTab caseId={caseData.id} />
           )}
           {activeTab === 'report' && (
             <ReportTab caseId={caseData.id} />
