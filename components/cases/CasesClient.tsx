@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { CaseWithCounts } from '@/lib/queries/cases'
 import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { cn } from '@/lib/utils'
-import { getSession, type UserRecord } from '@/lib/auth'
+import { useSession } from '@/hooks/useSession'
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Statuses' },
@@ -120,16 +120,26 @@ export function CasesClient({
   const [submitting, setSubmitting] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
 
-  const [session, setSession] = useState<UserRecord | null>(null)
+  const session = useSession()
   const [scopeFilter, setScopeFilter] = useState<'my' | 'all' | string>('my')
 
+  // Keep cases in sync with prop updates
   useEffect(() => {
-    const cur = getSession()
-    setSession(cur)
-    if (cur) {
-      setForm((p) => ({ ...p, advocate: cur.name }))
+    setCases(initialCases)
+  }, [initialCases])
+
+  // Automatically update form advocate and sync case list on persona switch
+  useEffect(() => {
+    if (session?.name) {
+      setForm((p) => ({ ...p, advocate: session.name }))
+      fetch('/api/cases')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) setCases(data)
+        })
+        .catch(() => {})
     }
-  }, [])
+  }, [session?.id, session?.name])
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('new') === '1') {
@@ -171,18 +181,9 @@ export function CasesClient({
 
       let matchesScope = true
       if (scopeFilter === 'my' && session?.name) {
-        if (
-          session.role?.toLowerCase().includes('judge') ||
-          session.name.toLowerCase().includes('deshmukh')
-        ) {
-          matchesScope = !!(c.judge && c.judge.toLowerCase().includes('deshmukh'))
-        } else {
-          matchesScope = c.advocate === session.name
-        }
+        matchesScope = c.advocate === session.name
       } else if (scopeFilter !== 'all' && scopeFilter !== 'my') {
-        matchesScope =
-          c.advocate === scopeFilter ||
-          !!(c.judge && c.judge.toLowerCase().includes(scopeFilter.toLowerCase()))
+        matchesScope = c.advocate === scopeFilter
       }
 
       return matchesStatus && matchesType && matchesScope
@@ -253,8 +254,8 @@ export function CasesClient({
           </div>
           <p className="text-xs text-[var(--section-subheading)] mt-1">
             {scopeFilter === 'my' && session
-              ? `Showing matters assigned to ${session.role?.toLowerCase().includes('judge') ? 'Bench of ' + session.name : 'Advocate ' + session.name}.`
-              : 'Showing all chamber and judicial court records.'}
+              ? `Showing matters assigned to Advocate ${session.name}.`
+              : 'Showing all chamber case records.'}
           </p>
         </div>
 
@@ -353,7 +354,7 @@ export function CasesClient({
           {/* Scope pills */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <PillButton active={scopeFilter === 'my'} onClick={() => setScopeFilter('my')}>
-              {session?.role?.toLowerCase().includes('judge') ? `My Bench` : `My Cases`}
+              My Cases
             </PillButton>
             <PillButton active={scopeFilter === 'all'} onClick={() => setScopeFilter('all')}>
               All ({cases.length})
@@ -363,9 +364,6 @@ export function CasesClient({
             </PillButton>
             <PillButton active={scopeFilter === 'Rohan Mehta'} onClick={() => setScopeFilter('Rohan Mehta')}>
               Adv. Rohan
-            </PillButton>
-            <PillButton active={scopeFilter === 'Deshmukh'} onClick={() => setScopeFilter('Deshmukh')}>
-              Judge Deshmukh
             </PillButton>
           </div>
 

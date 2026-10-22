@@ -18,7 +18,8 @@ import {
 import { useMobileSidebar } from '@/components/layout/MobileSidebarContext'
 import { CommandPalette } from '@/components/layout/CommandPalette'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
-import { logoutUser, getSession, DEMO_USERS, type UserRecord } from '@/lib/auth'
+import { logoutUser, setSession, DEMO_USERS, type UserRecord } from '@/lib/auth'
+import { useSession } from '@/hooks/useSession'
 import { cn } from '@/lib/utils'
 import type { BailAlert } from '@/app/api/overview/alerts/route'
 
@@ -108,7 +109,7 @@ export function Topbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { setMobileOpen } = useMobileSidebar()
-  const [session, setSession] = useState<UserRecord | null>(null)
+  const session = useSession()
   const [profileOpen, setProfileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
 
@@ -118,10 +119,6 @@ export function Topbar() {
   const bellRef = useRef<HTMLDivElement>(null)
 
   const pageMeta = getPageMeta(pathname)
-
-  useEffect(() => {
-    setSession(getSession())
-  }, [])
 
   const fetchAlerts = useCallback(async () => {
     try {
@@ -179,7 +176,7 @@ export function Topbar() {
     setAlerts((prev) => prev.filter((a) => a.caseId !== caseId))
   }
 
-  function handleSwitchUser(user: (typeof DEMO_USERS)[number]) {
+  async function handleSwitchUser(user: (typeof DEMO_USERS)[number]) {
     if (typeof window !== 'undefined') {
       const newSession: UserRecord = {
         id: user.id,
@@ -187,9 +184,19 @@ export function Topbar() {
         email: user.email,
         role: user.role,
       }
-      localStorage.setItem('nyayatrace_session', JSON.stringify(newSession))
       setSession(newSession)
       setProfileOpen(false)
+
+      try {
+        await fetch('/api/auth/switch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email }),
+        })
+      } catch {
+        /* ignore */
+      }
+
       router.refresh()
     }
   }

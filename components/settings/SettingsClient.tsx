@@ -21,7 +21,8 @@ import {
   Scale,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getSession } from '@/lib/auth'
+import { setSession } from '@/lib/auth'
+import { useSession } from '@/hooks/useSession'
 import Link from 'next/link'
 
 // ── Avatar options ────────────────────────────────────────────────────────────
@@ -256,8 +257,9 @@ export function SettingsClient() {
   })
   const [profileSaved, setProfileSaved] = useState(false)
 
+  const session = useSession()
+
   useEffect(() => {
-    const session = getSession()
     const stored = loadProfile()
     setProfile({
       name: stored?.name || session?.name || '',
@@ -271,20 +273,17 @@ export function SettingsClient() {
       barCouncilId: stored?.barCouncilId || '',
       specialisation: stored?.specialisation || '',
     })
-  }, [])
+  }, [session])
 
   function handleSaveProfile() {
     saveProfile(profile)
-    // Also update the session name/role in localStorage
-    try {
-      const raw = localStorage.getItem('nyayatrace_session')
-      if (raw) {
-        const s = JSON.parse(raw)
-        s.name = profile.name
-        s.role = profile.role
-        localStorage.setItem('nyayatrace_session', JSON.stringify(s))
-      }
-    } catch {/* */}
+    if (session) {
+      setSession({
+        ...session,
+        name: profile.name,
+        role: profile.role,
+      })
+    }
     setProfileSaved(true)
     setTimeout(() => setProfileSaved(false), 2200)
   }
