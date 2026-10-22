@@ -43,7 +43,7 @@ export function CitationHoverCard({
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center gap-1 text-left text-xs font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-900 focus:outline-none"
+        className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-mono rounded-full px-3 py-1 mt-3 w-fit transition-colors"
       >
         <FileText className="h-3.5 w-3.5 shrink-0" />
         {children || `${documentName}, p. ${pageNumber}`}

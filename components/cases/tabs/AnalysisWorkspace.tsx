@@ -6,6 +6,7 @@ import {
   Check,
   CircleAlert,
   FileText,
+  File as FileIcon,
   LoaderCircle,
   Printer,
   RefreshCw,
@@ -13,8 +14,6 @@ import {
   GitCompare,
   Search,
   Calendar,
-  Gavel,
-  Layers,
   Sparkles,
   Clock,
   Building2,
@@ -38,7 +37,10 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { CitationHoverCard } from '@/components/shared/CitationHoverCard'
+import { ExtractedQuotesSection } from '@/components/cases/ExtractedQuotesSection'
 import { cn } from '@/lib/utils'
+import { sanitizeExtractedValue } from '@/lib/ocrSanitizer'
+import { categorizeLegalText, cleanOcrRegex, cleanOcrText } from '@/lib/legalSanitizer'
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { FindingWithSources } from '@/lib/queries/findings'
 import type { DocumentRow } from '@/lib/queries/documents'
@@ -87,7 +89,6 @@ interface AnalysisWorkspaceProps {
   caseData: CaseDetail
   documents: DocumentRow[]
   onUploadDocuments: () => void
-  onGoToChronology?: () => void
 }
 
 function sourceHref(source: Pick<EvidenceReference, 'documentId' | 'pageNumber'>) {
@@ -109,22 +110,21 @@ function SourceBadge({
       passage={source.passage}
       onOpen={() => onOpen(source)}
     >
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800 border border-teal-200/70 hover:bg-teal-100 hover:border-teal-300 transition-colors">
-        <FileText className="h-3 w-3 text-teal-600 shrink-0" />
-        <span className="truncate max-w-[200px]">{source.documentName}</span>
-        <span className="text-teal-600 font-semibold">· p. {source.pageNumber}</span>
+      <span className="inline-flex max-w-full flex-wrap items-center gap-1.5">
+        <FileText className="h-3 w-3 shrink-0 text-emerald-700" />
+        <span className="break-words">{source.documentName}</span>
+        <span className="shrink-0 text-emerald-700 font-semibold">· p. {source.pageNumber}</span>
       </span>
     </CitationHoverCard>
   )
 }
 
-type TabSection = 'all' | 'summary' | 'data' | 'conflicts' | 'evidence' | 'orders'
+type AnalysisSectionId = 'overview' | 'data' | 'summary' | 'documents' | 'facts' | 'citations'
 
 export function AnalysisWorkspace({
   caseData,
   documents,
   onUploadDocuments,
-  onGoToChronology,
 }: AnalysisWorkspaceProps) {
   const [runs, setRuns] = useState<AnalysisRun[]>([])
   const [current, setCurrent] = useState(false)
@@ -147,7 +147,7 @@ export function AnalysisWorkspace({
   const [selectedSource, setSelectedSource] = useState<(EvidenceReference & { relatedFinding?: string }) | null>(null)
   
   // Interactive features
-  const [activeSection, setActiveSection] = useState<TabSection>('all')
+  const [activeSection, setActiveSection] = useState<AnalysisSectionId>('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [entityCategoryFilter, setEntityCategoryFilter] = useState<'all' | 'charges' | 'person' | 'datetime' | 'location' | 'evidence' | 'custody'>('all')
@@ -165,7 +165,11 @@ export function AnalysisWorkspace({
   function copyAllKeyEntities(entities: KeyEntity[]) {
     if (!entities.length) return
     const text = entities
-      .map((e) => `[${e.field}]: ${e.value} (Source: ${e.source.documentName}, p. ${e.source.pageNumber})`)
+      .map((entity) => {
+        const normalizedValue = sanitizeExtractedValue(entity.value, entity.field).value
+        const value = cleanOcrRegex(normalizedValue)
+        return `[${entity.field}]: ${value} (Source: ${entity.source.documentName}, p. ${entity.source.pageNumber})`
+      })
       .join('\n')
     if (typeof window !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(text)
@@ -237,7 +241,7 @@ export function AnalysisWorkspace({
     if (!synopsis || language === 'English') return
     setTranslating(true)
     try {
-      // Collect all text fields from sections 1-9
+      // Collect text fields displayed throughout the analysis.
       const fields: Record<string, string> = {
         // Section 1 – Case Overview
         'overview.caseType': synopsis.caseOverview.caseType || '',
@@ -248,19 +252,7 @@ export function AnalysisWorkspace({
         // Section 3 – Executive Summary
         'executiveSynopsis': synopsis.executiveSynopsis || '',
         'aiAnalysis.executiveSummary': synopsis.aiAnalysis?.executiveSummary || '',
-        // Section 4 – Timeline previews (first 3)
-        ...Object.fromEntries(
-          synopsis.chronology.slice(0, 6).map((ev, i) => [`chronology.${i}`, ev.passage || ''])
-        ),
-        // Section 5 – Conflicts
-        ...Object.fromEntries(
-          synopsis.potentialInconsistencies.flatMap((issue, i) => [
-            [`conflict.${i}.explanation`, issue.explanation || ''],
-            [`conflict.${i}.field`, issue.field || ''],
-            ...issue.values.map((v, vi) => [`conflict.${i}.val.${vi}`, v]),
-          ])
-        ),
-        // Section 6 – Document summaries & facts
+        // Uploaded documents and extracted facts
         ...Object.fromEntries(
           synopsis.documentSummaries.flatMap((ds, i) => [
             [`docSummary.${i}.apparentType`, ds.apparentType || ''],
@@ -273,11 +265,7 @@ export function AnalysisWorkspace({
         ...Object.fromEntries(
           synopsis.facts.slice(0, 8).map((f, i) => [`fact.${i}`, f.passage || ''])
         ),
-        // Section 7 – Court orders
-        ...Object.fromEntries(
-          synopsis.ordersAndProceduralHistory.map((o, i) => [`order.${i}`, o.passage || ''])
-        ),
-        // Section 8 – Missing/unclear
+        // Page review notes
         ...Object.fromEntries(
           synopsis.missingOrUnclear.map((m, i) => [`missing.${i}`, m])
         ),
@@ -355,31 +343,6 @@ export function AnalysisWorkspace({
     }, 800)
     return () => window.clearTimeout(timeout)
   }, [isDirty, notesDraft, saveNotes, savingNotes, selectedRun])
-
-  async function reviewFinding(findingId: number, reviewStatus: 'verified' | 'needs_review' | 'not_a_discrepancy') {
-    try {
-      const response = await fetch(`/api/findings/${findingId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewStatus, note: 'Reviewed in case synopsis.' }),
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error ?? 'Finding could not be updated.')
-      setRuns((previous) => previous.map((run) => run.id === selectedRunId
-        ? { ...run, findings: run.findings.map((finding) => finding.id === findingId ? data : finding) }
-        : run
-      ))
-      toast.success(
-        reviewStatus === 'verified'
-          ? 'Marked as verified difference.'
-          : reviewStatus === 'not_a_discrepancy'
-          ? 'Dismissed as not a conflict.'
-          : 'Flagged for further review.'
-      )
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Finding could not be updated.')
-    }
-  }
 
   // Extracted Key Values & Data Matrix (with fallback extraction)
   const keyEntities: KeyEntity[] = useMemo(() => {
@@ -531,18 +494,6 @@ export function AnalysisWorkspace({
     )
   }, [synopsis, searchQuery])
 
-  const filteredInconsistencies = useMemo(() => {
-    if (!synopsis) return []
-    if (!searchQuery.trim()) return synopsis.potentialInconsistencies
-    const query = searchQuery.toLowerCase()
-    return synopsis.potentialInconsistencies.filter((item) =>
-      item.field.toLowerCase().includes(query) ||
-      item.values.some((v) => v.toLowerCase().includes(query)) ||
-      (item.explanation && item.explanation.toLowerCase().includes(query)) ||
-      item.sources.some((s) => s.documentName.toLowerCase().includes(query) || s.passage.toLowerCase().includes(query))
-    )
-  }, [synopsis, searchQuery])
-
   const filteredDocuments = useMemo(() => {
     if (!documents) return []
     if (!searchQuery.trim()) return documents
@@ -551,19 +502,17 @@ export function AnalysisWorkspace({
       doc.originalName.toLowerCase().includes(query)
     )
   }, [documents, searchQuery])
-
-  const filteredOrders = useMemo(() => {
-    if (!synopsis) return []
-    if (!searchQuery.trim()) return synopsis.ordersAndProceduralHistory
-    const query = searchQuery.toLowerCase()
-    return synopsis.ordersAndProceduralHistory.filter((item) =>
-      item.passage.toLowerCase().includes(query) ||
-      item.documentName.toLowerCase().includes(query)
-    )
-  }, [synopsis, searchQuery])
+  const pageCount = synopsis?.sourceIndex.length ?? 0
+  const readablePageCount = synopsis?.sourceIndex.filter((source) => source.readable).length ?? 0
+  const pagesNeedingReview = Math.max(0, pageCount - readablePageCount)
+  const ocrReadability = pageCount > 0 ? Math.round((readablePageCount / pageCount) * 100) : 0
+  const groundCount = new Set(
+    (synopsis?.facts ?? []).map((fact) => categorizeLegalText(fact.passage).category)
+  ).size
+  const filingDate = synopsis?.chronology.find((entry) => /\b(?:filed|filing)\b/i.test(entry.passage))?.date
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="min-w-0 space-y-5 pb-12">
       {/* ── Security & Privacy Notice (User-Friendly Tip) ───────────────── */}
       <div className="flex items-start gap-3 rounded-xl border border-teal-200/80 bg-teal-50/70 p-4 text-xs leading-relaxed text-teal-950 shadow-xs">
         <Sparkles className="h-4 w-4 shrink-0 text-teal-600 mt-0.5" />
@@ -574,42 +523,47 @@ export function AnalysisWorkspace({
       </div>
 
       {/* ── Main Toolbar: Header & Run Controls ───────────────────────── */}
-      <div className="analysis-controls flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center rounded-lg bg-teal-100/70 p-1.5 text-teal-800">
-              <Layers className="h-5 w-5" />
+      <div className="analysis-controls flex min-w-0 flex-col justify-between gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7 md:flex-row md:items-center">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-teal-700">
+            Case Analysis &amp; Synopsis
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              {caseData.title || synopsis?.caseOverview.title || 'Case analysis'}
+            </h1>
+            <span className="rounded-md bg-slate-100 px-2.5 py-1 font-mono text-xs text-slate-500">
+              {caseData.caseNumber || synopsis?.caseOverview.reference || `Case #${caseData.id}`}
             </span>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900">Case Analysis &amp; Synopsis</h2>
           </div>
-          <p className="mt-1.5 text-xs text-slate-500 max-w-xl">
-            Everything extracted from your case documents—organized into verified facts, chronological timeline, document breakdown, and cross-file differences.
+          <p className="mt-1.5 max-w-xl border-b border-slate-100 pb-3 text-xs font-medium text-slate-600">
+            Locally organized case facts, source citations, and procedural context for review.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Button
             variant="outline"
+            onClick={() => window.print()}
+            disabled={!synopsis}
+            className="gap-2 border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50"
+          >
+            <Printer className="h-4 w-4 text-slate-500" /> Print / Export PDF
+          </Button>
+
+          <Button
+            variant="outline"
             onClick={() => setNotesDrawerOpen(true)}
             disabled={!selectedRun}
-            className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs"
+            className="gap-2 border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50"
           >
             <FileText className="h-4 w-4 text-slate-500" /> Notes &amp; Strategy
           </Button>
 
           <Button
-            variant="outline"
-            onClick={() => window.print()}
-            disabled={!synopsis}
-            className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs"
-          >
-            <Printer className="h-4 w-4 text-slate-500" /> Print / Save PDF
-          </Button>
-
-          <Button
             onClick={analyseDocuments}
             disabled={analysing || !hasReadableDocuments}
-            className="gap-2 bg-teal text-white hover:bg-teal-light shadow-xs transition-all"
+            className="gap-2 bg-teal text-white shadow-xs transition-all hover:bg-teal-light"
           >
             {analysing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {analysing
@@ -617,14 +571,14 @@ export function AnalysisWorkspace({
               : useAi
               ? `Analyze with ${aiProvider === 'gemini' ? 'Gemini AI' : 'OpenAI'}`
               : selectedRun
-              ? 'Re-analyze Documents'
+              ? 'Re-analyze'
               : 'Start Analysis'}
           </Button>
         </div>
       </div>
 
       {/* ── AI Provider Configuration (Clean & Friendly Toggle) ──────────── */}
-      <div className="analysis-controls rounded-xl border border-slate-200 bg-white p-4 text-xs shadow-xs">
+      <div className="analysis-controls rounded-2xl border border-slate-200 bg-white p-6 text-xs shadow-sm transition-all sm:p-7">
         {aiProviders.gemini || aiProviders.openai ? (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <label className="flex items-center gap-2.5 cursor-pointer">
@@ -760,7 +714,7 @@ export function AnalysisWorkspace({
         </div>
       ) : synopsis ? (
         /* ── Full Analysis Report Container ────────────────────────────── */
-        <div className="analysis-print rounded-2xl border border-slate-200 bg-white p-6 shadow-xs print-content space-y-7">
+        <div className="analysis-print print-content space-y-5 pb-6">
           
           {/* ── Version Header & Diff Bar ───────────────────────────────── */}
           <div className="analysis-controls flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
@@ -845,7 +799,7 @@ export function AnalysisWorkspace({
                       + New Observations in Version {selectedRun.version} ({newFindings.length})
                     </span>
                     {newFindings.length === 0 ? (
-                      <p className="text-slate-400 italic text-[11px]">No new findings detected in this run.</p>
+                      <p className="text-[11px] font-medium italic text-slate-700">No new findings detected in this run.</p>
                     ) : (
                       <ul className="space-y-1.5">
                         {newFindings.map((nf, i) => (
@@ -862,11 +816,11 @@ export function AnalysisWorkspace({
                       Resolved / Omitted Since Version {previousRun.version} ({resolvedFindings.length})
                     </span>
                     {resolvedFindings.length === 0 ? (
-                      <p className="text-slate-400 italic text-[11px]">No differences removed.</p>
+                      <p className="text-[11px] font-medium italic text-slate-700">No differences removed.</p>
                     ) : (
                       <ul className="space-y-1.5">
                         {resolvedFindings.map((rf, i) => (
-                          <li key={i} className="text-slate-400 line-through bg-slate-50 p-2 rounded text-[11px]">
+                          <li key={i} className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px] font-medium text-slate-700 line-through">
                             [{rf.findingType}] {rf.description}
                           </li>
                         ))}
@@ -878,136 +832,92 @@ export function AnalysisWorkspace({
             )
           })()}
 
-          {/* ── Case Header ───────────────────────────────────────────── */}
-          <div className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-300">
-                NyayaTrace · Case Record Analysis
-              </span>
-              <span className="rounded-full bg-white/10 px-3 py-0.5 text-xs font-medium text-slate-200">
-                {caseData.caseNumber || synopsis.caseOverview.reference || 'Case #1'}
-              </span>
-            </div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
-              {caseData.title || synopsis.caseOverview.title}
-            </h1>
-            <p className="mt-1 text-xs text-slate-300">
-              Generated from {documents.length} uploaded files · {synopsis.sourceIndex.filter((s) => s.readable).length} readable pages
-            </p>
-          </div>
-
           {/* ── High-Impact Metric Cards (At a Glance) ─────────────────── */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <FileText className="h-4 w-4 text-slate-600" />
-                <span className="text-[10px] uppercase font-bold text-slate-500">Files</span>
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+            <h3 className="mb-5 border-b border-slate-100 pb-3 text-base font-bold text-slate-900">At a Glance</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50">
+                  <FileText className="h-4 w-4 text-sky-700" />
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Documents</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">{documents.filter((d) => d.processingStatus === 'complete').length}</p>
-              <p className="mt-0.5 text-[11px] text-slate-500">Processed</p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <FileCheck className="h-4 w-4 text-teal" />
-                <span className="text-[10px] uppercase font-bold text-slate-500">Pages</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900">{synopsis.sourceIndex.filter((s) => s.readable).length}</p>
-              <p className="mt-0.5 text-[11px] text-slate-500">Readable</p>
-            </div>
-
-            <div
-              onClick={onGoToChronology}
-              className={cn(
-                "rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70",
-                onGoToChronology && "cursor-pointer hover:border-teal-300 hover:bg-teal-50/50"
-              )}
-            >
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                <span className="text-[10px] uppercase font-bold text-slate-500">Dates</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900">{synopsis.chronology.length}</p>
-              <p className="mt-0.5 text-[11px] text-slate-500 flex items-center justify-between">
-                <span>Timeline events</span>
-                {onGoToChronology && <span className="text-[10px] text-teal-700 font-semibold">View tab →</span>}
+              <p className="text-xl font-bold text-slate-900">
+                {documents.length} Uploaded File{documents.length === 1 ? '' : 's'}
               </p>
+              <p className="mt-1 text-xs font-medium text-slate-600">{pageCount} Pages Processed</p>
             </div>
 
-            <div className={cn(
-              'rounded-xl border p-3.5 transition-all',
-              synopsis.potentialInconsistencies.length > 0
-                ? 'border-amber-200 bg-amber-50/70'
-                : 'border-slate-200/90 bg-slate-50/70'
-            )}>
-              <div className="flex items-center justify-between mb-1">
-                <AlertTriangle className={cn('h-4 w-4', synopsis.potentialInconsistencies.length > 0 ? 'text-amber-600' : 'text-slate-500')} />
-                <span className={cn('text-[10px] uppercase font-bold', synopsis.potentialInconsistencies.length > 0 ? 'text-amber-700' : 'text-slate-500')}>Conflicts</span>
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50">
+                  <FileCheck className="h-4 w-4 text-teal" />
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Evidence</span>
               </div>
-              <p className={cn('text-2xl font-bold', synopsis.potentialInconsistencies.length > 0 ? 'text-amber-900' : 'text-slate-900')}>
-                {synopsis.potentialInconsistencies.length}
-              </p>
-              <p className="mt-0.5 text-[11px] text-slate-500">Differences found</p>
+              <p className="text-xl font-bold text-slate-900">{synopsis.facts.length} Facts Extracted</p>
+              <p className="mt-1 text-xs font-medium text-slate-600">Categorized across {groundCount} legal grounds</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <Clock className="h-4 w-4 text-purple-600" />
-                <span className="text-[10px] uppercase font-bold text-slate-500">Pending</span>
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50">
+                  <FileSpreadsheet className="h-4 w-4 text-indigo-700" />
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Fact Matrix</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">
-                {selectedRun.findings.filter((f) => f.reviewStatus === 'needs_review').length}
+              <p className="text-xl font-bold text-slate-900">
+                {keyEntities.length} Key Data Point{keyEntities.length === 1 ? '' : 's'}
               </p>
-              <p className="mt-0.5 text-[11px] text-slate-500">Needs review</p>
+              <p className="mt-1 text-xs font-medium text-slate-600">Structured values with source citations</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 transition-all hover:bg-slate-100/70">
-              <div className="flex items-center justify-between text-slate-400 mb-1">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span className="text-[10px] uppercase font-bold text-slate-500">Checked</span>
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">OCR Readability</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">
-                {selectedRun.findings.filter((f) => f.reviewStatus === 'verified').length}
-              </p>
-              <p className="mt-0.5 text-[11px] text-slate-500">Verified</p>
+              <p className="text-xl font-bold text-slate-900">{ocrReadability}% Readable</p>
+              <p className="mt-1 text-xs font-medium text-slate-600">{pagesNeedingReview} Pages Needing Review</p>
             </div>
           </div>
+          </section>
 
           {/* ── Sub-Navigation & Quick Search Filter ─────────────────────── */}
-          <div className="analysis-controls flex flex-col md:flex-row md:items-center justify-between gap-3 border-y border-slate-200/80 py-3">
-            <div className="flex flex-wrap gap-1.5 items-center">
+          <nav aria-label="Analysis sections" className="analysis-controls flex flex-col justify-between gap-3 border-y border-slate-200/80 py-3 md:flex-row md:items-center">
+            <div className="flex flex-wrap items-center gap-1.5">
               {[
-                { id: 'all', label: 'All Insights' },
-                { id: 'summary', label: 'Overview & Summary' },
-                { id: 'data', label: `📊 Key Data Table (${keyEntities.length})` },
-                { id: 'conflicts', label: `Conflicts (${synopsis.potentialInconsistencies.length})` },
-                { id: 'evidence', label: `Files & Facts (${synopsis.facts.length})` },
-                { id: 'orders', label: 'Court Orders & Notes' },
+                { id: 'overview', label: '1. Case Overview' },
+                { id: 'data', label: '2. Key Case Data & Fact Matrix' },
+                { id: 'summary', label: '3. Executive Summary' },
+                { id: 'documents', label: '4. Uploaded Documents & Files' },
+                { id: 'facts', label: '5. Key Facts & Quotes Extracted' },
+                { id: 'citations', label: '6. Page Citations & Source Index' },
               ].map((tab) => (
-                <button
+                <a
                   key={tab.id}
-                  onClick={() => setActiveSection(tab.id as TabSection)}
+                  href={`#analysis-section-${tab.id}`}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    setActiveSection(tab.id as AnalysisSectionId)
+                    document.getElementById(`analysis-section-${tab.id}`)?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    })
+                  }}
                   className={cn(
-                    'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
+                    'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                     activeSection === tab.id
                       ? 'bg-teal text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                   )}
                 >
                   {tab.label}
-                </button>
+                </a>
               ))}
-
-              {onGoToChronology && (
-                <button
-                  onClick={onGoToChronology}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-all flex items-center gap-1.5 cursor-pointer"
-                  title="Switch to the dedicated Checkpoints & Chronology tab"
-                >
-                  <Clock className="h-3 w-3 text-teal-600" />
-                  Full Chronology Tab ↗
-                </button>
-              )}
             </div>
 
             {/* Quick in-page search input */}
@@ -1028,7 +938,7 @@ export function AnalysisWorkspace({
                 </button>
               )}
             </div>
-          </div>
+          </nav>
 
           {/* Search Result Feedback if filtered */}
           {searchQuery && (
@@ -1046,51 +956,52 @@ export function AnalysisWorkspace({
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 1: CASE OVERVIEW                                      */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'summary') && (
-            <section className="space-y-3.5 pt-2">
-              <div className="flex items-center gap-2">
+            <section id="analysis-section-overview" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+              <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
                 <span className="h-2 w-2 rounded-full bg-teal-500" />
-                <h3 className="text-base font-bold text-slate-900">1. Case Overview</h3>
+                <h3 className="flex-1 text-base font-bold text-slate-900">1. Case Overview</h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <FolderOpen className="h-4 w-4 text-teal" />
-                    <span className="text-xs font-semibold">Case Type</span>
-                  </div>
-                  <p className="text-sm font-medium text-slate-900 capitalize">
-                    {t('overview.caseType', synopsis.caseOverview.caseType === 'unspecified' ? 'Not specified yet' : (synopsis.caseOverview.caseType || 'Not specified'))}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <Clock className="h-4 w-4 text-teal" />
-                    <span className="text-xs font-semibold">Current Status</span>
-                  </div>
-                  <p className="text-sm font-medium text-slate-900 capitalize">
-                    {t('overview.status', synopsis.caseOverview.status === 'unspecified' ? 'Active / In Progress' : (synopsis.caseOverview.status || 'Active'))}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="bg-white p-4">
                   <div className="flex items-center gap-2 text-slate-500 mb-1">
                     <Building2 className="h-4 w-4 text-teal" />
                     <span className="text-xs font-semibold">Court</span>
                   </div>
-                  <p className="text-sm font-medium text-slate-900">
-                    {t('overview.court', synopsis.caseOverview.court || 'Not specified')}
-                  </p>
+                  <p className="text-sm font-medium text-slate-900">{t('overview.court', synopsis.caseOverview.court || 'Not specified')}</p>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                <div className="bg-white p-4">
                   <div className="flex items-center gap-2 text-slate-500 mb-1">
                     <MapPin className="h-4 w-4 text-teal" />
                     <span className="text-xs font-semibold">Jurisdiction</span>
                   </div>
+                  <p className="text-sm font-medium text-slate-900">{t('overview.jurisdiction', synopsis.caseOverview.jurisdiction || 'Not specified')}</p>
+                </div>
+
+                <div className="bg-white p-4">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <Clock className="h-4 w-4 text-teal" />
+                    <span className="text-xs font-semibold">Current Status</span>
+                  </div>
+                  <p className="text-sm font-medium capitalize text-slate-900">
+                    {t('overview.status', synopsis.caseOverview.status === 'unspecified' ? 'Active / In Progress' : (synopsis.caseOverview.status || 'Active'))}
+                  </p>
+                </div>
+
+                <div className="bg-white p-4">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <Calendar className="h-4 w-4 text-teal" />
+                    <span className="text-xs font-semibold">Filing Date</span>
+                  </div>
                   <p className="text-sm font-medium text-slate-900">
-                    {t('overview.jurisdiction', synopsis.caseOverview.jurisdiction || 'Not specified')}
+                    {filingDate
+                      ? new Date(`${filingDate}T00:00:00`).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : 'Not recorded'}
                   </p>
                 </div>
               </div>
@@ -1104,14 +1015,12 @@ export function AnalysisWorkspace({
                 </div>
               )}
             </section>
-          )}
 
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 2: KEY CASE DATA & FACT MATRIX (TABULAR VIEW)          */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'data') && (
-            <section className="space-y-4 pt-2 border-t border-slate-200/80">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <section id="analysis-section-data" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+              <div className="mb-5 flex flex-col justify-between gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-teal-500" />
                   <div className="flex items-center gap-2.5">
@@ -1138,132 +1047,22 @@ export function AnalysisWorkspace({
                 </div>
               </div>
 
-              <p className="text-xs text-slate-500 max-w-2xl">
-                Critical legal identifiers, penal sections, custody dates, and forensic items organized into structured tabular rows so key values never get lost in prose. Every entry is clickable to jump directly to its document page.
-              </p>
-
-              {/* Quick Highlight Cards Strip */}
-              {keyEntities.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {/* FIR / Crime No */}
-                  {(() => {
-                    const fir = keyEntities.find((k) => k.field.includes('FIR'))
-                    return fir ? (
-                      <div
-                        onClick={() => openSource(fir.source, fir.field)}
-                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500" />
-                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
-                            <Scale className="h-3.5 w-3.5 text-teal" /> FIR / Crime No
-                          </span>
-                          <span className="text-[10px] text-teal-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
-                        </div>
-                        <p className="text-lg font-mono font-bold text-slate-900 tracking-tight">{fir.value}</p>
-                        <p className="text-[11px] text-slate-500 mt-1 truncate">
-                          {keyEntities.find((k) => k.field === 'Police Station')?.value ?? 'Police Station'} · p. {fir.source.pageNumber}
-                        </p>
-                      </div>
-                    ) : null
-                  })()}
-
-                  {/* Accused Person */}
-                  {(() => {
-                    const acc = keyEntities.find((k) => k.field.includes('Accused'))
-                    return acc ? (
-                      <div
-                        onClick={() => openSource(acc.source, acc.field)}
-                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-indigo-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500" />
-                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
-                            <User className="h-3.5 w-3.5 text-indigo-600" /> Accused
-                          </span>
-                          <span className="text-[10px] text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
-                        </div>
-                        <p className="text-sm font-bold text-slate-900 truncate" title={acc.value}>{acc.value.split(',')[0]}</p>
-                        <p className="text-[11px] text-slate-500 mt-1 truncate">
-                          {acc.value.split(',')[1] || acc.contextSnippet || 'Named in FIR'}
-                        </p>
-                      </div>
-                    ) : null
-                  })()}
-
-                  {/* Charges / Penal Sections */}
-                  {(() => {
-                    const sec = keyEntities.find((k) => k.field.includes('Penal Sections'))
-                    return sec ? (
-                      <div
-                        onClick={() => openSource(sec.source, sec.field)}
-                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-rose-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-amber-500" />
-                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
-                            <Scale className="h-3.5 w-3.5 text-rose-600" /> Penal Sections
-                          </span>
-                          <span className="text-[10px] text-rose-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
-                        </div>
-                        <p className="text-xs font-bold text-slate-900 line-clamp-2" title={sec.value}>{sec.value}</p>
-                        <p className="text-[10px] text-slate-500 mt-1 truncate">
-                          Substantive criminal sections cited
-                        </p>
-                      </div>
-                    ) : null
-                  })()}
-
-                  {/* Arrest & Custody */}
-                  {(() => {
-                    const arrest = keyEntities.find((k) => k.field.includes('Arrest'))
-                    const remand = keyEntities.find((k) => k.field.includes('Remand'))
-                    const target = arrest || remand
-                    return target ? (
-                      <div
-                        onClick={() => openSource(target.source, target.field)}
-                        className="group rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-all cursor-pointer relative overflow-hidden"
-                      >
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-500" />
-                        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                          <span className="font-semibold text-slate-600 flex items-center gap-1.5">
-                            <ShieldAlert className="h-3.5 w-3.5 text-amber-600" /> Custody / Remand
-                          </span>
-                          <span className="text-[10px] text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Click to view →</span>
-                        </div>
-                        <p className="text-sm font-bold text-slate-900 truncate">
-                          {remand ? remand.value : arrest?.value}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-1 truncate">
-                          {arrest ? `Arrest: ${arrest.value}` : 'Judicial Custody'}
-                        </p>
-                      </div>
-                    ) : null
-                  })()}
-                </div>
-              )}
-
-              {/* Table Card */}
-              <div className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-                {/* Table Filter Bar */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 border-b border-slate-100 bg-slate-50/50">
+              {/* Category filters */}
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   {/* Category Pills */}
-                  <div className="flex flex-wrap gap-1.5 items-center">
+                  <div className="flex flex-wrap items-center gap-2">
                     {[
                       { id: 'all', label: `All (${keyEntities.length})` },
                       { id: 'charges', label: `⚖️ Charges (${keyEntities.filter((k) => k.category === 'charges').length})` },
                       { id: 'person', label: `👤 People (${keyEntities.filter((k) => k.category === 'person').length})` },
-                      { id: 'custody', label: `🛡️ Custody (${keyEntities.filter((k) => k.category === 'custody').length})` },
                       { id: 'datetime', label: `📅 Dates (${keyEntities.filter((k) => k.category === 'datetime').length})` },
-                      { id: 'location', label: `📍 Locations (${keyEntities.filter((k) => k.category === 'location').length})` },
-                      { id: 'evidence', label: `🔍 Evidence (${keyEntities.filter((k) => k.category === 'evidence').length})` },
                     ].map((tab) => (
                       <button
                         key={tab.id}
                         type="button"
                         onClick={() => setEntityCategoryFilter(tab.id as typeof entityCategoryFilter)}
                         className={cn(
-                          'rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer',
+                          'rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
                           entityCategoryFilter === tab.id
                             ? 'bg-slate-900 text-white shadow-xs'
                             : 'bg-white text-slate-600 hover:bg-slate-200/80 border border-slate-200'
@@ -1275,7 +1074,7 @@ export function AnalysisWorkspace({
                   </div>
 
                   {/* Filter inside table */}
-                  <div className="relative min-w-[220px]">
+                  <div className="relative min-w-[220px] sm:max-w-xs sm:flex-1">
                     <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
                     <Input
                       value={tableSearchQuery}
@@ -1292,22 +1091,23 @@ export function AnalysisWorkspace({
                       </button>
                     )}
                   </div>
-                </div>
+              </div>
 
-                {/* The Responsive Table */}
+              {/* The Responsive Table */}
+              <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 {filteredKeyEntities.length === 0 ? (
                   <div className="p-8 text-center text-xs text-slate-500">
                     No key values match your current filter. Try clearing the search.
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-slate-700">
+                    <table className="w-full table-fixed text-left text-xs text-slate-700">
                       <thead className="bg-slate-100/75 text-slate-600 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
                         <tr>
-                          <th scope="col" className="py-3 px-4 w-[24%]">Case Parameter / Field</th>
-                          <th scope="col" className="py-3 px-4 w-[40%]">Extracted Key Value</th>
-                          <th scope="col" className="py-3 px-4 w-[22%]">Verified Source</th>
-                          <th scope="col" className="py-3 px-4 w-[14%] text-right">Actions</th>
+                          <th scope="col" className="w-[23%] px-4 py-3">Case Parameter / Field</th>
+                          <th scope="col" className="w-[35%] px-4 py-3">Extracted Key Value</th>
+                          <th scope="col" className="w-[23%] px-4 py-3">Verified Source</th>
+                          <th scope="col" className="w-[19%] px-4 py-3 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -1355,18 +1155,25 @@ export function AnalysisWorkspace({
                           }
 
                           const isCopied = copiedKey === item.field
+                          const normalizedValue = sanitizeExtractedValue(item.value, item.field)
+                          const extractedValue = {
+                            ...normalizedValue,
+                            value: normalizedValue.value === 'Not Specified'
+                              ? normalizedValue.value
+                              : cleanOcrRegex(normalizedValue.value),
+                          }
 
                           return (
                             <tr
                               key={`${item.field}-${idx}`}
-                              className="hover:bg-teal-50/30 transition-colors group"
+                              className="group transition-colors hover:bg-slate-50/80"
                             >
                               {/* Field Name & Category */}
-                              <td className="py-3 px-4 align-top">
+                              <td className="px-4 py-3 align-top">
                                 <div className="flex items-start gap-2">
                                   <div className="mt-0.5">{categoryStyle.icon}</div>
                                   <div>
-                                    <span className="font-bold text-slate-900 block leading-snug">
+                                    <span className="block text-xs font-semibold leading-snug text-slate-900">
                                       {item.field}
                                     </span>
                                     {item.contextSnippet && (
@@ -1379,34 +1186,37 @@ export function AnalysisWorkspace({
                               </td>
 
                               {/* Extracted Key Value */}
-                              <td className="py-3 px-4 align-top">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className={cn(
-                                      "inline-block font-semibold text-xs py-1 px-2.5 rounded-lg border",
-                                      item.category === 'charges'
-                                        ? "bg-rose-50/80 text-rose-900 border-rose-200 font-mono"
-                                        : item.category === 'custody'
-                                        ? "bg-amber-50 text-amber-950 border-amber-200"
-                                        : item.category === 'person'
-                                        ? "bg-indigo-50/80 text-indigo-950 border-indigo-200"
-                                        : item.category === 'datetime'
-                                        ? "bg-blue-50/80 text-blue-950 border-blue-200 font-mono"
-                                        : "bg-slate-100 text-slate-900 border-slate-200"
-                                    )}>
-                                      {item.value}
+                              <td className="max-w-md whitespace-normal break-words px-4 py-3 align-top">
+                                <div className="flex flex-col gap-1">
+                                  {extractedValue.value === 'Not Specified' ? (
+                                    <span className="w-fit rounded-md bg-slate-100 px-2 py-1 text-xs font-normal text-slate-500">
+                                      Not Specified
                                     </span>
-                                  </div>
+                                  ) : (
+                                    <span className="inline-block w-fit rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-900">
+                                      {extractedValue.value}
+                                    </span>
+                                  )}
+                                  {extractedValue.isNormalized && (
+                                    <span className="w-fit rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] text-emerald-600">
+                                      Verified Citation Standard
+                                    </span>
+                                  )}
                                 </div>
                               </td>
 
                               {/* Verified Source (Clickable) */}
-                              <td className="py-3 px-4 align-top">
+                              <td className="px-4 py-3 align-top">
                                 <div className="space-y-1">
                                   <button
                                     type="button"
-                                    onClick={() => openSource(item.source, item.field)}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-850 border border-teal-200/80 hover:bg-teal-100 hover:border-teal-300 transition-colors text-left cursor-pointer"
+                                    onClick={() => {
+                                      window.dispatchEvent(new CustomEvent('openPdfPage', {
+                                        detail: { page: item.source.pageNumber },
+                                      }))
+                                      openSource(item.source, item.field)
+                                    }}
+                                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-teal-200/80 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-850 transition-colors hover:border-teal-300 hover:bg-teal-100"
                                     title="Click to view original source page in document"
                                   >
                                     <FileText className="h-3 w-3 text-teal-600 shrink-0" />
@@ -1417,13 +1227,13 @@ export function AnalysisWorkspace({
                               </td>
 
                               {/* Actions */}
-                              <td className="py-3 px-4 align-top text-right">
-                                <div className="flex items-center justify-end gap-1.5">
+                              <td className="px-4 py-3 align-top text-right">
+                                <div className="flex flex-wrap items-center justify-end gap-1.5">
                                   <button
                                     type="button"
-                                    onClick={() => copyToClipboard(item.value, item.field)}
+                                    onClick={() => copyToClipboard(extractedValue.value, item.field)}
                                     className={cn(
-                                      "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer border",
+                                      "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer",
                                       isCopied
                                         ? "bg-emerald-100 text-emerald-800 border-emerald-300"
                                         : "bg-white text-slate-600 hover:bg-slate-100 border-slate-200"
@@ -1446,11 +1256,11 @@ export function AnalysisWorkspace({
                                   <button
                                     type="button"
                                     onClick={() => openSource(item.source, item.field)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800 transition-colors hover:bg-teal-100 cursor-pointer"
                                     title="View in Document Preview"
                                   >
                                     <Eye className="h-3 w-3 text-teal-600" />
-                                    <span>View</span>
+                                    <span>View Page</span>
                                   </button>
                                 </div>
                               </td>
@@ -1463,17 +1273,15 @@ export function AnalysisWorkspace({
                 )}
               </div>
             </section>
-          )}
 
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 3: EXECUTIVE SUMMARY                                  */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'summary') && (
-            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
-              <div className="flex items-center gap-2">
+            <section id="analysis-section-summary" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+              <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
                 <span className="h-2 w-2 rounded-full bg-teal-500" />
-                <h3 className="text-base font-bold text-slate-900">3. Executive Summary</h3>
-                <span className="text-xs font-normal text-slate-500">(At a glance)</span>
+                <h3 className="flex-1 text-base font-bold text-slate-900">3. Executive Summary</h3>
+                <span className="text-xs font-medium text-slate-600">(At a glance)</span>
               </div>
 
               {/* Standard Extracted Summary */}
@@ -1490,14 +1298,6 @@ export function AnalysisWorkspace({
                       <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
                         <FileCheck className="h-3.5 w-3.5 text-teal" /> {documents.length} files reviewed
                       </span>
-                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
-                        <Calendar className="h-3.5 w-3.5 text-blue-600" /> {synopsis.chronology.length} dates recorded
-                      </span>
-                      {synopsis.potentialInconsistencies.length > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2.5 py-1 text-amber-800 font-medium">
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> {synopsis.potentialInconsistencies.length} conflicts flagged
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1542,239 +1342,16 @@ export function AnalysisWorkspace({
                 </div>
               )}
             </section>
-          )}
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 4: TIMELINE & CHRONOLOGY HIGHLIGHTS                   */}
+          {/* SECTION 4: UPLOADED DOCUMENTS & FILES                         */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'summary') && (
-            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <section id="analysis-section-documents" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-teal-500" />
-                  <h3 className="text-base font-bold text-slate-900">4. Timeline &amp; Event Checkpoints</h3>
-                  <span className="text-xs font-normal text-slate-500">
-                    ({synopsis.chronology.length} date milestone{synopsis.chronology.length === 1 ? '' : 's'} recorded)
-                  </span>
-                </div>
-                {onGoToChronology && (
-                  <button
-                    type="button"
-                    onClick={onGoToChronology}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
-                  >
-                    <Clock className="h-3.5 w-3.5" />
-                    Open Complete Chronology &amp; Investigation Wall →
-                  </button>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-teal-200/80 bg-gradient-to-r from-teal-50/60 via-slate-50 to-white p-5 shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-teal" />
-                      Key Milestones Mapped Across Records
-                    </h4>
-                    <p className="mt-1 text-xs text-slate-600 max-w-xl">
-                      {synopsis.chronology.length} chronological events were extracted from your case records. To prevent duplicate clutter, the full animated timeline, procedural checkpoints, and interactive investigation wall live in the dedicated tab.
-                    </p>
-                  </div>
-                  {onGoToChronology && (
-                    <Button
-                      onClick={onGoToChronology}
-                      size="sm"
-                      className="shrink-0 gap-1.5 bg-teal text-white hover:bg-teal-light shadow-xs cursor-pointer"
-                    >
-                      <Clock className="h-3.5 w-3.5" />
-                      Explore Timeline &amp; Wall
-                    </Button>
-                  )}
-                </div>
-
-                {synopsis.chronology.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-3 border-t border-teal-100">
-                    {synopsis.chronology.slice(0, 3).map((event, idx) => (
-                      <div key={idx} className="rounded-lg border border-slate-200/90 bg-white p-3 text-xs space-y-1.5 shadow-2xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-teal-850 bg-teal-50 px-2 py-0.5 rounded text-[11px] border border-teal-200/60">
-                            {event.date}
-                          </span>
-                          <span className="text-[10px] text-slate-400">p. {event.pageNumber}</span>
-                        </div>
-                        <p className="text-slate-700 line-clamp-2 text-[11px]">
-                          {t(`chronology.${idx}`, event.passage)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 5: CONFLICTS & DIFFERENCES (POTENTIAL INCONSISTENCIES)*/}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'conflicts') && (
-            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  <h3 className="text-base font-bold text-slate-900">5. Conflicts &amp; Differences Found</h3>
-                  <span className="text-xs font-normal text-slate-500">
-                    ({filteredInconsistencies.length} item{filteredInconsistencies.length === 1 ? '' : 's'})
-                  </span>
-                </div>
-              </div>
-
-              {filteredInconsistencies.length === 0 ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 text-sm text-emerald-900">
-                  <div className="flex items-center gap-2.5">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-                    <div>
-                      <p className="font-semibold">No conflicting statements found</p>
-                      <p className="text-xs text-emerald-800 mt-0.5">
-                        {documents.length <= 1
-                          ? 'Only 1 file uploaded so cross-document comparison is not applicable. Upload related records to compare.'
-                          : 'No conflicting dates, party names, or locations were detected between your uploaded documents.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredInconsistencies.map((issue, index) => {
-                    const finding = selectedRun.findings.find(
-                      (item) => item.analysisRunId === selectedRun.id && item.extractedValue === issue.values[0]
-                    ) ?? selectedRun.findings[index]
-
-                    return (
-                      <div
-                        key={`${issue.field}-${index}`}
-                        className="rounded-xl border border-amber-200/80 bg-white p-5 shadow-xs space-y-4"
-                      >
-                        {/* Header with field name & origin badge */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                            <span className="font-bold text-slate-900 text-sm capitalize">
-                              Difference in: {issue.field}
-                            </span>
-                            <span className={cn(
-                              'rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                              issue.origin === 'ai' ? 'bg-teal-50 text-teal-800 border border-teal-200' : 'bg-slate-100 text-slate-700'
-                            )}>
-                              {issue.origin === 'ai' ? 'AI Flagged' : 'Direct Text Comparison'}
-                            </span>
-                          </div>
-
-                          {/* Review status badge */}
-                          <span className={cn(
-                            'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold',
-                            finding?.reviewStatus === 'verified'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : finding?.reviewStatus === 'not_a_discrepancy'
-                              ? 'bg-slate-100 text-slate-600'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          )}>
-                            {finding?.reviewStatus === 'verified'
-                              ? '✓ Verified Conflict'
-                              : finding?.reviewStatus === 'not_a_discrepancy'
-                              ? '✕ Dismissed (Not a conflict)'
-                              : '⚠️ Needs Review'}
-                          </span>
-                        </div>
-
-                        {/* Explanation in plain english */}
-                        {issue.explanation && (
-                          <p className="text-xs leading-relaxed text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/60">
-                            <strong>Note: </strong>{t(`conflict.${index}.explanation`, issue.explanation)}
-                          </p>
-                        )}
-
-                        {/* Conflicting Values Comparison */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {issue.sources.map((source, sIdx) => (
-                            <div key={sIdx} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-semibold text-slate-700">Record #{sIdx + 1} states:</span>
-                                <SourceBadge source={source} onOpen={(ref) => openSource(ref, finding?.description)} />
-                              </div>
-                              <p className="text-sm font-bold text-slate-900 bg-white p-2 rounded border border-slate-200">
-                                {t(`conflict.${index}.val.${sIdx}`, issue.values[sIdx] || issue.values[0])}
-                              </p>
-                              {source.passage && (
-                                <p className="text-xs text-slate-600 italic line-clamp-2">
-                                  &ldquo;{source.passage}&rdquo;
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Interactive review buttons */}
-                        {finding && (
-                          <div className="analysis-controls flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
-                            <span className="text-slate-500 font-medium">Verify this difference:</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => reviewFinding(finding.id, 'verified')}
-                                className={cn(
-                                  'rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer',
-                                  finding.reviewStatus === 'verified'
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-800'
-                                )}
-                              >
-                                ✓ Looks Valid
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => reviewFinding(finding.id, 'needs_review')}
-                                className={cn(
-                                  'rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer',
-                                  finding.reviewStatus === 'needs_review'
-                                    ? 'bg-amber-600 text-white'
-                                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-amber-50 hover:text-amber-800'
-                                )}
-                              >
-                                ⚠️ Needs Review
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => reviewFinding(finding.id, 'not_a_discrepancy')}
-                                className={cn(
-                                  'rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer',
-                                  finding.reviewStatus === 'not_a_discrepancy'
-                                    ? 'bg-slate-700 text-white'
-                                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                                )}
-                              >
-                                ✕ Not a Conflict
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 6: UPLOADED DOCUMENTS & EVIDENCE                      */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'evidence') && (
-            <section className="space-y-4 pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-teal-500" />
-                  <h3 className="text-base font-bold text-slate-900">6. Uploaded Documents &amp; Files</h3>
-                  <span className="text-xs font-normal text-slate-500">
+                  <h3 className="text-base font-bold text-slate-900">4. Uploaded Documents &amp; Files</h3>
+                  <span className="text-xs font-medium text-slate-600">
                     ({filteredDocuments.length} file{filteredDocuments.length === 1 ? '' : 's'})
                   </span>
                 </div>
@@ -1788,7 +1365,7 @@ export function AnalysisWorkspace({
                   return (
                     <div
                       key={doc.id}
-                      className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-slate-300 space-y-3"
+                      className="min-w-0 space-y-3 rounded-xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-2.5">
@@ -1812,7 +1389,7 @@ export function AnalysisWorkspace({
                               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
                                 {t(`docSummary.${filteredDocuments.indexOf(doc)}.apparentType`, summary?.apparentType || 'General Record')}
                               </span>
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs font-medium text-slate-700">
                                 {doc.pageCount ?? 1} page{doc.pageCount === 1 ? '' : 's'}
                               </span>
                             </div>
@@ -1832,7 +1409,7 @@ export function AnalysisWorkspace({
                       {/* Text snippet preview */}
                       {summary?.summary && (
                         <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 line-clamp-2">
-                          {t(`docSummary.${filteredDocuments.indexOf(doc)}.summary`, (summary.summary as { passage?: string })?.passage || '')}
+                          {cleanOcrText(t(`docSummary.${filteredDocuments.indexOf(doc)}.summary`, (summary.summary as { passage?: string })?.passage || ''))}
                         </p>
                       )}
 
@@ -1843,7 +1420,7 @@ export function AnalysisWorkspace({
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+                      <div className="flex items-center justify-between pt-1 text-[11px] font-medium text-slate-700">
                         <span>Processed: {doc.processedAt ? new Date(doc.processedAt).toLocaleDateString() : 'Ready'}</span>
                         <button
                           type="button"
@@ -1863,147 +1440,116 @@ export function AnalysisWorkspace({
                 })}
               </div>
 
-              {/* Verified Facts & Important Statements */}
-              <div className="pt-4 space-y-3">
-                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Quote className="h-4 w-4 text-teal" />
-                  Key Facts &amp; Quotes Extracted
-                </h4>
-
-                {filteredFacts.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">No key facts matching your query.</p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filteredFacts.slice(0, 8).map((fact, index) => (
-                      <div key={index} className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          &ldquo;{t(`fact.${index}`, fact.passage)}&rdquo;
-                        </p>
-                        <div className="flex justify-end">
-                          <SourceBadge source={fact} onOpen={openSource} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </section>
-          )}
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 7: COURT ORDERS & PROCEDURAL HISTORY                  */}
+          {/* SECTION 5: KEY FACTS & QUOTES EXTRACTED                       */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'orders') && (
-            <section className="space-y-3.5 pt-2 border-t border-slate-200/80">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-teal-500" />
-                <h3 className="text-base font-bold text-slate-900">7. Court Orders &amp; Procedural History</h3>
-                <span className="text-xs font-normal text-slate-500">
-                  ({filteredOrders.length} record{filteredOrders.length === 1 ? '' : 's'})
-                </span>
-              </div>
-
-              {filteredOrders.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-xs text-slate-500">
-                  No prior court orders or procedural directions were found in the uploaded documents.
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {filteredOrders.map((order, idx) => (
-                    <div key={idx} className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                          <Gavel className="h-4 w-4 text-teal" />
-                          <span>Court Direction / Ruling</span>
-                        </div>
-                        <SourceBadge source={order} onOpen={openSource} />
-                      </div>
-                      <p className="text-xs text-slate-700 leading-relaxed">
-                        &ldquo;{t(`order.${idx}`, order.passage)}&rdquo;
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <section id="analysis-section-facts" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+              <h3 className="mb-4 border-b border-slate-100 pb-3 text-base font-bold text-slate-900">5. Key Facts &amp; Quotes Extracted</h3>
+              <ExtractedQuotesSection
+                rawQuotes={filteredFacts.map((fact, index) => ({
+                  ...fact,
+                  passage: t(`fact.${index}`, fact.passage),
+                }))}
+                onOpen={openSource}
+              />
             </section>
-          )}
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 8: MISSING OR UNCLEAR DETAILS                         */}
+          {/* SECTION 6: PAGE CITATIONS & SOURCE INDEX                     */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'orders') && (
-            <section className="space-y-3 pt-2 border-t border-slate-200/80">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-400" />
-                <h3 className="text-base font-bold text-slate-900">8. Missing Details &amp; Unclear Scans</h3>
-              </div>
-
-              {synopsis.missingOrUnclear.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs text-slate-600 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>All uploaded pages were clear and readable. No processing errors reported.</span>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-2 text-xs text-amber-900">
-                  <p className="font-semibold flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                    Please check the following items:
-                  </p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {synopsis.missingOrUnclear.map((item, idx) => (
-                      <li key={idx}>{t(`missing.${idx}`, item)}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 10: PAGE CITATIONS & SOURCE INDEX                     */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {(activeSection === 'all' || activeSection === 'orders') && (
-            <section className="space-y-3 pt-2 border-t border-slate-200/80">
-              <div className="flex items-center justify-between">
+            <section id="analysis-section-citations" className="scroll-mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-slate-400" />
-                  <h3 className="text-base font-bold text-slate-900">10. Page Citations &amp; Source Index</h3>
+                  <h3 className="text-base font-bold text-slate-900">6. Page Citations &amp; Source Index</h3>
                 </div>
-                <span className="text-xs text-slate-500">
-                  {synopsis.sourceIndex.filter((s) => s.readable).length} of {synopsis.sourceIndex.length} pages verified
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                  <span aria-hidden="true">🟢</span>
+                  {synopsis.sourceIndex.filter((s) => s.readable).length} of {synopsis.sourceIndex.length} Pages Verified
+                  <span className="text-emerald-600">·</span>
+                  {synopsis.sourceIndex.length > 0 && synopsis.sourceIndex.every((source) => source.readable)
+                    ? 'High Quality OCR'
+                    : 'Review Scan Quality'}
                 </span>
               </div>
 
+              {synopsis.missingOrUnclear.length > 0 && (
+                <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      Pages or records needing review
+                    </p>
+                    <ul className="list-disc space-y-1 pl-5">
+                      {synopsis.missingOrUnclear.map((item, idx) => (
+                        <li key={idx}>{t(`missing.${idx}`, item)}</li>
+                      ))}
+                    </ul>
+                </div>
+              )}
+
               {synopsis.sourceIndex.length === 0 ? (
-                <p className="text-xs text-slate-500">No page references available.</p>
+                <p className="text-xs font-medium text-slate-600">No page references available.</p>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {synopsis.sourceIndex.map((source, index) => (
-                    <button
-                      key={`${source.documentId}-${source.pageNumber}-${index}`}
-                      type="button"
-                      onClick={() => openSource({
-                        documentId: source.documentId,
-                        documentName: source.documentName,
-                        pageNumber: source.pageNumber,
-                        passage: 'Viewing source page.',
-                      })}
-                      className="flex items-center justify-between rounded-lg border border-slate-200/90 bg-slate-50/70 px-3 py-2 text-xs text-slate-700 hover:bg-teal-50 hover:border-teal-200 transition-all text-left cursor-pointer"
-                    >
-                      <div className="truncate mr-1">
-                        <span className="font-medium truncate block max-w-[120px]">{source.documentName}</span>
-                        <span className="text-[10px] text-slate-400">p. {source.pageNumber}</span>
-                      </div>
-                      <span className={cn(
-                        'h-2 w-2 rounded-full shrink-0',
-                        source.readable ? 'bg-emerald-500' : 'bg-rose-500'
-                      )} title={source.readable ? 'Readable' : 'Unreadable'} />
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-5">
+                  {synopsis.sourceIndex.map((source, index) => {
+                    const pageFact = synopsis.facts.find(
+                      (fact) => fact.documentId === source.documentId && fact.pageNumber === source.pageNumber
+                    )
+                    const category = categorizeLegalText(pageFact?.passage ?? '').category
+                    const topicPresentation = {
+                      JURISDICTION: { label: '🚨 Jurisdiction', border: 'border-l-red-500' },
+                      COMPENSATION: { label: '💰 Compensation', border: 'border-l-amber-500' },
+                      PROCEDURE: { label: '📜 Procedural', border: 'border-l-blue-500' },
+                      LIMITATION: { label: '📅 Limitation', border: 'border-l-emerald-500' },
+                      GENERAL: { label: '📋 Overview', border: 'border-l-slate-300' },
+                    }[category]
+
+                    return (
+                      <button
+                        key={`${source.documentId}-${source.pageNumber}-${index}`}
+                        type="button"
+                        onClick={() => {
+                          window.dispatchEvent(new CustomEvent('openPdfPage', {
+                            detail: { page: source.pageNumber },
+                          }))
+                          openSource({
+                            documentId: source.documentId,
+                            documentName: source.documentName,
+                            pageNumber: source.pageNumber,
+                            passage: 'Viewing source page.',
+                          })
+                        }}
+                        className={`group flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border border-l-4 border-slate-200/80 bg-slate-50/80 p-4 text-left transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md sm:p-5 ${topicPresentation.border}`}
+                      >
+                        <div className="flex w-full min-w-0 items-start justify-between gap-2">
+                          <span className="flex min-w-0 items-center gap-1.5 truncate text-xs font-medium text-slate-700">
+                            <FileIcon className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-slate-600" />
+                            <span className="truncate">{source.documentName}</span>
+                          </span>
+                          <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-600">
+                            p. {source.pageNumber}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-xs font-medium text-slate-600">
+                            p. {source.pageNumber} · {topicPresentation.label}
+                          </span>
+                          <span
+                            className={cn(
+                              'h-2 w-2 shrink-0 rounded-full',
+                              source.readable ? 'bg-emerald-500' : 'bg-rose-500'
+                            )}
+                            title={source.readable ? 'Verified page' : 'Page needs scan review'}
+                          />
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </section>
-          )}
 
           {/* ── Document Preview Modal ──────────────────────────────────── */}
           <Dialog open={selectedSource !== null} onOpenChange={(open) => { if (!open) setSelectedSource(null) }}>

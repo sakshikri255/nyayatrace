@@ -13,33 +13,11 @@ import { OverviewTab } from './tabs/OverviewTab'
 import { DocumentsTab } from './tabs/DocumentsTab'
 import { FindingsTab } from './tabs/FindingsTab'
 import { HearingsTab } from './tabs/HearingsTab'
-import { OrdersTab } from './tabs/OrdersTab'
 import { BriefTab } from './tabs/BriefTab'
 import { ReportTab } from './tabs/ReportTab'
-import { AnalysisWorkspace } from './tabs/AnalysisWorkspace'
 import { MasterChronologyView } from '@/components/progress/MasterChronologyView'
+import { AnalysisWorkspace } from './tabs/AnalysisWorkspace'
 import { LegalSectionsTab } from './tabs/LegalSectionsTab'
-
-type JudicialOrder = {
-  id: number
-  caseId: number
-  orderDate: string
-  orderType: string
-  summary: string | null
-  issuedBy: string | null
-  documentId: number | null
-  createdAt: string | null
-}
-
-type BailCondition = {
-  id: number
-  caseId: number
-  conditionText: string
-  conditionType: string
-  status: string
-  orderId: number | null
-  createdAt: string | null
-}
 
 interface CaseDetailTabsProps {
   caseData: CaseDetail
@@ -47,19 +25,16 @@ interface CaseDetailTabsProps {
   findings: FindingRow[]
   hearings: HearingRow[]
   hearingChartData?: HearingChartPoint[]
-  orders: JudicialOrder[]
-  conditions: BailCondition[]
 }
 
 type TabId =
   | 'overview'
   | 'documents'
-  | 'synopsis'
   | 'chronology'
+  | 'synopsis'
   | 'findings'
   | 'sections'
   | 'hearings'
-  | 'orders'
   | 'brief'
   | 'report'
 
@@ -75,8 +50,6 @@ export function CaseDetailTabs({
   findings,
   hearings,
   hearingChartData,
-  orders,
-  conditions,
 }: CaseDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview')
 
@@ -90,11 +63,11 @@ export function CaseDetailTabs({
         [
           'overview',
           'documents',
+          'chronology',
           'synopsis',
           'findings',
           'sections',
           'hearings',
-          'orders',
           'brief',
           'report',
         ].includes(tabParam)
@@ -120,7 +93,6 @@ export function CaseDetailTabs({
       { id: 'findings', label: 'Findings', count: findings.length, badgeClassName: 'text-amber-700 bg-amber-50 border border-amber-200' },
       { id: 'sections', label: 'Legal Sections' },
       { id: 'hearings', label: 'Hearings', count: hearings.length },
-      { id: 'orders', label: 'Orders', count: orders.length },
       { id: 'brief', label: 'Brief' },
       { id: 'report', label: 'Report' },
     ]
@@ -131,7 +103,11 @@ export function CaseDetailTabs({
         onValueChange={(v) => setActiveTab(v as TabId)}
         className="w-full"
       >
-        <div className="relative mb-5 w-full max-w-full overflow-x-auto border-b border-slate-200 pb-0 flex items-center gap-1 scrollbar-none">
+        <div
+          aria-label="Case sections"
+          className="relative mb-5 flex w-full min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap rounded-xl border border-slate-200/80 bg-slate-100 px-1 py-2 scrollbar-none scroll-smooth"
+          tabIndex={0}
+        >
           {TAB_ITEMS.map((tab) => {
             const isActive = activeTab === tab.id
             const Icon = tab.icon
@@ -142,32 +118,26 @@ export function CaseDetailTabs({
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'relative flex-none px-3.5 py-2.5 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer outline-none select-none',
-                  isActive ? 'text-teal font-bold' : 'text-slate-600 hover:text-slate-900'
+                  'relative flex flex-none cursor-pointer select-none items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium outline-none transition-all',
+                  isActive
+                    ? 'bg-white font-semibold text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
                 )}
               >
-                {Icon && <Icon className={cn('w-3.5 h-3.5 transition-colors', isActive ? 'text-teal' : 'text-slate-400')} />}
+                {Icon && <Icon className={cn('h-3.5 w-3.5 transition-colors', isActive ? 'text-teal' : 'text-slate-400')} />}
                 <span>{tab.label}</span>
 
                 {typeof tab.count === 'number' && tab.count > 0 && (
                   <span
                     className={cn(
-                      'rounded-full px-1.5 py-0.2 text-[10px] font-bold transition-all',
-                      tab.badgeClassName || 'bg-slate-100 text-slate-500',
-                      isActive && 'scale-105'
+                      'rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-all',
+                      isActive
+                        ? 'bg-slate-100 text-slate-600'
+                        : tab.badgeClassName || 'bg-slate-200/70 text-slate-500'
                     )}
                   >
                     {tab.count}
                   </span>
-                )}
-
-                {/* Animated Sliding Indicator Line */}
-                {isActive && (
-                  <motion.div
-                    layoutId="caseDetailActiveTabIndicator"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal rounded-full shadow-[0_1px_6px_rgba(13,148,136,0.35)]"
-                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  />
                 )}
               </button>
             )
@@ -195,23 +165,22 @@ export function CaseDetailTabs({
           {activeTab === 'documents' && (
             <DocumentsTab caseId={caseData.id} initialDocuments={documents} />
           )}
-          {activeTab === 'synopsis' && (
-            <AnalysisWorkspace
-              caseData={caseData}
-              documents={documents}
-              onUploadDocuments={() => setActiveTab('documents')}
-              onGoToChronology={() => setActiveTab('chronology')}
-            />
-          )}
-          {activeTab === 'findings' && (
-            <FindingsTab caseId={caseData.id} findings={findings} />
-          )}
           {activeTab === 'chronology' && (
             <MasterChronologyView
               caseId={caseData.id}
               caseNumber={caseData.caseNumber}
               caseTitle={caseData.title}
             />
+          )}
+          {activeTab === 'synopsis' && (
+            <AnalysisWorkspace
+              caseData={caseData}
+              documents={documents}
+              onUploadDocuments={() => setActiveTab('documents')}
+            />
+          )}
+          {activeTab === 'findings' && (
+            <FindingsTab caseId={caseData.id} findings={findings} />
           )}
           {activeTab === 'sections' && (
             <LegalSectionsTab caseData={caseData} />
@@ -222,9 +191,6 @@ export function CaseDetailTabs({
               chartData={hearingChartData}
               caseTitle={caseData.title}
             />
-          )}
-          {activeTab === 'orders' && (
-            <OrdersTab caseId={caseData.id} orders={orders} conditions={conditions} />
           )}
           {activeTab === 'brief' && (
             <BriefTab caseId={caseData.id} />
