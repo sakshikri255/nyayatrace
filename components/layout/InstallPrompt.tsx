@@ -56,10 +56,10 @@ export function InstallPrompt() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -80, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed top-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-teal/30 bg-charcoal/95 px-4 py-3 text-xs text-slate-200 shadow-2xl backdrop-blur-sm max-w-xs"
+          className="fixed top-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-gold/30 bg-midnight-900/95 px-4 py-3 text-xs text-slate-200 shadow-2xl backdrop-blur-sm max-w-xs"
           role="alert"
         >
-          <Download size={16} className="text-teal shrink-0" />
+          <Download size={16} className="text-gold shrink-0" />
           <span className="flex-1">
             Install NyayaTrace for offline access
           </span>
@@ -67,7 +67,7 @@ export function InstallPrompt() {
             <button
               type="button"
               onClick={handleInstall}
-              className="rounded-md bg-teal px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-teal-600 transition-colors"
+              className="rounded-md bg-gradient-to-r from-gold-muted via-gold to-gold-light px-2.5 py-1 text-[11px] font-semibold text-midnight-950 hover:brightness-110 transition-colors"
             >
               Install
             </button>

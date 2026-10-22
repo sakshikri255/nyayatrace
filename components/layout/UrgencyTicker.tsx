@@ -15,15 +15,15 @@ interface UrgencyTickerProps {
 }
 
 const LEVEL_STYLES = {
-  critical: 'text-rose-300',
-  warning: 'text-amber-300',
-  info: 'text-sky-300',
+  critical: 'text-rose-400 hover:text-rose-300',
+  warning: 'text-gold-light hover:text-gold',
+  info: 'text-slate-300 hover:text-white',
 }
 
 const LEVEL_DOTS = {
   critical: '🚨',
   warning: '⚠️',
-  info: '🔵',
+  info: '⚖️',
 }
 
 export function UrgencyTicker({ items }: UrgencyTickerProps) {
@@ -32,14 +32,13 @@ export function UrgencyTicker({ items }: UrgencyTickerProps) {
   return (
     <div
       className={cn(
-        'no-print flex-shrink-0 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900',
-        'border-b border-slate-700/60 px-4 py-1.5 overflow-hidden'
+        'no-print flex-shrink-0 bg-midnight-950/95 border-b border-white/8 px-4 py-1.5 overflow-hidden backdrop-blur-md'
       )}
       role="marquee"
       aria-label="Urgent case alerts"
     >
       <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 shrink-0 mr-4 border-r border-slate-700 pr-4">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gold shrink-0 mr-4 border-r border-white/10 pr-4">
           Alerts
         </span>
         <div className="flex items-center gap-0 flex-nowrap">
@@ -48,7 +47,7 @@ export function UrgencyTicker({ items }: UrgencyTickerProps) {
               <Link
                 href={item.href}
                 className={cn(
-                  'text-xs font-medium transition-opacity hover:opacity-80 flex items-center gap-1.5 px-2 whitespace-nowrap',
+                  'text-xs font-medium transition-colors flex items-center gap-1.5 px-2 whitespace-nowrap',
                   LEVEL_STYLES[item.level]
                 )}
               >
@@ -56,7 +55,7 @@ export function UrgencyTicker({ items }: UrgencyTickerProps) {
                 {item.label}
               </Link>
               {idx < items.length - 1 && (
-                <span className="text-slate-600 text-xs px-1 select-none">·</span>
+                <span className="text-white/20 text-xs px-1 select-none">·</span>
               )}
             </span>
           ))}

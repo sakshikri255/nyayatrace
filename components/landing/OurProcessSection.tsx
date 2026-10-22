@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef, useState } from 'react'
-import { motion, useInView, useReducedMotion, AnimatePresence } from 'framer-motion'
+import { motion, useInView, useReducedMotion } from 'framer-motion'
 import {
   UploadCloud,
   Layers,

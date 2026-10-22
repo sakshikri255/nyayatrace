@@ -27,7 +27,7 @@ interface CommandItem {
   badge?: string
 }
 
-export function CommandPalette() {
+export function CommandPalette({ dark }: { dark?: boolean } = {}) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<CommandItem[]>([])
@@ -248,20 +248,25 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden md:flex h-9 items-center gap-2.5 rounded-lg border border-slate-200 dark:border-border-dark bg-slate-50/90 dark:bg-charcoal/80 hover:bg-slate-100/90 hover:border-teal/40 px-3.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-offwhite transition-all shadow-2xs group w-48 lg:w-64 xl:w-72"
+        className={cn(
+          'hidden md:flex h-9 items-center gap-2.5 rounded-lg border px-3.5 text-xs transition-all shadow-2xs group w-48 lg:w-64 xl:w-72',
+          dark
+            ? 'border-white/12 bg-white/6 hover:bg-white/10 hover:border-gold/40 text-slate-400 hover:text-slate-200'
+            : 'border-white/12 bg-white/6 hover:bg-white/10 hover:border-gold/40 text-slate-400 hover:text-slate-200'
+        )}
       >
-        <Search className="h-3.5 w-3.5 text-teal group-hover:scale-110 transition-transform" />
-        <span className="flex-1 text-left truncate text-slate-500 font-normal">Search records, laws, text…</span>
-        <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-mono text-slate-500 shadow-2xs">
+        <Search className="h-3.5 w-3.5 group-hover:scale-110 transition-transform text-gold" />
+        <span className="flex-1 text-left truncate font-normal">Search records, laws, text…</span>
+        <kbd className="rounded-md border border-white/12 bg-white/5 px-1.5 py-0.5 text-[10px] font-mono shadow-2xs text-slate-400">
           ⌘K
         </kbd>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl overflow-hidden p-0 bg-midnight-900 border-border-dark text-slate-100 shadow-2xl">
+        <DialogContent className="max-w-2xl overflow-hidden p-0 bg-midnight-900 border-white/10 text-slate-100 shadow-2xl">
           {/* Search bar header */}
-          <div className="flex items-center border-b border-border-dark px-4 py-3 bg-midnight-950">
-            <Search className="h-5 w-5 text-teal shrink-0" />
+          <div className="flex items-center border-b border-white/10 px-4 py-3 bg-midnight-950">
+            <Search className="h-5 w-5 text-gold shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -286,7 +291,7 @@ export function CommandPalette() {
           </div>
 
           {/* Result items */}
-          <div className="max-h-96 overflow-y-auto p-2 divide-y divide-slate-100">
+          <div className="max-h-96 overflow-y-auto p-2 divide-y divide-white/5">
             {loading ? (
               <div className="py-12 text-center text-xs text-slate-400">Searching records...</div>
             ) : items.length === 0 ? (
@@ -304,7 +309,7 @@ export function CommandPalette() {
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={cn(
                       'flex items-center justify-between rounded-lg px-3 py-2.5 text-left cursor-pointer transition-colors',
-                      isSelected ? 'bg-teal/10 text-teal-900' : 'hover:bg-slate-50 text-slate-700'
+                      isSelected ? 'bg-gold/10 text-midnight-900' : 'hover:bg-white/5 text-slate-300'
                     )}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
@@ -312,19 +317,19 @@ export function CommandPalette() {
                         className={cn(
                           'flex h-8 w-8 shrink-0 items-center justify-center rounded-md border',
                           isSelected
-                            ? 'border-teal bg-teal text-white'
-                            : 'border-slate-200 bg-white text-slate-600'
+                            ? 'border-gold bg-gold/20 text-gold-light'
+                            : 'border-white/10 bg-white/5 text-slate-400'
                         )}
                       >
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-xs truncate text-slate-900">
+                          <span className="font-semibold text-xs truncate text-slate-100">
                             {item.title}
                           </span>
                           {item.badge && (
-                            <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-medium text-slate-600 border border-slate-200">
+                            <span className="rounded bg-white/8 px-1.5 py-0.2 text-[10px] font-medium text-slate-400 border border-white/10">
                               {item.badge}
                             </span>
                           )}
@@ -336,7 +341,7 @@ export function CommandPalette() {
                         )}
                       </div>
                     </div>
-                    {isSelected && <ArrowRight className="h-4 w-4 text-teal shrink-0 ml-2" />}
+                    {isSelected && <ArrowRight className="h-4 w-4 text-gold shrink-0 ml-2" />}
                   </div>
                 )
               })
@@ -344,17 +349,17 @@ export function CommandPalette() {
           </div>
 
           {/* Footer hotkeys hint */}
-          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-500">
+          <div className="flex items-center justify-between border-t border-white/8 bg-midnight-950 px-4 py-2 text-[11px] text-slate-500">
             <div className="flex items-center gap-3">
               <span>
-                <kbd className="rounded border bg-white px-1 font-mono text-[10px]">↑</kbd>{' '}
-                <kbd className="rounded border bg-white px-1 font-mono text-[10px]">↓</kbd> to navigate
+                <kbd className="rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-slate-400">↑</kbd>{' '}
+                <kbd className="rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-slate-400">↓</kbd> to navigate
               </span>
               <span>
-                <kbd className="rounded border bg-white px-1 font-mono text-[10px]">↵</kbd> to select
+                <kbd className="rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-slate-400">↵</kbd> to select
               </span>
             </div>
-            <span className="font-medium text-teal-800">NyayaTrace Command Bar</span>
+            <span className="font-medium text-gold-muted">NyayaTrace Command Bar</span>
           </div>
         </DialogContent>
       </Dialog>

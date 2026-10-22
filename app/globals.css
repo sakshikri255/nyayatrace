@@ -17,22 +17,22 @@ html {
   background: var(--muted, #1E293B);
 }
 ::-webkit-scrollbar-thumb {
-  background: #0D9488;
+  background: #C5A880;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #14B8A6;
+  background: #E5C378;
 }
 
 /* ── Design token custom properties ────────────────────────── */
 :root {
-  --nt-navy: #0F172A;
-  --nt-charcoal: #1E293B;
+  --nt-navy: #05070B;
+  --nt-charcoal: #0B0F17;
   --nt-offwhite: #F8FAFC;
-  --nt-teal: #0D9488;
-  --nt-teal-light: #14B8A6;
+  --nt-teal: #C5A880;
+  --nt-teal-light: #E5C378;
   --nt-muted: #94A3B8;
-  --nt-border-dark: #334155;
+  --nt-border-dark: rgba(255, 255, 255, 0.1);
 }
 
 /* ── Hero pulse animation ───────────────────────────────────── */
@@ -176,14 +176,14 @@ html {
     --chart-4: 229 195 120;
     --chart-5: 158 131 94;
     --radius: 0.625rem;
-    --sidebar-background: 15 23 42;    /* #0F172A */
+    --sidebar-background: 5 7 11;       /* #05070B midnight-950 */
     --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 13 148 136;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 30 41 59;
-    --sidebar-accent-foreground: 248 250 252;
-    --sidebar-border: 51 65 85;
-    --sidebar-ring: 13 148 136;
+    --sidebar-primary: 197 168 128;     /* #C5A880 gold */
+    --sidebar-primary-foreground: 5 7 11;
+    --sidebar-accent: 16 22 34;
+    --sidebar-accent-foreground: 229 195 120; /* #E5C378 gold-light */
+    --sidebar-border: 255 255 255;
+    --sidebar-ring: 197 168 128;
     /* page surface tokens */
     --page-bg: #F8FAFC;
     --section-card-bg: #FFFFFF;
@@ -221,14 +221,14 @@ html {
     --chart-3: 20 184 166;
     --chart-4: 229 195 120;
     --chart-5: 158 131 94;
-    --sidebar-background: 15 23 42;
+    --sidebar-background: 5 7 11;       /* #05070B midnight-950 */
     --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 13 148 136;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 30 41 59;
-    --sidebar-accent-foreground: 248 250 252;
-    --sidebar-border: 51 65 85;
-    --sidebar-ring: 13 148 136;
+    --sidebar-primary: 197 168 128;     /* #C5A880 gold */
+    --sidebar-primary-foreground: 5 7 11;
+    --sidebar-accent: 16 22 34;
+    --sidebar-accent-foreground: 229 195 120; /* #E5C378 gold-light */
+    --sidebar-border: 255 255 255;
+    --sidebar-ring: 197 168 128;
     /* page surface tokens */
     --page-bg: #05070B;
     --section-card-bg: #0B0F17;

@@ -4,7 +4,7 @@ import { useTheme } from 'next-themes'
 import { SunIcon, MoonIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-export function ThemeToggle() {
+export function ThemeToggle({ dark }: { dark?: boolean } = {}) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -13,7 +13,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)]" />
+      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${dark ? 'border-white/15' : 'border-[var(--section-card-border)]'}`} />
     )
   }
 
@@ -25,7 +25,11 @@ export function ThemeToggle() {
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:bg-[var(--muted)] hover:text-[var(--section-heading)] transition-colors"
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors ${
+        dark
+          ? 'border-white/15 text-slate-400 hover:bg-white/8 hover:text-slate-200'
+          : 'border-[var(--section-card-border)] text-[var(--section-subheading)] hover:bg-[var(--muted)] hover:text-[var(--section-heading)]'
+      }`}
     >
       {isDark ? (
         <SunIcon className="h-4 w-4" />

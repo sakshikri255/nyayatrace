@@ -64,14 +64,14 @@ export function Sidebar() {
         type="button"
         aria-label="Close navigation"
         onClick={() => setMobileOpen(false)}
-        className={cn('fixed inset-0 z-40 hidden bg-slate-950/50 md:hidden', mobileOpen && 'block')}
+        className={cn('fixed inset-0 z-40 hidden bg-black/70 backdrop-blur-xs md:hidden', mobileOpen && 'block')}
       />
       <motion.aside
         variants={sidebarVariants}
         animate={collapsed ? 'collapsed' : 'expanded'}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className={cn(
-          'relative hidden h-full shrink-0 flex-col overflow-hidden border-r border-border-dark bg-navy md:flex',
+          'relative hidden h-full shrink-0 flex-col overflow-hidden border-r border-white/10 bg-midnight-950 md:flex',
           mobileOpen && 'fixed inset-y-0 left-0 z-50 flex w-60 shadow-2xl md:relative md:inset-auto md:z-auto md:shadow-none'
         )}
         style={{ minWidth: 0 }}
@@ -79,18 +79,18 @@ export function Sidebar() {
         {/* ── Logo ── */}
         <Link
           href="/overview"
-          className="flex items-center h-14 px-4 border-b border-border-dark shrink-0 hover:opacity-90 transition-opacity"
+          className="flex items-center h-14 px-4 border-b border-white/10 shrink-0 hover:opacity-90 transition-opacity"
         >
           {collapsed ? (
-            <NyayaTraceLogo size="sm" variant="light" />
+            <NyayaTraceLogo size="sm" variant="gold" />
           ) : (
-            <NyayaTraceLogo size="lg" variant="light" />
+            <NyayaTraceLogo size="lg" variant="gold" />
           )}
         </Link>
 
         {/* ── Navigation ── */}
         <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
-          <ul className="space-y-0.5 px-2">
+          <ul className="space-y-1 px-2.5">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon
               const isActive =
@@ -101,12 +101,12 @@ export function Sidebar() {
                   {isActive && (
                     <motion.div
                       layoutId="activeIndicator"
-                      className="absolute inset-0 rounded-md bg-charcoal"
+                      className="absolute inset-0 rounded-lg bg-gradient-to-r from-gold/15 via-gold/[0.08] to-transparent border border-gold/30 shadow-[0_0_12px_rgba(197,168,128,0.12)]"
                       transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                     />
                   )}
                   {isActive && (
-                    <div className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-teal" />
+                    <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full bg-gradient-to-b from-gold-light via-gold to-gold-dark shadow-[0_0_8px_rgba(229,195,120,0.6)]" />
                   )}
 
                   <Tooltip>
@@ -117,26 +117,26 @@ export function Sidebar() {
                           prefetch={true}
                           onClick={() => setMobileOpen(false)}
                           className={cn(
-                            'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                            'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                             isActive
-                              ? 'text-teal-light'
-                              : 'text-muted hover:text-offwhite hover:bg-charcoal/60'
+                              ? 'text-gold-light font-semibold'
+                              : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05]'
                           )}
                         >
                           <div className="relative shrink-0">
                             <Icon
                               size={18}
                               className={cn(
-                                'transition-colors',
-                                isActive ? 'text-teal-light' : 'text-muted'
+                                'transition-colors duration-200',
+                                isActive ? 'text-gold-light' : 'text-slate-400 group-hover:text-gold-light/90'
                               )}
                             />
                             {item.href === '/bail-briefs' && hasUrgentBail && (
-                              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-gold-light shadow-[0_0_6px_rgba(229,195,120,0.9)] animate-pulse" />
                             )}
                           </div>
                           {!collapsed && (
-                            <span className="overflow-hidden whitespace-nowrap">
+                            <span className="overflow-hidden whitespace-nowrap tracking-wide">
                               {item.label}
                             </span>
                           )}
@@ -144,7 +144,7 @@ export function Sidebar() {
                       }
                     />
                     {collapsed && (
-                      <TooltipContent side="right">
+                      <TooltipContent side="right" className="bg-midnight-900 border-white/10 text-slate-100">
                         {item.label}
                       </TooltipContent>
                     )}
@@ -156,11 +156,11 @@ export function Sidebar() {
         </nav>
 
         {/* ── Bottom Section ── */}
-        <div className="border-t border-border-dark px-2 py-3 shrink-0">
+        <div className="border-t border-white/10 px-2.5 py-3 shrink-0">
           {/* Collapse toggle */}
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="hidden w-full items-center justify-center rounded-md py-2 text-muted transition-colors hover:bg-charcoal/60 hover:text-offwhite md:flex"
+            className="hidden w-full items-center justify-center rounded-lg py-2 text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-gold-light md:flex"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <motion.div

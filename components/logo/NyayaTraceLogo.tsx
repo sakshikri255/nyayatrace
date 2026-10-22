@@ -2,14 +2,14 @@ import React from 'react'
 
 interface NyayaTraceLogoProps {
   size?: 'sm' | 'lg'
-  /** 'light' = white wordmark (dark bg), 'dark' = navy wordmark, 'auth' = warm ivory/gold (auth pages) */
-  variant?: 'light' | 'dark' | 'auth'
+  /** 'light' = white wordmark (dark bg), 'dark' = navy wordmark, 'auth' = warm ivory/gold (auth pages), 'gold' = black/gold/white theme */
+  variant?: 'light' | 'dark' | 'auth' | 'gold'
   className?: string
 }
 
 export function NyayaTraceLogo({
   size = 'lg',
-  variant = 'light',
+  variant = 'gold',
   className = '',
 }: NyayaTraceLogoProps) {
   const isSmall = size === 'sm'
@@ -18,16 +18,27 @@ export function NyayaTraceLogo({
 
   // "Nyaya" base color
   const wordmarkColor =
-    variant === 'light' ? '#F8FAFC' :
     variant === 'auth'  ? '#2C1F0E' :
-    '#0F172A'
+    variant === 'dark'  ? '#0F172A' :
+    '#FFFFFF'
 
   // Icon structural color (pillar, beam, base, pivot)
-  const teal = variant === 'auth' ? '#7A6240' : '#0D9488'
+  const teal =
+    variant === 'auth' ? '#7A6240' :
+    variant === 'dark' ? '#0F172A' :
+    '#C5A880' // Rich warm gold
+
   // Icon accent color (chains, pans)
-  const tealLight = variant === 'auth' ? '#C5A880' : '#14B8A6'
+  const tealLight =
+    variant === 'auth' ? '#C5A880' :
+    variant === 'dark' ? '#334155' :
+    '#E5C378' // Radiant light gold
+
   // "Trace" accent word
-  const accentColor = variant === 'auth' ? '#C5A880' : teal
+  const accentColor =
+    variant === 'auth' ? '#C5A880' :
+    variant === 'dark' ? '#C5A880' :
+    '#E5C378' // Light gold
 
   return (
     <div

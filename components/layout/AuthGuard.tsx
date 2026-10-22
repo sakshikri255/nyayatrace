@@ -37,11 +37,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (status === 'checking') {
     return (
-      <div className="min-h-screen bg-navy flex flex-col items-center justify-center gap-4">
-        <NyayaTraceLogo size="lg" variant="light" />
+      <div className="min-h-screen bg-midnight-950 flex flex-col items-center justify-center gap-4">
+        <NyayaTraceLogo size="lg" variant="gold" />
         <div className="flex items-center gap-2 mt-2">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-teal/30 border-t-teal" />
-          <span className="text-xs text-muted animate-pulse">Loading workspace…</span>
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
+          <span className="text-xs text-slate-400 animate-pulse">Loading workspace…</span>
         </div>
       </div>
     )
