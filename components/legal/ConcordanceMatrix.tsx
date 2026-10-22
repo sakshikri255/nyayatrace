@@ -14,7 +14,6 @@ import {
   Gavel,
   AlertCircle,
   FileText,
-  Scale,
 } from 'lucide-react'
 import { LEGAL_SECTIONS_DB, type LegalSectionMapping } from '@/lib/legal/sections'
 import { cn } from '@/lib/utils'
@@ -70,14 +69,10 @@ function SectionCard({
   highlighted: boolean
 }) {
   const isNonBailable = item.bailable === 'Non-Bailable'
-  const isProcedure = item.category === 'procedure'
   const [copied, setCopied] = useState(false)
 
-  const oldCode = item.ipcSection.startsWith('CrPC') ? item.ipcSection : `IPC ${item.ipcSection}`
-  const newCode = item.bnsSection.startsWith('BNSS') ? item.bnsSection : `BNS ${item.bnsSection}`
-
   function handleCopy() {
-    const textToCopy = `${oldCode} ↔ ${newCode}: ${item.offense}`
+    const textToCopy = `IPC § ${item.ipcSection} ↔ BNS § ${item.bnsSection}: ${item.offense}`
     navigator.clipboard?.writeText(textToCopy).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
@@ -92,158 +87,102 @@ function SectionCard({
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'group relative flex flex-col justify-between rounded-2xl border transition-all duration-200 text-sm overflow-hidden',
-        // Distinct surface tint and border by legal classification
-        isProcedure
-          ? 'bg-gradient-to-b from-sky-500/[0.04] via-white to-white dark:from-sky-500/[0.08] dark:via-[#0B0F17] dark:to-[#0B0F17] border-slate-200/90 dark:border-white/10 hover:border-sky-400/70 hover:shadow-sky-500/10'
-          : isNonBailable
-          ? 'bg-gradient-to-b from-rose-500/[0.04] via-white to-white dark:from-rose-500/[0.08] dark:via-[#0B0F17] dark:to-[#0B0F17] border-slate-200/90 dark:border-white/10 hover:border-rose-400/70 hover:shadow-rose-500/10'
-          : 'bg-gradient-to-b from-emerald-500/[0.04] via-white to-white dark:from-emerald-500/[0.08] dark:via-[#0B0F17] dark:to-[#0B0F17] border-slate-200/90 dark:border-white/10 hover:border-emerald-400/70 hover:shadow-emerald-500/10',
-        // Real physical drop-shadow to clearly separate cards from canvas and each other
-        'shadow-[0_4px_16px_-2px_rgba(15,23,42,0.07),0_2px_4px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)]',
-        'hover:shadow-[0_12px_28px_-4px_rgba(15,23,42,0.13),0_4px_8px_-2px_rgba(15,23,42,0.06)] hover:-translate-y-0.5',
-        highlighted ? 'ring-2 ring-teal border-teal shadow-xl shadow-teal/15' : ''
+        'group relative flex flex-col justify-between rounded-xl border p-5 transition-all duration-200 text-sm bg-[var(--section-card-bg)] border-[var(--section-card-border)] hover:border-teal/40 hover:shadow-lg hover:shadow-teal/5',
+        highlighted ? 'ring-2 ring-teal border-teal shadow-md shadow-teal/10' : ''
       )}
     >
-      {/* ── Top Color Accent Strip (Immediate Visual Identification) ── */}
-      <div
-        className={cn(
-          'h-1.5 w-full shrink-0',
-          isProcedure
-            ? 'bg-gradient-to-r from-sky-500 via-indigo-500 to-sky-400'
-            : isNonBailable
-            ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500'
-            : 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500'
-        )}
-      />
-
-      <div className="p-5 sm:p-6 flex flex-col justify-between h-full">
-        <div>
-          {/* ── Top Row: Old Code ↔ New Code Banner + Status Chips ── */}
-          <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5 pb-3 border-b border-slate-100 dark:border-white/5">
-            {/* High-Contrast Dual Code Converter Pill */}
-            <div className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900/5 dark:bg-white/5 p-1 border border-slate-200/80 dark:border-white/10 shadow-2xs">
-              <span className="font-mono text-xs font-bold text-slate-900 dark:text-amber-300 bg-white dark:bg-slate-950 px-2.5 py-0.5 rounded border border-slate-200 dark:border-slate-800 shadow-xs">
-                {oldCode}
-              </span>
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-teal/15 text-teal shrink-0">
-                <ArrowRight className="h-3 w-3 stroke-[2.5]" />
-              </div>
-              <span className="font-mono text-xs font-bold text-white bg-teal px-2.5 py-0.5 rounded shadow-xs">
-                {newCode}
-              </span>
+      <div>
+        {/* ── Top Header: Old Law ↔ New Law Conversion Banner + Badges ── */}
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-3.5 pb-3.5 border-b border-[var(--section-card-border)]">
+          {/* Side-by-Side Dual Code conversion chip */}
+          <div className="inline-flex items-center gap-2 rounded-lg bg-muted/40 p-1 border border-[var(--section-card-border)]">
+            <span className="font-mono text-xs font-bold text-[var(--section-heading)] bg-navy/80 text-gold-light dark:text-gold-champagne px-2 py-0.5 rounded shadow-2xs">
+              IPC {item.ipcSection}
+            </span>
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-teal/15 text-teal">
+              <ArrowRight className="h-3 w-3 shrink-0" />
             </div>
-
-            {/* Badges: Bail, Cognizance, Compoundable, Copy */}
-            <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold border shadow-2xs',
-                  isProcedure
-                    ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800'
-                    : isNonBailable
-                    ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
-                    : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
-                )}
-              >
-                {isProcedure ? (
-                  <Scale className="h-3 w-3 text-sky-600 dark:text-sky-400" />
-                ) : isNonBailable ? (
-                  <ShieldAlert className="h-3 w-3 text-rose-600 dark:text-rose-400" />
-                ) : (
-                  <ShieldCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                )}
-                {item.bailable}
-              </span>
-
-              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold border bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                {item.cognizable}
-              </span>
-
-              {item.compoundable && (
-                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/60 dark:text-violet-300 dark:border-violet-800">
-                  Compoundable
-                </span>
-              )}
-
-              {/* Quick copy citation button */}
-              <button
-                type="button"
-                onClick={handleCopy}
-                title="Copy citation"
-                className="p-1 rounded-md text-slate-400 hover:text-teal hover:bg-teal/10 transition-colors ml-0.5 cursor-pointer"
-              >
-                {copied ? (
-                  <Check className="h-3.5 w-3.5 text-teal" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-              </button>
-            </div>
+            <span className="font-mono text-xs font-bold text-white bg-teal px-2 py-0.5 rounded shadow-2xs">
+              BNS {item.bnsSection}
+            </span>
           </div>
 
-          {/* ── Category Micro-Label ── */}
-          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
-            {isProcedure ? 'CRIMINAL PROCEDURE' : 'PENAL OFFENSE'}
-          </span>
+          {/* Classification & Compoundability Chips */}
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold border shadow-2xs',
+                isNonBailable
+                  ? 'bg-rose-500/10 text-rose-500 border-rose-500/25 dark:bg-rose-950/40 dark:text-rose-400'
+                  : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:bg-emerald-950/40 dark:text-emerald-400'
+              )}
+            >
+              {isNonBailable ? (
+                <ShieldAlert className="h-3 w-3" />
+              ) : (
+                <ShieldCheck className="h-3 w-3" />
+              )}
+              {item.bailable}
+            </span>
 
-          {/* ── Offense Name ── */}
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-3 leading-snug group-hover:text-teal transition-colors">
-            {item.offense}
-          </h3>
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-muted/30 text-[var(--section-subheading)] border-[var(--section-card-border)]">
+              {item.cognizable}
+            </span>
 
-          {/* ── Key Statutory Elements Dossier ── */}
-          <div
-            className={cn(
-              'rounded-lg p-3.5 mb-3.5 border transition-colors',
-              'bg-slate-50/90 dark:bg-slate-900/50 border-slate-200/90 dark:border-white/5',
-              isProcedure
-                ? 'border-l-4 border-l-sky-500'
-                : isNonBailable
-                ? 'border-l-4 border-l-rose-500'
-                : 'border-l-4 border-l-emerald-500'
+            {item.compoundable && (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-violet-500/10 text-violet-600 border-violet-500/25 dark:bg-violet-950/40 dark:text-violet-400">
+                Compoundable
+              </span>
             )}
-          >
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-              <FileText className="h-3 w-3 text-slate-400" />
-              Statutory Elements
-            </div>
-            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
-              {item.keyElements}
+
+            {/* Quick copy citation button */}
+            <button
+              type="button"
+              onClick={handleCopy}
+              title="Copy citation"
+              className="p-1 rounded-md text-[var(--section-subheading)] hover:text-teal hover:bg-teal/10 transition-colors ml-1 cursor-pointer"
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-teal" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Offense Name ── */}
+        <h3 className="text-base font-bold text-[var(--section-heading)] tracking-tight mb-2.5 leading-snug group-hover:text-teal transition-colors">
+          {item.offense}
+        </h3>
+
+        {/* ── Key Statutory Elements Dossier ── */}
+        <div className="rounded-lg bg-muted/30 border-l-3 border-teal/70 p-3 mb-3 border-t border-r border-b border-[var(--section-card-border)]">
+          <p className="text-xs text-[var(--section-subheading)] leading-relaxed font-sans">
+            {item.keyElements}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Metadata Grid: Punishment & Triable By ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-[var(--section-card-border)]">
+        <div className="flex items-start gap-2 bg-muted/20 rounded-md p-2 border border-[var(--section-card-border)]">
+          <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-xs text-[var(--section-subheading)] leading-tight">
+              <span className="font-semibold text-[var(--section-heading)]">Punishment: </span>
+              {item.punishment}
             </p>
           </div>
         </div>
 
-        {/* ── Metadata Grid: Punishment & Triable By ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3.5 border-t border-slate-100 dark:border-white/10 mt-auto">
-          {/* Punishment Card */}
-          <div className="flex items-start gap-2.5 rounded-lg p-2.5 border bg-amber-500/[0.06] border-amber-500/20 dark:bg-amber-950/20 dark:border-amber-900/40">
-            <div className="p-1 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
-              <AlertCircle className="h-3.5 w-3.5" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[10px] uppercase font-bold tracking-wider text-amber-700 dark:text-amber-400 mb-0.5">
-                Punishment
-              </span>
-              <p className="text-xs text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
-                {item.punishment}
-              </p>
-            </div>
-          </div>
-
-          {/* Triable By Card */}
-          <div className="flex items-start gap-2.5 rounded-lg p-2.5 border bg-teal-500/[0.06] border-teal-500/20 dark:bg-teal-950/20 dark:border-teal-900/40">
-            <div className="p-1 rounded-md bg-teal-500/15 text-teal shrink-0 mt-0.5">
-              <Gavel className="h-3.5 w-3.5" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[10px] uppercase font-bold tracking-wider text-teal-700 dark:text-teal-400 mb-0.5">
-                Triable By
-              </span>
-              <p className="text-xs text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
-                {item.triableBy}
-              </p>
-            </div>
+        <div className="flex items-start gap-2 bg-muted/20 rounded-md p-2 border border-[var(--section-card-border)]">
+          <Gavel className="h-3.5 w-3.5 text-teal shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-xs text-[var(--section-subheading)] leading-tight">
+              <span className="font-semibold text-[var(--section-heading)]">Triable by: </span>
+              {item.triableBy}
+            </p>
           </div>
         </div>
       </div>
@@ -259,79 +198,74 @@ function SectionTable({
   highlightedSection: string | null
 }) {
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#0B0F17] shadow-[0_4px_16px_-2px_rgba(15,23,42,0.06)]">
+    <div className="w-full overflow-hidden rounded-xl border border-[var(--section-card-border)] bg-[var(--section-card-bg)] shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-              <th className="py-3.5 px-4">IPC / CrPC</th>
-              <th className="py-3.5 px-4">BNS / BNSS</th>
-              <th className="py-3.5 px-4 min-w-[260px]">Offense &amp; Statutory Elements</th>
-              <th className="py-3.5 px-4">Classification</th>
-              <th className="py-3.5 px-4 min-w-[200px]">Punishment</th>
-              <th className="py-3.5 px-4 min-w-[160px]">Triable by</th>
+            <tr className="border-b border-[var(--section-card-border)] bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-[var(--section-subheading)]">
+              <th className="py-3 px-4">IPC</th>
+              <th className="py-3 px-4">BNS</th>
+              <th className="py-3 px-4 min-w-[260px]">Offense &amp; Key Elements</th>
+              <th className="py-3 px-4">Classification</th>
+              <th className="py-3 px-4 min-w-[200px]">Punishment</th>
+              <th className="py-3 px-4 min-w-[160px]">Triable by</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs">
+          <tbody className="divide-y divide-[var(--section-card-border)] text-xs">
             {items.map((item) => {
               const isHighlighted = highlightedSection === item.ipcSection
               const isNonBailable = item.bailable === 'Non-Bailable'
-              const isProcedure = item.category === 'procedure'
-              const oldCode = item.ipcSection.startsWith('CrPC') ? item.ipcSection : `IPC ${item.ipcSection}`
-              const newCode = item.bnsSection.startsWith('BNSS') ? item.bnsSection : `BNS ${item.bnsSection}`
 
               return (
                 <tr
                   key={item.ipcSection}
                   className={cn(
-                    'transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.03]',
+                    'transition-colors hover:bg-muted/30',
                     isHighlighted ? 'bg-teal/10' : ''
                   )}
                 >
-                  {/* Old Law */}
-                  <td className="py-3.5 px-4 align-top whitespace-nowrap">
-                    <span className="font-mono font-bold text-slate-900 dark:text-amber-300 bg-slate-100 dark:bg-slate-950 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800">
-                      {oldCode}
+                  {/* IPC */}
+                  <td className="py-3 px-4 align-top whitespace-nowrap">
+                    <span className="font-mono font-bold text-[var(--section-heading)] bg-navy/80 text-gold-light dark:text-gold-champagne px-2 py-0.5 rounded border border-[var(--section-card-border)]">
+                      IPC {item.ipcSection}
                     </span>
                   </td>
 
-                  {/* New Law */}
-                  <td className="py-3.5 px-4 align-top whitespace-nowrap">
-                    <span className="font-mono font-bold text-white bg-teal px-2 py-0.5 rounded shadow-2xs">
-                      {newCode}
+                  {/* BNS */}
+                  <td className="py-3 px-4 align-top whitespace-nowrap">
+                    <span className="font-mono font-bold text-white bg-teal px-2 py-0.5 rounded">
+                      BNS {item.bnsSection}
                     </span>
                   </td>
 
                   {/* Offense & Key Elements */}
-                  <td className="py-3.5 px-4 align-top">
-                    <p className="font-bold text-slate-900 dark:text-white text-sm mb-1">
+                  <td className="py-3 px-4 align-top">
+                    <p className="font-bold text-[var(--section-heading)] text-sm mb-1">
                       {item.offense}
                     </p>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+                    <p className="text-[11px] text-[var(--section-subheading)] leading-relaxed">
                       {item.keyElements}
                     </p>
                   </td>
 
                   {/* Badges */}
-                  <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                  <td className="py-3 px-4 align-top whitespace-nowrap">
                     <div className="flex flex-col gap-1">
                       <span
                         className={cn(
-                          'inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold border w-fit shadow-2xs',
-                          isProcedure
-                            ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800'
-                            : isNonBailable
-                            ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                          'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold border w-fit',
+                          isNonBailable
+                            ? 'bg-rose-500/10 text-rose-500 border-rose-500/25'
+                            : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25'
                         )}
                       >
                         {item.bailable}
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                      <span className="text-[10px] text-[var(--section-subheading)] font-medium">
                         {item.cognizable}
                       </span>
                       {item.compoundable && (
-                        <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold">
+                        <span className="text-[10px] text-violet-500 font-medium">
                           Compoundable
                         </span>
                       )}
@@ -339,14 +273,14 @@ function SectionTable({
                   </td>
 
                   {/* Punishment */}
-                  <td className="py-3.5 px-4 align-top text-slate-700 dark:text-slate-300">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">Punishment: </span>
+                  <td className="py-3 px-4 align-top text-[var(--section-subheading)]">
+                    <span className="font-semibold text-[var(--section-heading)]">Punishment: </span>
                     {item.punishment}
                   </td>
 
                   {/* Triable by */}
-                  <td className="py-3.5 px-4 align-top text-slate-700 dark:text-slate-300">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">Triable by: </span>
+                  <td className="py-3 px-4 align-top text-[var(--section-subheading)]">
+                    <span className="font-semibold text-[var(--section-heading)]">Triable by: </span>
                     {item.triableBy}
                   </td>
                 </tr>
@@ -573,7 +507,7 @@ export function ConcordanceMatrix({ initialQuery }: { initialQuery?: string }) {
         />
       ) : (
         <AnimatePresence mode="popLayout">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filtered.map((item) => (
               <SectionCard
                 key={item.ipcSection}
