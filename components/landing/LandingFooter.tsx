@@ -101,7 +101,7 @@ export function LandingFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/case-progress" className="hover:text-gold-light transition-colors">
+                <Link href="/cases" className="hover:text-gold-light transition-colors">
                   Procedural Chronology
                 </Link>
               </li>

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate, BriefcaseIcon, TrendingUpIcon, ScaleIcon, Bot } from 'lucide-react'
+import { ArrowLeftIcon, FileSearchIcon, Bookmark, Search, GripVertical, GitBranch, LayoutTemplate, BriefcaseIcon, ScaleIcon, Bot } from 'lucide-react'
 import { CaseChatDrawer } from './CaseChatDrawer'
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelGroupHandle } from 'react-resizable-panels'
 import { DocumentPanel } from './DocumentPanel'
@@ -191,14 +191,6 @@ export function VerificationWorkspace({ caseData, initialDocuments, initialFindi
           >
             <ScaleIcon className="w-3 h-3" />
             Bail
-          </Link>
-          <Link
-            href={`/case-progress/${caseData.id}`}
-            title="Case Progress"
-            className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-500 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
-          >
-            <TrendingUpIcon className="w-3 h-3" />
-            Progress
           </Link>
         </div>
       </header>

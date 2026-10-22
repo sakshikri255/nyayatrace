@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, type Variants } from 'framer-motion'
-import { GavelIcon, FileTextIcon, CalendarIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, PrinterIcon, BriefcaseIcon, TrendingUpIcon, SearchIcon } from 'lucide-react'
+import { GavelIcon, FileTextIcon, CalendarIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, PrinterIcon, BriefcaseIcon, SearchIcon } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { ConditionsTable } from '@/components/bail/ConditionsTable'
@@ -180,13 +180,6 @@ export function BailBriefView({ data }: BailBriefViewProps) {
           >
             <BriefcaseIcon className="w-3.5 h-3.5" />
             Case Workspace
-          </Link>
-          <Link
-            href={`/case-progress/${caseRecord.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--section-card-border)] bg-[var(--section-card-bg)] px-2.5 py-1 text-xs font-medium text-[var(--section-subheading)] hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
-          >
-            <TrendingUpIcon className="w-3.5 h-3.5" />
-            Case Progress
           </Link>
           <Link
             href={`/verification/${caseRecord.id}`}

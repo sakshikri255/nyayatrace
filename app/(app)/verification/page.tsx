@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRightIcon, FileSearchIcon, AlertTriangleIcon, BriefcaseIcon, ScaleIcon, TrendingUpIcon } from 'lucide-react'
+import { ArrowRightIcon, FileSearchIcon, AlertTriangleIcon, BriefcaseIcon, ScaleIcon } from 'lucide-react'
 import { getAllCases } from '@/lib/queries/cases'
 import { getFindingsByCaseId } from '@/lib/queries/findings'
 import { CaseStatusBadge } from '@/components/cases/CaseStatusBadge'
@@ -153,13 +153,6 @@ function CaseRow({
           title="Bail & Parole"
         >
           <ScaleIcon className="w-3.5 h-3.5" />
-        </Link>
-        <Link
-          href={`/case-progress/${id}`}
-          className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--section-card-border)] text-[var(--section-subheading)] hover:border-teal/40 hover:text-teal transition-colors"
-          title="Case Progress"
-        >
-          <TrendingUpIcon className="w-3.5 h-3.5" />
         </Link>
         <Link
           href={`/verification/${id}`}

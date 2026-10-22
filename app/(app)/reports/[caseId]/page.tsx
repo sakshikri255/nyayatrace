@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeftIcon, BriefcaseIcon, TrendingUpIcon, ScaleIcon, SearchIcon } from 'lucide-react'
+import { ArrowLeftIcon, BriefcaseIcon, ScaleIcon, SearchIcon } from 'lucide-react'
 import { CaseBriefView, type CaseBriefData } from '@/components/reports/CaseBriefView'
 import { getCaseById } from '@/lib/queries/cases'
 
@@ -53,13 +53,6 @@ export default async function ReportDetailPage({ params }: Props) {
           >
             <SearchIcon className="w-3.5 h-3.5" />
             Verification
-          </Link>
-          <Link
-            href={`/case-progress/${caseId}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-teal/40 hover:bg-teal/5 hover:text-teal transition-colors"
-          >
-            <TrendingUpIcon className="w-3.5 h-3.5" />
-            Case Progress
           </Link>
           <Link
             href={`/bail-briefs/${caseId}`}

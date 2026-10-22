@@ -87,7 +87,7 @@ function generateICS(hearings: HearingEntry[]): string {
     const uid = `nyaya-${h.id}@nyayatrace.in`
     const summary = `Case ${h.caseNumber} — ${EVENT_TYPE_LABELS[h.eventType] ?? h.eventType}`
     const desc = `${h.caseTitle}${h.court ? ' | ' + h.court : ''}${h.judge ? ' | J. ' + h.judge : ''}`.replace(/\n/g, '\\n')
-    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/case-progress/${h.caseId}`
+    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/cases/${h.caseId}?tab=hearings`
 
     lines.push(
       'BEGIN:VEVENT',
