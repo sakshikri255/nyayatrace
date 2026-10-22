@@ -143,10 +143,9 @@ export function IntroductionSection() {
               </span>
             </div>
 
-            {/* Heading */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-100 tracking-tight leading-[1.25] mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-100 tracking-tight leading-normal mb-5">
               Legal Preparation,{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne">
+              <span className="inline-block pb-1.5 -mb-1.5 text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne leading-normal">
                 Made More Structured.
               </span>
             </h2>

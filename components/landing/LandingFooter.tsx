@@ -28,9 +28,9 @@ export function LandingFooter() {
             </span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-4xl font-bold text-slate-100 tracking-tight leading-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-4xl font-bold text-slate-100 tracking-tight leading-normal mb-4">
             Spend Less Time Searching.{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne">
+            <span className="inline-block pb-2 -mb-2 text-transparent bg-clip-text bg-gradient-to-r from-gold-light via-gold to-gold-champagne leading-normal">
               More Time Understanding.
             </span>
           </h2>
