@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { getSession } from '@/lib/auth'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
 
 /**
@@ -15,13 +14,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<'ok' | 'checking'>('checking')
 
   useEffect(() => {
-    // Fast path: check legacy localStorage session first for instant feedback
-    if (getSession()) {
-      setStatus('ok')
-      return
-    }
-
-    // Then verify via server session
+    // Always verify via server session cookie — localStorage alone is not sufficient
     fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => {
         if (res.ok) {
