@@ -22,13 +22,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import type { CaseWithCounts } from '@/lib/queries/cases'
 import { calculateStatutoryBail } from '@/lib/analysis/statutoryBail'
 import { cn } from '@/lib/utils'
@@ -73,7 +66,7 @@ const EMPTY_FORM: NewCaseForm = {
   caseNumber: '',
   title: '',
   description: '',
-  caseType: '',
+  caseType: 'unspecified',
   status: 'unspecified',
   court: '',
   jurisdiction: '',
@@ -493,24 +486,20 @@ export function CasesClient({
                 <label className="text-xs font-semibold text-slate-700">
                   Case Type
                 </label>
-                <Select
-                  value={form.caseType || 'unspecified'}
-                  onValueChange={(v) =>
-                    v != null &&
-                    setForm((p) => ({ ...p, caseType: v === 'unspecified' ? '' : v }))
-                  }
+                <select
+                  value={form.caseType}
+                  onChange={(e) => setForm((p) => ({ ...p, caseType: e.target.value }))}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal cursor-pointer"
                 >
-                  <SelectTrigger size="sm" className="w-full h-9">
-                    <SelectValue placeholder="Not specified" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unspecified">Not specified</SelectItem>
-                    <SelectItem value="criminal">Criminal</SelectItem>
-                    <SelectItem value="civil">Civil</SelectItem>
-                    <SelectItem value="bail">Bail</SelectItem>
-                    <SelectItem value="parole">Parole</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="unspecified">Not specified</option>
+                  <option value="criminal">Criminal</option>
+                  <option value="civil">Civil</option>
+                  <option value="bail">Bail</option>
+                  <option value="parole">Parole</option>
+                  <option value="writ">Writ Petition</option>
+                  <option value="appeal">Appeal</option>
+                  <option value="revision">Revision</option>
+                </select>
               </div>
             </div>
 
@@ -519,21 +508,19 @@ export function CasesClient({
                 <label className="text-xs font-semibold text-slate-700">
                   Procedural Status
                 </label>
-                <Select
+                <select
                   value={form.status}
-                  onValueChange={(v) => v != null && setForm((p) => ({ ...p, status: v }))}
+                  onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal cursor-pointer"
                 >
-                  <SelectTrigger size="sm" className="w-full h-9">
-                    <SelectValue placeholder="Not specified" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unspecified">Not specified</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                    <SelectItem value="stayed">Stayed</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="unspecified">Not specified</option>
+                  <option value="active">Active</option>
+                  <option value="pending">Pending</option>
+                  <option value="closed">Closed</option>
+                  <option value="stayed">Stayed</option>
+                  <option value="disposed">Disposed</option>
+                  <option value="adjourned">Adjourned</option>
+                </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-slate-700">Court / Forum</label>

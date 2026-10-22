@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { CaseDetail } from '@/lib/queries/cases'
 
 export function EditCaseDialog({ caseData }: { caseData: CaseDetail }) {
@@ -19,8 +18,8 @@ export function EditCaseDialog({ caseData }: { caseData: CaseDetail }) {
     caseNumber: caseData.caseNumber,
     title: caseData.title,
     description: caseData.description ?? '',
-    caseType: caseData.caseType,
-    status: caseData.status,
+    caseType: caseData.caseType || 'unspecified',
+    status: caseData.status || 'unspecified',
     court: caseData.court ?? '',
     jurisdiction: caseData.jurisdiction ?? '',
   })
@@ -63,29 +62,62 @@ export function EditCaseDialog({ caseData }: { caseData: CaseDetail }) {
             <Input value={form.title} onChange={(event) => update('title', event.target.value)} required maxLength={200} />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">Case number<Input value={form.caseNumber} onChange={(event) => update('caseNumber', event.target.value)} required maxLength={100} /></label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">Case type
-              <Select value={form.caseType} onValueChange={(value) => value && update('caseType', value)}>
-                <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
-                  <SelectItem value="unspecified">Not specified</SelectItem><SelectItem value="criminal">Criminal</SelectItem><SelectItem value="civil">Civil</SelectItem><SelectItem value="bail">Bail</SelectItem><SelectItem value="parole">Parole</SelectItem>
-                </SelectContent>
-              </Select>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Case number
+              <Input value={form.caseNumber} onChange={(event) => update('caseNumber', event.target.value)} required maxLength={100} />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Case type
+              <select
+                value={form.caseType}
+                onChange={(e) => update('caseType', e.target.value)}
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal cursor-pointer"
+              >
+                <option value="unspecified">Not specified</option>
+                <option value="criminal">Criminal</option>
+                <option value="civil">Civil</option>
+                <option value="bail">Bail</option>
+                <option value="parole">Parole</option>
+                <option value="writ">Writ Petition</option>
+                <option value="appeal">Appeal</option>
+                <option value="revision">Revision</option>
+              </select>
             </label>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">Procedural status
-              <Select value={form.status} onValueChange={(value) => value && update('status', value)}>
-                <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
-                  <SelectItem value="unspecified">Not specified</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="closed">Closed</SelectItem><SelectItem value="stayed">Stayed</SelectItem>
-                </SelectContent>
-              </Select>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Procedural status
+              <select
+                value={form.status}
+                onChange={(e) => update('status', e.target.value)}
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal cursor-pointer"
+              >
+                <option value="unspecified">Not specified</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="closed">Closed</option>
+                <option value="stayed">Stayed</option>
+                <option value="disposed">Disposed</option>
+                <option value="adjourned">Adjourned</option>
+              </select>
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">Court<Input value={form.court} onChange={(event) => update('court', event.target.value)} maxLength={200} /></label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+              Court
+              <Input value={form.court} onChange={(event) => update('court', event.target.value)} maxLength={200} />
+            </label>
           </div>
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">Jurisdiction<Input value={form.jurisdiction} onChange={(event) => update('jurisdiction', event.target.value)} maxLength={200} /></label>
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">Case notes<Textarea value={form.description} onChange={(event) => update('description', event.target.value)} rows={4} maxLength={5000} /></label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            Jurisdiction
+            <Input value={form.jurisdiction} onChange={(event) => update('jurisdiction', event.target.value)} maxLength={200} />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            Case notes
+            <Textarea value={form.description} onChange={(event) => update('description', event.target.value)} rows={4} maxLength={5000} />
+          </label>
           <div className="flex justify-end border-t border-slate-200 pt-3">
-            <Button type="submit" disabled={saving} className="bg-teal text-white hover:bg-teal-light">{saving ? 'Saving…' : 'Save changes'}</Button>
+            <Button type="submit" disabled={saving} className="bg-teal text-white hover:bg-teal-light">
+              {saving ? 'Saving…' : 'Save changes'}
+            </Button>
           </div>
         </form>
       </DialogContent>

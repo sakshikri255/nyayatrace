@@ -44,6 +44,33 @@ import type { FindingWithSources } from '@/lib/queries/findings'
 import type { DocumentRow } from '@/lib/queries/documents'
 import type { CaseSynopsis, EvidenceReference, KeyEntity } from '@/lib/analysis/synopsis'
 
+// All 22 languages in the Eighth Schedule to the Constitution of India
+const INDIAN_LANGUAGES = [
+  { value: 'English',    label: 'English' },
+  { value: 'Hindi',      label: 'हिंदी (Hindi)' },
+  { value: 'Bengali',    label: 'বাংলা (Bengali)' },
+  { value: 'Telugu',     label: 'తెలుగు (Telugu)' },
+  { value: 'Marathi',    label: 'मराठी (Marathi)' },
+  { value: 'Tamil',      label: 'தமிழ் (Tamil)' },
+  { value: 'Gujarati',   label: 'ગુજરાતી (Gujarati)' },
+  { value: 'Kannada',    label: 'ಕನ್ನಡ (Kannada)' },
+  { value: 'Malayalam',  label: 'മലയാളം (Malayalam)' },
+  { value: 'Odia',       label: 'ଓଡ଼ିଆ (Odia)' },
+  { value: 'Punjabi',    label: 'ਪੰਜਾਬੀ (Punjabi)' },
+  { value: 'Assamese',   label: 'অসমীয়া (Assamese)' },
+  { value: 'Maithili',   label: 'मैथिली (Maithili)' },
+  { value: 'Urdu',       label: 'اردو (Urdu)' },
+  { value: 'Sanskrit',   label: 'संस्कृत (Sanskrit)' },
+  { value: 'Kashmiri',   label: 'کٲشُر (Kashmiri)' },
+  { value: 'Konkani',    label: 'कोंकणी (Konkani)' },
+  { value: 'Sindhi',     label: 'سنڌي (Sindhi)' },
+  { value: 'Nepali',     label: 'नेपाली (Nepali)' },
+  { value: 'Manipuri',   label: 'মৈতৈলোন্ (Manipuri)' },
+  { value: 'Dogri',      label: 'डोगरी (Dogri)' },
+  { value: 'Bodo',       label: 'बड़ो (Bodo)' },
+  { value: 'Santhali',   label: 'ᱥᱟᱱᱛᱟᱲᱤ (Santhali)' },
+]
+
 interface AnalysisRun {
   id: number
   version: number
@@ -107,6 +134,9 @@ export function AnalysisWorkspace({
   const [aiProviders, setAiProviders] = useState({ gemini: false, openai: false })
   const [aiProvider, setAiProvider] = useState<'gemini' | 'openai'>('gemini')
   const [useAi, setUseAi] = useState(false)
+  const [language, setLanguage] = useState('English')
+  const [translations, setTranslations] = useState<Record<string, string>>({})
+  const [translating, setTranslating] = useState(false)
   const [savingNotes, setSavingNotes] = useState(false)
   const [notesDraft, setNotesDraft] = useState('')
   const [isDirty, setIsDirty] = useState(false)
@@ -178,13 +208,91 @@ export function AnalysisWorkspace({
     setSelectedSource({ ...source, relatedFinding })
   }
 
+  // t() returns the translated version of a field if available, else original
+  function t(key: string, fallback: string): string {
+    return translations[key] ?? fallback
+  }
+
+  // Reset translations when language changes back to English or synopsis changes
+  function handleLanguageChange(lang: string) {
+    setLanguage(lang)
+    setTranslations({})
+  }
+
+  async function translateSynopsis() {
+    if (!synopsis || language === 'English') return
+    setTranslating(true)
+    try {
+      // Collect all text fields from sections 1-9
+      const fields: Record<string, string> = {
+        // Section 1 – Case Overview
+        'overview.caseType': synopsis.caseOverview.caseType || '',
+        'overview.status': synopsis.caseOverview.status || '',
+        'overview.court': synopsis.caseOverview.court || '',
+        'overview.jurisdiction': synopsis.caseOverview.jurisdiction || '',
+        'overview.userNotes': synopsis.caseOverview.userNotes || '',
+        // Section 3 – Executive Summary
+        'executiveSynopsis': synopsis.executiveSynopsis || '',
+        'aiAnalysis.executiveSummary': synopsis.aiAnalysis?.executiveSummary || '',
+        // Section 4 – Timeline previews (first 3)
+        ...Object.fromEntries(
+          synopsis.chronology.slice(0, 6).map((ev, i) => [`chronology.${i}`, ev.passage || ''])
+        ),
+        // Section 5 – Conflicts
+        ...Object.fromEntries(
+          synopsis.potentialInconsistencies.flatMap((issue, i) => [
+            [`conflict.${i}.explanation`, issue.explanation || ''],
+            [`conflict.${i}.field`, issue.field || ''],
+            ...issue.values.map((v, vi) => [`conflict.${i}.val.${vi}`, v]),
+          ])
+        ),
+        // Section 6 – Document summaries & facts
+        ...Object.fromEntries(
+          synopsis.documentSummaries.flatMap((ds, i) => [
+            [`docSummary.${i}.apparentType`, ds.apparentType || ''],
+            [`docSummary.${i}.summary`, (ds.summary as { passage?: string })?.passage || ''],
+          ])
+        ),
+        ...Object.fromEntries(
+          (synopsis.aiAnalysis?.documentSummaries ?? []).map((ds, i) => [`aiDocSummary.${i}`, ds.summary || ''])
+        ),
+        ...Object.fromEntries(
+          synopsis.facts.slice(0, 8).map((f, i) => [`fact.${i}`, f.passage || ''])
+        ),
+        // Section 7 – Court orders
+        ...Object.fromEntries(
+          synopsis.ordersAndProceduralHistory.map((o, i) => [`order.${i}`, o.passage || ''])
+        ),
+        // Section 8 – Missing/unclear
+        ...Object.fromEntries(
+          synopsis.missingOrUnclear.map((m, i) => [`missing.${i}`, m])
+        ),
+      }
+
+      const response = await fetch(`/api/cases/${caseData.id}/analysis/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language, fields }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error ?? 'Translation failed.')
+      setTranslations(data.translated ?? {})
+      toast.success(`Translated to ${language} successfully!`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Translation failed.')
+    } finally {
+      setTranslating(false)
+    }
+  }
+
   async function analyseDocuments() {
     setAnalysing(true)
+    setTranslations({}) // reset translations on new analysis
     try {
       const response = await fetch(`/api/cases/${caseData.id}/analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ useAi, aiProvider }),
+        body: JSON.stringify({ useAi, aiProvider, language }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error ?? 'Analysis could not be started.')
@@ -498,19 +606,53 @@ export function AnalysisWorkspace({
               </span>
             </label>
 
-            {useAi && (
-              <div className="flex items-center gap-2 pl-6 sm:pl-0">
-                <span className="text-slate-500 font-medium">Model provider:</span>
+            <div className="flex flex-wrap items-center gap-3 pl-6 sm:pl-0">
+              {/* Language selector — always visible */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500 font-medium whitespace-nowrap">Output language:</span>
                 <select
-                  value={aiProvider}
-                  onChange={(event) => setAiProvider(event.target.value as 'gemini' | 'openai')}
-                  className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-slate-700 text-xs focus:ring-2 focus:ring-teal/30 focus:border-teal"
+                  value={language}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-slate-700 text-xs focus:ring-2 focus:ring-teal/30 focus:border-teal max-w-[180px]"
                 >
-                  {aiProviders.gemini && <option value="gemini">Google Gemini</option>}
-                  {aiProviders.openai && <option value="openai">OpenAI</option>}
+                  {INDIAN_LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>{lang.label}</option>
+                  ))}
                 </select>
               </div>
-            )}
+
+              {/* Translate existing content button — shows when non-English + synopsis loaded */}
+              {language !== 'English' && synopsis && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={translateSynopsis}
+                  disabled={translating}
+                  className="h-7 gap-1.5 text-xs border-teal-300 text-teal-800 bg-teal-50 hover:bg-teal-100 cursor-pointer"
+                  title={`Translate displayed analysis into ${language}`}
+                >
+                  {translating
+                    ? <><LoaderCircle className="h-3 w-3 animate-spin" /> Translating…</>
+                    : <><Sparkles className="h-3 w-3" /> Translate to {language}</>
+                  }
+                </Button>
+              )}
+
+              {/* AI provider picker — only when AI is enabled */}
+              {useAi && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-500 font-medium">Provider:</span>
+                  <select
+                    value={aiProvider}
+                    onChange={(event) => setAiProvider(event.target.value as 'gemini' | 'openai')}
+                    className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-slate-700 text-xs focus:ring-2 focus:ring-teal/30 focus:border-teal"
+                  >
+                    {aiProviders.gemini && <option value="gemini">Google Gemini</option>}
+                    {aiProviders.openai && <option value="openai">OpenAI</option>}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-2 text-slate-500">
@@ -885,7 +1027,7 @@ export function AnalysisWorkspace({
                     <span className="text-xs font-semibold">Case Type</span>
                   </div>
                   <p className="text-sm font-medium text-slate-900 capitalize">
-                    {synopsis.caseOverview.caseType === 'unspecified' ? 'Not specified yet' : synopsis.caseOverview.caseType}
+                    {t('overview.caseType', synopsis.caseOverview.caseType === 'unspecified' ? 'Not specified yet' : (synopsis.caseOverview.caseType || 'Not specified'))}
                   </p>
                 </div>
 
@@ -895,7 +1037,7 @@ export function AnalysisWorkspace({
                     <span className="text-xs font-semibold">Current Status</span>
                   </div>
                   <p className="text-sm font-medium text-slate-900 capitalize">
-                    {synopsis.caseOverview.status === 'unspecified' ? 'Active / In Progress' : synopsis.caseOverview.status}
+                    {t('overview.status', synopsis.caseOverview.status === 'unspecified' ? 'Active / In Progress' : (synopsis.caseOverview.status || 'Active'))}
                   </p>
                 </div>
 
@@ -905,7 +1047,7 @@ export function AnalysisWorkspace({
                     <span className="text-xs font-semibold">Court</span>
                   </div>
                   <p className="text-sm font-medium text-slate-900">
-                    {synopsis.caseOverview.court || 'Not specified'}
+                    {t('overview.court', synopsis.caseOverview.court || 'Not specified')}
                   </p>
                 </div>
 
@@ -915,7 +1057,7 @@ export function AnalysisWorkspace({
                     <span className="text-xs font-semibold">Jurisdiction</span>
                   </div>
                   <p className="text-sm font-medium text-slate-900">
-                    {synopsis.caseOverview.jurisdiction || 'Not specified'}
+                    {t('overview.jurisdiction', synopsis.caseOverview.jurisdiction || 'Not specified')}
                   </p>
                 </div>
               </div>
@@ -925,7 +1067,7 @@ export function AnalysisWorkspace({
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
                     Lawyer&apos;s Initial Case Notes
                   </span>
-                  <p className="whitespace-pre-wrap leading-relaxed">{synopsis.caseOverview.userNotes}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed">{t('overview.userNotes', synopsis.caseOverview.userNotes)}</p>
                 </div>
               )}
             </section>
@@ -1309,7 +1451,7 @@ export function AnalysisWorkspace({
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm leading-relaxed text-slate-800">
-                      {synopsis.executiveSynopsis}
+                      {t('executiveSynopsis', synopsis.executiveSynopsis)}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-500">
                       <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
@@ -1344,7 +1486,7 @@ export function AnalysisWorkspace({
                   </div>
 
                   <p className="text-sm leading-relaxed text-slate-800">
-                    {synopsis.aiAnalysis.executiveSummary}
+                    {t('aiAnalysis.executiveSummary', synopsis.aiAnalysis.executiveSummary)}
                   </p>
 
                   {synopsis.aiAnalysis.executiveSources.length > 0 && (
@@ -1428,7 +1570,7 @@ export function AnalysisWorkspace({
                           <span className="text-[10px] text-slate-400">p. {event.pageNumber}</span>
                         </div>
                         <p className="text-slate-700 line-clamp-2 text-[11px]">
-                          {event.passage}
+                          {t(`chronology.${idx}`, event.passage)}
                         </p>
                       </div>
                     ))}
@@ -1514,7 +1656,7 @@ export function AnalysisWorkspace({
                         {/* Explanation in plain english */}
                         {issue.explanation && (
                           <p className="text-xs leading-relaxed text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/60">
-                            <strong>Note: </strong>{issue.explanation}
+                            <strong>Note: </strong>{t(`conflict.${index}.explanation`, issue.explanation)}
                           </p>
                         )}
 
@@ -1527,7 +1669,7 @@ export function AnalysisWorkspace({
                                 <SourceBadge source={source} onOpen={(ref) => openSource(ref, finding?.description)} />
                               </div>
                               <p className="text-sm font-bold text-slate-900 bg-white p-2 rounded border border-slate-200">
-                                {issue.values[sIdx] || issue.values[0]}
+                                {t(`conflict.${index}.val.${sIdx}`, issue.values[sIdx] || issue.values[0])}
                               </p>
                               {source.passage && (
                                 <p className="text-xs text-slate-600 italic line-clamp-2">
@@ -1635,7 +1777,7 @@ export function AnalysisWorkspace({
                             </button>
                             <div className="flex flex-wrap items-center gap-2 mt-1">
                               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                                {summary?.apparentType || 'General Record'}
+                                {t(`docSummary.${filteredDocuments.indexOf(doc)}.apparentType`, summary?.apparentType || 'General Record')}
                               </span>
                               <span className="text-xs text-slate-400">
                                 {doc.pageCount ?? 1} page{doc.pageCount === 1 ? '' : 's'}
@@ -1657,14 +1799,14 @@ export function AnalysisWorkspace({
                       {/* Text snippet preview */}
                       {summary?.summary && (
                         <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 line-clamp-2">
-                          {summary.summary.passage}
+                          {t(`docSummary.${filteredDocuments.indexOf(doc)}.summary`, (summary.summary as { passage?: string })?.passage || '')}
                         </p>
                       )}
 
                       {aiDocSummary && (
                         <div className="text-xs text-teal-900 bg-teal-50/70 p-2.5 rounded-lg border border-teal-200/60 space-y-1">
                           <span className="font-semibold block">AI Summary:</span>
-                          <p>{aiDocSummary.summary}</p>
+                          <p>{t(`aiDocSummary.${(synopsis.aiAnalysis?.documentSummaries ?? []).indexOf(aiDocSummary)}`, aiDocSummary.summary)}</p>
                         </div>
                       )}
 
@@ -1702,7 +1844,7 @@ export function AnalysisWorkspace({
                     {filteredFacts.slice(0, 8).map((fact, index) => (
                       <div key={index} className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs space-y-2">
                         <p className="text-xs text-slate-700 leading-relaxed">
-                          &ldquo;{fact.passage}&rdquo;
+                          &ldquo;{t(`fact.${index}`, fact.passage)}&rdquo;
                         </p>
                         <div className="flex justify-end">
                           <SourceBadge source={fact} onOpen={openSource} />
@@ -1744,7 +1886,7 @@ export function AnalysisWorkspace({
                         <SourceBadge source={order} onOpen={openSource} />
                       </div>
                       <p className="text-xs text-slate-700 leading-relaxed">
-                        &ldquo;{order.passage}&rdquo;
+                        &ldquo;{t(`order.${idx}`, order.passage)}&rdquo;
                       </p>
                     </div>
                   ))}
@@ -1776,7 +1918,7 @@ export function AnalysisWorkspace({
                   </p>
                   <ul className="list-disc pl-5 space-y-1">
                     {synopsis.missingOrUnclear.map((item, idx) => (
-                      <li key={idx}>{item}</li>
+                      <li key={idx}>{t(`missing.${idx}`, item)}</li>
                     ))}
                   </ul>
                 </div>
