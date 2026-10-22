@@ -119,7 +119,7 @@ function CompliancePanel({ conditionId, caseId }: { conditionId: number; caseId:
               type="date"
               value={formDate}
               onChange={(e) => setFormDate(e.target.value)}
-              className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-xs focus:border-teal-500 focus:outline-none"
+              className="flex-1 rounded border border-slate-400 px-2 py-1.5 text-xs focus:border-teal-500 focus:outline-none"
             />
             <div className="flex gap-1">
               {(['complied', 'violated'] as const).map((t) => (
@@ -144,7 +144,7 @@ function CompliancePanel({ conditionId, caseId }: { conditionId: number; caseId:
             value={formNote}
             onChange={(e) => setFormNote(e.target.value)}
             rows={2}
-            className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs focus:border-teal-500 focus:outline-none resize-none"
+            className="w-full rounded border border-slate-400 px-2 py-1.5 text-xs focus:border-teal-500 focus:outline-none resize-none"
           />
           <div className="flex justify-end gap-2">
             <button onClick={() => setShowForm(false)} className="text-xs text-slate-500 hover:text-slate-700">Cancel</button>
@@ -240,13 +240,13 @@ export function ConditionsTable({ conditions, showEmpty = true, caseId }: Condit
           Bail / Parole Conditions ({conditions.length})
         </h3>
       </div>
-      <table className="w-full text-sm">
+      <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="text-left border-b border-slate-100">
-            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide">Condition</th>
-            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-28">Type</th>
-            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-24">Status</th>
-            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-44">Associated Order</th>
+          <tr className="text-left border-b border-slate-400 bg-slate-50">
+            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide border-r border-slate-400">Condition</th>
+            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-28 border-r border-slate-400">Type</th>
+            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-24 border-r border-slate-400">Status</th>
+            <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-44 border-r border-slate-400">Associated Order</th>
             {caseId && (
               <th className="py-2.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wide w-10"></th>
             )}
@@ -266,16 +266,16 @@ export function ConditionsTable({ conditions, showEmpty = true, caseId }: Condit
 
             return (
               <>
-                <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4">
+                <tr key={c.id} className="border-b border-slate-400 hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 border-r border-slate-400">
                     <p className="text-sm text-slate-700">{c.conditionText}</p>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 border-r border-slate-400">
                     <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium', typeConfig.className)}>
                       {typeConfig.label}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 border-r border-slate-400">
                     {caseId ? (
                       <button
                         onClick={() => handleStatusToggle(c.id, currentStatus)}
@@ -296,7 +296,7 @@ export function ConditionsTable({ conditions, showEmpty = true, caseId }: Condit
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 border-r border-slate-400">
                     {orderLabel ? (
                       <div className="flex flex-col gap-0.5">
                         <span className="text-xs font-medium text-slate-600">{orderLabel}</span>

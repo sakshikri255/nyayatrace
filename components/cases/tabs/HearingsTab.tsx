@@ -125,21 +125,21 @@ export function HearingsTab({ hearings, chartData, caseTitle }: HearingsTabProps
 
       {/* ── 3. Hearings List Table ────────────────────────────── */}
       <div className="rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs">
-        <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-slate-400 bg-slate-50 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
             Hearing Log ({hearings.length})
           </h3>
           <span className="text-xs text-slate-400">Chronological Order</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="text-left border-b border-slate-200 bg-slate-50/50">
-                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Date</th>
-                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Event Type</th>
-                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
-                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Outcome</th>
-                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-40">Court</th>
+              <tr className="text-left border-b border-slate-400 bg-slate-50">
+                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36 border-r border-slate-400">Date</th>
+                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36 border-r border-slate-400">Event Type</th>
+                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide border-r border-slate-400">Description</th>
+                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide border-r border-slate-400">Outcome</th>
+                <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-40 border-r border-slate-400">Court</th>
                 <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Source Doc</th>
               </tr>
             </thead>
@@ -148,8 +148,8 @@ export function HearingsTab({ hearings, chartData, caseTitle }: HearingsTabProps
                 const cfg = eventConfig[h.eventType] ?? { label: h.eventType, className: 'bg-slate-100 text-slate-600 border-slate-200' }
                 const isUpcoming = new Date(h.hearingDate) >= new Date()
                 return (
-                  <tr key={h.id} className={cn('border-b border-slate-100 transition-colors hover:bg-slate-50/80', isUpcoming && 'bg-violet-50/40')}>
-                    <td className="py-3 px-4">
+                  <tr key={h.id} className={cn('border-b border-slate-400 transition-colors hover:bg-slate-50/80', isUpcoming && 'bg-violet-50/40')}>
+                    <td className="py-3 px-4 border-r border-slate-400">
                       <div className="flex flex-col">
                         <span className="text-sm font-semibold text-slate-800 whitespace-nowrap">
                           {formatDate(h.hearingDate)}
@@ -161,18 +161,18 @@ export function HearingsTab({ hearings, chartData, caseTitle }: HearingsTabProps
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 border-r border-slate-400">
                       <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium', cfg.className)}>
                         {cfg.label}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 border-r border-slate-400">
                       <p className="text-sm text-slate-700">{h.description ?? '—'}</p>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 border-r border-slate-400">
                       <p className="text-sm text-slate-600">{h.outcome ?? '—'}</p>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 border-r border-slate-400">
                       <p className="text-xs text-slate-600 truncate max-w-[10rem]">{h.court ?? '—'}</p>
                     </td>
                     <td className="py-3 px-4">

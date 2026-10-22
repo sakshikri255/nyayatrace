@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { HistoryIcon, RefreshCwIcon } from 'lucide-react'
 import { format, parseISO, isValid } from 'date-fns'
-import { cn } from '@/lib/utils'
 
 interface ChangelogEntry {
   id: number
@@ -99,45 +98,53 @@ export function ChangelogTab({ caseId }: ChangelogTabProps) {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-        {entries.map((entry, i) => {
-          const ts = entry.performedAt
-            ? (() => {
-                const d = parseISO(entry.performedAt)
-                return isValid(d) ? format(d, 'd MMM yyyy, HH:mm') : entry.performedAt
-              })()
-            : '—'
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left border-b border-slate-400 bg-slate-50">
+              <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-8 border-r border-slate-400"></th>
+              <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-52 border-r border-slate-400">Field</th>
+              <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-44 border-r border-slate-400">Changed At</th>
+              <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide border-r border-slate-400">Previous Value</th>
+              <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">New Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => {
+              const ts = entry.performedAt
+                ? (() => {
+                    const d = parseISO(entry.performedAt)
+                    return isValid(d) ? format(d, 'd MMM yyyy, HH:mm') : entry.performedAt
+                  })()
+                : '—'
 
-          return (
-            <div
-              key={entry.id}
-              className={cn(
-                'flex items-start gap-4 px-4 py-3 text-sm',
-                i < entries.length - 1 && 'border-b border-slate-100'
-              )}
-            >
-              <div className="shrink-0 mt-0.5">
-                <HistoryIcon className="w-4 h-4 text-slate-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-slate-800 text-xs">
-                    {fieldLabels[entry.field] ?? entry.field}
-                  </span>
-                  <span className="text-xs text-slate-400">{ts}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-1 text-xs flex-wrap">
-                  <span className="rounded bg-rose-50 border border-rose-200 text-rose-700 px-1.5 py-0.5 font-mono">
-                    {formatValue(entry.field, entry.oldValue)}
-                  </span>
-                  <span className="text-slate-400">→</span>
-                  <span className="rounded bg-emerald-50 border border-emerald-200 text-emerald-700 px-1.5 py-0.5 font-mono">
-                    {formatValue(entry.field, entry.newValue)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+              return (
+                <tr key={entry.id} className="border-b border-slate-400 hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 border-r border-slate-400">
+                    <HistoryIcon className="w-4 h-4 text-slate-300" />
+                  </td>
+                  <td className="py-3 px-4 border-r border-slate-400">
+                    <span className="font-medium text-slate-800 text-xs">
+                      {fieldLabels[entry.field] ?? entry.field}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 border-r border-slate-400">
+                    <span className="text-xs text-slate-500">{ts}</span>
+                  </td>
+                  <td className="py-3 px-4 border-r border-slate-400">
+                    <span className="rounded bg-rose-50 border border-rose-200 text-rose-700 px-1.5 py-0.5 text-xs font-mono">
+                      {formatValue(entry.field, entry.oldValue)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="rounded bg-emerald-50 border border-emerald-200 text-emerald-700 px-1.5 py-0.5 text-xs font-mono">
+                      {formatValue(entry.field, entry.newValue)}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )

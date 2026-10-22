@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, type Variants } from 'framer-motion'
 import { GavelIcon, FileTextIcon, CalendarIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, PrinterIcon, BriefcaseIcon, SearchIcon } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { BailDisclaimer } from '@/components/bail/BailDisclaimer'
 import { ConditionsTable } from '@/components/bail/ConditionsTable'
 import { HearingsTab } from '@/components/cases/tabs/HearingsTab'
 import { StatutoryBailCard } from '@/components/bail/StatutoryBailCard'
@@ -114,9 +113,6 @@ export function BailBriefView({ data }: BailBriefViewProps) {
 
   return (
     <div className={cn('flex flex-col gap-4', printMode && 'bail-brief-print')}>
-      {/* Non-dismissable disclaimer — always at top */}
-      <BailDisclaimer />
-
       {/* Risk flags panel — only shown when flags exist */}
       <RiskFlagPanel
         bail={bailCalc}
@@ -374,13 +370,13 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                 </div>
               ) : (
                 <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm border-collapse">
                     <thead>
-                      <tr className="text-left border-b border-slate-200">
-                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-32">Order Date</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-40">Order Type</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Summary</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Issued By</th>
+                      <tr className="text-left border-b border-slate-400 bg-slate-50">
+                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-32 border-r border-slate-400">Order Date</th>
+                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-40 border-r border-slate-400">Order Type</th>
+                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide border-r border-slate-400">Summary</th>
+                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36 border-r border-slate-400">Issued By</th>
                         <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-40">Source Document</th>
                       </tr>
                     </thead>
@@ -388,23 +384,23 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                       {orders.map((o) => {
                         const typeCfg = orderTypeConfig[o.orderType] ?? orderTypeConfig.other
                         return (
-                          <tr key={o.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td className="py-3 px-4">
+                          <tr key={o.id} className="border-b border-slate-400 hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-4 border-r border-slate-400">
                               <span className="text-sm font-semibold text-slate-700">
                                 {new Date(o.orderDate).toLocaleDateString('en-IN', {
                                   day: 'numeric', month: 'short', year: 'numeric',
                                 })}
                               </span>
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-4 border-r border-slate-400">
                               <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium', typeCfg.className)}>
                                 {typeCfg.label}
                               </span>
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-4 border-r border-slate-400">
                               <p className="text-sm text-slate-600">{o.summary ?? '—'}</p>
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-4 border-r border-slate-400">
                               <p className="text-sm text-slate-500">{o.issuedBy ?? '—'}</p>
                             </td>
                             <td className="py-3 px-4">
@@ -463,11 +459,11 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm border-collapse">
                       <thead>
-                        <tr className="text-left border-b border-slate-200">
-                          <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Finding Type</th>
-                          <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
+                        <tr className="text-left border-b border-slate-400 bg-slate-50">
+                          <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36 border-r border-slate-400">Finding Type</th>
+                          <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide border-r border-slate-400">Description</th>
                           <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wide w-36">Review Status</th>
                         </tr>
                       </thead>
@@ -475,13 +471,13 @@ export function BailBriefView({ data }: BailBriefViewProps) {
                         {findings.map((f) => {
                           const revCfg = reviewConfig[f.reviewStatus] ?? reviewConfig.needs_review
                           return (
-                            <tr key={f.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                              <td className="py-3 px-4">
+                            <tr key={f.id} className="border-b border-slate-400 hover:bg-slate-50 transition-colors">
+                              <td className="py-3 px-4 border-r border-slate-400">
                                 <span className="text-xs font-medium text-slate-700">
                                   {findingTypeLabels[f.findingType] ?? f.findingType}
                                 </span>
                               </td>
-                              <td className="py-3 px-4 max-w-sm">
+                              <td className="py-3 px-4 max-w-sm border-r border-slate-400">
                                 <p className="text-sm text-slate-700">{f.description}</p>
                               </td>
                               <td className="py-3 px-4">

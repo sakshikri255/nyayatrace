@@ -12,7 +12,9 @@
     "db:push": "drizzle-kit push",
     "db:seed-demo": "tsx lib/db/seed-demo.ts",
     "db:seed-aditi": "tsx lib/db/seed-aditi-case.ts",
-    "db:remove-demo": "tsx lib/db/cleanup-demo-data.ts"
+    "db:seed-showcase": "tsx lib/db/seed-showcase.ts",
+    "db:remove-demo": "tsx lib/db/cleanup-demo-data.ts",
+    "db:seed-rathore": "tsx lib/db/seed-rathore-case.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
