@@ -76,12 +76,6 @@ export function CaseDetailTabs({
     }
   }, [caseData.id])
 
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent('nyaya:case-tab-change', { detail: { tab: activeTab } })
-    )
-  }, [activeTab])
-
   function changeActiveTab(tab: TabId) {
     setActiveTab(tab)
   }

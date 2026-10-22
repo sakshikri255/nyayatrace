@@ -122,7 +122,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <MobileSidebarProvider>
       <RouteThemeController />
       <NavigationProgressBar />
-      <div className="flex h-screen w-full min-w-0 overflow-hidden bg-background text-foreground">
+      <div className="flex h-screen w-full min-w-0 overflow-hidden bg-slate-900 text-slate-100">
         {/* Sidebar — desktop fixed, mobile overlay */}
         <Sidebar />
 
@@ -132,7 +132,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Topbar />
             <UrgencyTicker items={urgentItems} />
           </div>
-          <main id="main-viewport" className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-background text-foreground transition-colors duration-200">
+          <main id="main-viewport" className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#F8FAFC] text-slate-900 transition-colors duration-200 dark:bg-[#0B0F17] dark:text-slate-100">
             <AnimatedPageWrapper>
               {children}
             </AnimatedPageWrapper>
