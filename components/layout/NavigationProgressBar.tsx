@@ -8,6 +8,7 @@ function NavigationProgressBarInner() {
   const searchParams = useSearchParams()
   const [progress, setProgress] = useState(0)
   const [visible, setVisible] = useState(false)
+  const [showSpinner, setShowSpinner] = useState(false)
 
   // Listen to link clicks across the entire app
   useEffect(() => {
@@ -30,6 +31,7 @@ function NavigationProgressBarInner() {
         ) {
           setVisible(true)
           setProgress(25)
+          setShowSpinner(true)
 
           // Gradually advance while waiting for the route to change
           const timer1 = setTimeout(() => setProgress(55), 150)
@@ -55,6 +57,7 @@ function NavigationProgressBarInner() {
   useEffect(() => {
     if (visible) {
       setProgress(100)
+      setShowSpinner(false)
       const timeout = setTimeout(() => {
         setVisible(false)
         setProgress(0)
@@ -63,21 +66,48 @@ function NavigationProgressBarInner() {
     }
   }, [pathname, searchParams, visible])
 
-  if (!visible && progress === 0) return null
-
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none fixed top-0 left-0 right-0 z-[9999] h-[2.5px] overflow-hidden"
-    >
-      <div
-        className="h-full bg-gradient-to-r from-gold-muted via-gold to-gold-light shadow-[0_0_10px_rgba(229,195,120,0.8),0_0_5px_rgba(197,168,128,0.6)] transition-all duration-200 ease-out"
-        style={{
-          width: `${progress}%`,
-          opacity: visible ? 1 : 0,
-        }}
-      />
-    </div>
+    <>
+      {/* ── Top progress bar ── */}
+      {(visible || progress > 0) && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed top-0 left-0 right-0 z-[9999] h-[2.5px] overflow-hidden"
+        >
+          <div
+            className="h-full bg-gradient-to-r from-gold-muted via-gold to-gold-light shadow-[0_0_10px_rgba(229,195,120,0.8),0_0_5px_rgba(197,168,128,0.6)] transition-all duration-200 ease-out"
+            style={{
+              width: `${progress}%`,
+              opacity: visible ? 1 : 0,
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── Spinner overlay (only for slow navigations ≥ 400 ms) ── */}
+      {showSpinner && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[9998] flex items-center justify-center"
+        >
+          {/* Subtle frosted backdrop */}
+          <div className="absolute inset-0 bg-white/30 dark:bg-black/30 backdrop-blur-[1px]" />
+
+          {/* Spinner card */}
+          <div className="relative flex flex-col items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-8 py-6 shadow-xl dark:border-slate-700/60 dark:bg-slate-900/80">
+            <div className="relative h-10 w-10">
+              {/* Track */}
+              <div className="absolute inset-0 rounded-full border-[3px] border-slate-200 dark:border-slate-700" />
+              {/* Arc */}
+              <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-teal" />
+            </div>
+            <p className="animate-pulse text-[12px] font-medium tracking-wide text-slate-400 dark:text-slate-500">
+              Loading…
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
