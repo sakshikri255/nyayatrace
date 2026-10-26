@@ -44,10 +44,10 @@ function readStoredAvatarId(): string | undefined {
 const NAV_ITEMS = [
   { label: 'Overview', href: '/overview', icon: LayoutDashboard },
   { label: 'Cases', href: '/cases', icon: Briefcase },
-  { label: 'Verification', href: '/verification', icon: Search },
   { label: 'Bail & Parole', href: '/bail-briefs', icon: Scale },
+  { label: 'Verification', href: '/verification', icon: Search },
   { label: 'Concordance', href: '/concordance', icon: BookOpen },
-  { label: 'References', href: '/overview#references', icon: Users },
+  { label: 'References', href: '/references', icon: Users },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
 

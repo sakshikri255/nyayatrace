@@ -23,6 +23,7 @@ const PAGE_CONFIG: Record<string, { title: string; category: string }> = {
   '/bail-briefs': { title: 'Bail & Statutory Relief', category: 'Dashboard' },
   '/concordance': { title: 'Dual Law Concordance', category: 'Dashboard' },
   '/reports': { title: 'Reports', category: 'Dashboard' },
+  '/references': { title: 'Professional References', category: 'Dashboard' },
   '/settings': { title: 'Chamber Settings', category: 'Dashboard' },
 }
 
