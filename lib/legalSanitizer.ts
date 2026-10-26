@@ -674,9 +674,9 @@ export function generateStoryAndDossier(
     caseStory = `The proceedings concern statutory land acquisition${details ? ` for ${details}` : ''}, disputing the nature and classification of the acquired land.`
   }
   // 10. General Concept Note / Legal Platform Memo
-  else if (/concept\s+note|nyayatrace|workspace|evidence\s+traceability/i.test(lower)) {
+  else if (/concept\s+note|nyayasetu|nyayatrace|workspace|evidence\s+traceability/i.test(lower)) {
     const conceptSentence = sentences.find((s) => s.length >= 30 && !isCorruptedText(s))
-    caseStory = conceptSentence || 'Documentation outlining the NyayaTrace workspace, evidence traceability, and case preparation capabilities.'
+    caseStory = conceptSentence || 'Documentation outlining the NyayaSetu workspace, evidence traceability, and case preparation capabilities.'
   }
 
   // 11. Universal Narrative from Clean Document Sentences

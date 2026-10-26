@@ -35,7 +35,7 @@ const PRESET_LABELS: Record<LayoutPreset, string> = {
   'full-doc':   'Full Doc',
   'inspection': 'Inspect',
 }
-const LAYOUT_KEY = 'nyaya_workspace_layout'
+const LAYOUT_KEY = 'nyayasetu_workspace_layout'
 
 export function VerificationWorkspace({ caseData, initialDocuments, initialFindings }: Props) {
   const [documents, setDocuments] = useState<DocumentRow[]>(initialDocuments)

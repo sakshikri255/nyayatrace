@@ -336,7 +336,7 @@ export function OurProcessSection() {
           })}
         </div>
 
-        {/* Traditional vs NyayaTrace comparison strip */}
+        {/* Traditional vs NyayaSetu comparison strip */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -391,7 +391,7 @@ export function OurProcessSection() {
               </p>
             </motion.div>
 
-            {/* NyayaTrace */}
+            {/* NyayaSetu */}
             <motion.div
               initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: 18 }}
               animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -401,7 +401,7 @@ export function OurProcessSection() {
               <div className="absolute top-0 right-0 w-24 h-24 bg-teal/10 rounded-full blur-xl pointer-events-none" />
               <div className="flex items-center gap-2.5 mb-3.5 text-teal-light">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span className="text-sm font-bold uppercase tracking-wider">NyayaTrace-Assisted</span>
+                <span className="text-sm font-bold uppercase tracking-wider">NyayaSetu-Assisted</span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 {['Organize docs', 'Source-linked synopsis', 'Review passages', 'Structured brief'].map((step, i, arr) => (

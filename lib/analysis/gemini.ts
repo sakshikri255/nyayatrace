@@ -120,7 +120,7 @@ async function callGeminiAPI(
       })
 
       if (response.ok) {
-        console.log(`[NyayaTrace] Model "${model}" not found. Using fallback "${fallbackModel}" (${apiVersion}).`)
+        console.log(`[NyayaSetu] Model "${model}" not found. Using fallback "${fallbackModel}" (${apiVersion}).`)
         return { response, apiVersion, modelUsed: fallbackModel }
       }
 
@@ -165,7 +165,7 @@ function sanitizePageTextForLLM(raw: string): string {
 export async function generateGeminiAnalysis(documents: DocumentWithPages[], language = 'English'): Promise<AIAnalysis> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey) {
-    throw new Error('Gemini is not configured. Set GEMINI_API_KEY on the server and restart NyayaTrace.')
+    throw new Error('Gemini is not configured. Set GEMINI_API_KEY on the server and restart NyayaSetu.')
   }
 
   const model = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash'

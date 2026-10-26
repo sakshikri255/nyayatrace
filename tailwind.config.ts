@@ -16,7 +16,7 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        // NyayaTrace design tokens
+        // NyayaSetu design tokens
         navy: "#0F172A",
         charcoal: "#1E293B",
         offwhite: "#F8FAFC",

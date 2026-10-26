@@ -39,7 +39,7 @@ export default function ResetPasswordPage() {
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <Image
           src="/images/auth-bg.jpg"
-          alt="NyayaTrace Legal Chambers"
+          alt="NyayaSetu Legal Chambers"
           fill
           priority
           sizes="100vw"

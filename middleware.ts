@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const SESSION_COOKIE = 'nyayatrace_session'
+const SESSION_COOKIE = 'nyayasetu_session'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

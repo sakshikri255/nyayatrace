@@ -77,14 +77,14 @@ function generateICS(hearings: HearingEntry[]): string {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//NyayaTrace//Court Diary//EN',
+    'PRODID:-//NyayaSetu//Court Diary//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
   ]
 
   for (const h of hearings) {
     const dtStart = h.hearingDate.replace(/-/g, '')
-    const uid = `nyaya-${h.id}@nyayatrace.in`
+    const uid = `nyaya-${h.id}@nyayasetu.in`
     const summary = `Case ${h.caseNumber} — ${EVENT_TYPE_LABELS[h.eventType] ?? h.eventType}`
     const desc = `${h.caseTitle}${h.court ? ' | ' + h.court : ''}${h.judge ? ' | J. ' + h.judge : ''}`.replace(/\n/g, '\\n')
     const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/cases/${h.caseId}?tab=hearings`
@@ -301,7 +301,7 @@ export function CauseListBoard() {
     }
     const ics = generateICS(allHearings)
     const weekLabel = fmt(fromDate, { day: 'numeric', month: 'short' }).replace(/\s/g, '-')
-    downloadICS(ics, `nyayatrace-hearings-${weekLabel}.ics`)
+    downloadICS(ics, `nyayasetu-hearings-${weekLabel}.ics`)
     toast.success(`Exported ${allHearings.length} hearings to calendar file.`)
   }
 

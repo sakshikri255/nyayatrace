@@ -15,7 +15,7 @@ export default function OverviewPage() {
       {/* 1. Hero with animated Lady Justice visual */}
       <HeroSection />
 
-      {/* 2. Our Process with flowing line & Traditional vs. NyayaTrace comparison */}
+      {/* 2. Our Process with flowing line & Traditional vs. NyayaSetu comparison */}
       <OurProcessSection />
 
       {/* 3. Introduction / Our Approach */}

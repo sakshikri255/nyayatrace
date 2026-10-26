@@ -60,10 +60,10 @@ function getPageMeta(pathname: string) {
     }
   }
 
-  return { title: 'NyayaTrace', category: 'Dashboard', subTitle: null, parentHref: null }
+  return { title: 'NyayaSetu', category: 'Dashboard', subTitle: null, parentHref: null }
 }
 
-const DISMISSED_KEY = 'nyayatrace_dismissed_alerts'
+const DISMISSED_KEY = 'nyayasetu_dismissed_alerts'
 
 function getDismissed(): Record<string, number> {
   try {

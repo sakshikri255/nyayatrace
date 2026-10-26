@@ -51,7 +51,7 @@ export function IntroductionSection() {
                   <div className="w-2.5 h-2.5 rounded-full bg-rose-500/70" />
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
-                  <span className="text-xs font-mono text-slate-400 ml-2">NyayaTrace Evidence Matrix</span>
+                  <span className="text-xs font-mono text-slate-400 ml-2">NyayaSetu Evidence Matrix</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-teal-light font-medium bg-teal/10 px-2.5 py-0.5 rounded-full border border-teal/20">
                   <Link2 className="w-3 h-3" />
@@ -152,7 +152,7 @@ export function IntroductionSection() {
 
             {/* Description */}
             <p className="text-base text-slate-300/90 leading-relaxed mb-6 font-light">
-              NyayaTrace helps legal professionals organize lengthy case files, understand key events,
+              NyayaSetu helps legal professionals organize lengthy case files, understand key events,
               trace findings to their original sources, and review potential inconsistencies without repeatedly
               searching through every page.
             </p>
@@ -169,7 +169,7 @@ export function IntroductionSection() {
                 onClick={scrollToServices}
                 className="group inline-flex items-center gap-2 text-sm font-semibold text-gold-light hover:text-gold transition-colors"
               >
-                <span>Explore NyayaTrace</span>
+                <span>Explore NyayaSetu</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </a>
             </div>

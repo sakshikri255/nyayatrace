@@ -30,7 +30,7 @@ import { logoutUser, setSession, DEMO_USERS, type UserRecord } from '@/lib/auth'
 import { useSession } from '@/hooks/useSession'
 import { getAvatar } from '@/lib/avatars'
 
-const PROFILE_KEY = 'nyayatrace_profile'
+const PROFILE_KEY = 'nyayasetu_profile'
 function readStoredAvatarId(): string | undefined {
   if (typeof window === 'undefined') return undefined
   try {
@@ -65,7 +65,7 @@ export function Sidebar() {
   const { mobileOpen, setMobileOpen } = useMobileSidebar()
   const profileRef = useRef<HTMLDivElement>(null)
 
-  // Keep storedAvatarId in sync with nyayatrace_profile localStorage
+  // Keep storedAvatarId in sync with nyayasetu_profile localStorage
   useEffect(() => {
     setStoredAvatarId(readStoredAvatarId())
     function onStorage(e: StorageEvent) {

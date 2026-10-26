@@ -4,7 +4,7 @@ import type { AIAnalysis } from './openai'
 
 export async function generateOpenRouterAnalysis(documents: DocumentWithPages[], language = 'English'): Promise<AIAnalysis> {
   const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) throw new Error('OpenRouter is not configured. Set OPENROUTER_API_KEY on the server and restart NyayaTrace.')
+  if (!apiKey) throw new Error('OpenRouter is not configured. Set OPENROUTER_API_KEY on the server and restart NyayaSetu.')
 
   const model = process.env.OPENROUTER_MODEL?.trim() || 'openai/gpt-4o-mini'
   const pageInputs: Array<{ documentId: number; documentName: string; pageNumber: number; text: string }> = []
@@ -50,8 +50,8 @@ Write in ${language}. Every quote must be exact from the text. Return only the J
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://nyayatrace.app',
-      'X-Title': 'NyayaTrace Legal Analysis',
+      'HTTP-Referer': 'https://nyayasetu.app',
+      'X-Title': 'NyayaSetu Legal Analysis',
     },
     body: JSON.stringify({
       model,

@@ -1,6 +1,6 @@
 import React from 'react'
 
-interface NyayaTraceLogoProps {
+interface NyayaSetuLogoProps {
   size?: 'sm' | 'lg'
   /** 'light' = white wordmark (dark bg), 'dark' = navy wordmark, 'auth' = warm ivory/gold (auth pages), 'gold' = black/gold/white theme */
   variant?: 'light' | 'dark' | 'auth' | 'gold'
@@ -11,7 +11,7 @@ export function NyayaTraceLogo({
   size = 'lg',
   variant = 'gold',
   className = '',
-}: NyayaTraceLogoProps) {
+}: NyayaSetuLogoProps) {
   const isSmall = size === 'sm'
   const iconSize = isSmall ? 24 : 40
   const fontSize = isSmall ? 14 : 22
@@ -43,7 +43,7 @@ export function NyayaTraceLogo({
   return (
     <div
       className={`flex items-center gap-2 select-none ${className}`}
-      aria-label="NyayaTrace"
+      aria-label="NyayaSetu"
     >
       {/* ── Scales of Justice Icon ── */}
       <svg
@@ -104,7 +104,7 @@ export function NyayaTraceLogo({
           }}
         >
           Nyaya
-          <span style={{ color: accentColor }}>Trace</span>
+          <span style={{ color: accentColor }}>Setu</span>
         </span>
       )}
     </div>

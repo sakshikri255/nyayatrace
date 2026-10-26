@@ -162,7 +162,7 @@ export function LandingPageView() {
             transition={{ duration: 0.5, ease: 'easeOut', delay: 0.18 }}
             className="text-base sm:text-lg text-muted leading-relaxed max-w-xl mb-10"
           >
-            NyayaTrace helps legal professionals verify facts, surface
+            NyayaSetu helps legal professionals verify facts, surface
             inconsistencies, and build transparent case narratives from raw
             court documents — faster and with a full audit trail.
           </motion.p>
@@ -238,7 +238,7 @@ export function LandingPageView() {
         </div>
 
         <div className="mx-auto max-w-5xl mt-10 pt-6 border-t border-border-dark text-center text-xs text-muted/50">
-          © {new Date().getFullYear()} NyayaTrace.
+          © {new Date().getFullYear()} NyayaSetu.
         </div>
       </footer>
     </div>

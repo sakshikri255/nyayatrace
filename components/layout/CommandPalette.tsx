@@ -359,7 +359,7 @@ export function CommandPalette({ dark }: { dark?: boolean } = {}) {
                 <kbd className="rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-slate-400">↵</kbd> to select
               </span>
             </div>
-            <span className="font-medium text-gold-muted">NyayaTrace Command Bar</span>
+            <span className="font-medium text-gold-muted">NyayaSetu Command Bar</span>
           </div>
         </DialogContent>
       </Dialog>

@@ -2,7 +2,7 @@ import { ConcordanceMatrix } from '@/components/legal/ConcordanceMatrix'
 import { BookOpen, Scale, ArrowRightLeft } from 'lucide-react'
 
 export const metadata = {
-  title: 'Dual Law Concordance — NyayaTrace',
+  title: 'Dual Law Concordance — NyayaSetu',
   description: 'IPC ↔ BNS and CrPC ↔ BNSS section concordance matrix',
 }
 

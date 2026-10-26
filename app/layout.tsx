@@ -17,7 +17,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "NyayaTrace | Legal Intelligence & Case Preparation",
+  title: "NyayaSetu | Legal Intelligence & Case Preparation",
   description: "Complex Case Files. Clearer Legal Understanding. Case records, document extraction, and source-linked analysis.",
 };
 

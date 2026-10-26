@@ -1,6 +1,6 @@
 /**
  * Server-side auth utilities — DB-backed sessions with bcrypt password hashing.
- * Cookie name: nyayatrace_session
+ * Cookie name: nyayasetu_session
  * Session: stored in SQLite sessions table, 7-day expiry
  */
 
@@ -11,7 +11,7 @@ import { eq, lt } from 'drizzle-orm'
 import { DEMO_USERS } from '@/lib/auth'
 import { cookies } from 'next/headers'
 
-export const SESSION_COOKIE = 'nyayatrace_session'
+export const SESSION_COOKIE = 'nyayasetu_session'
 const SESSION_MAX_AGE_DAYS = 7
 
 export interface SessionUser {

@@ -75,7 +75,7 @@ export function LandingFooter() {
           <div className="md:col-span-2 space-y-3">
             <NyayaTraceLogo size="lg" variant="light" />
             <p className="text-xs text-slate-400 max-w-sm leading-relaxed font-light">
-              NyayaTrace is a professional legal intelligence workspace designed for lawyers and law students to organize case records, trace evidence citations, inspect inconsistencies, and prepare structured briefs.
+              NyayaSetu is a professional legal intelligence workspace designed for lawyers and law students to organize case records, trace evidence citations, inspect inconsistencies, and prepare structured briefs.
             </p>
           </div>
 
@@ -134,7 +134,7 @@ export function LandingFooter() {
         {/* Bottom Copyright & Disclaimer */}
         <div className="pt-6 border-t border-white/5 flex items-center justify-center gap-4 text-xs text-slate-500">
           <p>
-            © {new Date().getFullYear()} NyayaTrace. Assistive legal intelligence for judicial professionals.
+            © {new Date().getFullYear()} NyayaSetu. Assistive legal intelligence for judicial professionals.
           </p>
         </div>
       </div>

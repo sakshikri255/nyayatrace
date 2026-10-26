@@ -139,7 +139,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({
       error: aiProvider === 'ollama'
         ? `Ollama is not configured. Set OLLAMA_BASE_URL=http://localhost:11434 and OLLAMA_MODEL=llama3 in your environment, run "ollama serve", and pull the model with "ollama pull llama3".`
-        : `${providerName} is not configured. Set ${providerEnvVar} in the server environment and restart NyayaTrace.`,
+        : `${providerName} is not configured. Set ${providerEnvVar} in the server environment and restart NyayaSetu.`,
     }, { status: 503 })
   }
 

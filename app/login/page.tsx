@@ -255,7 +255,7 @@ function LoginContent() {
               </h1>
               <p className="auth-subheading">
                 {tab === 'login'
-                  ? 'Sign in to access your NyayaTrace legal workspace'
+                  ? 'Sign in to access your NyayaSetu legal workspace'
                   : 'Start managing your legal cases with precision and clarity'}
               </p>
             </div>

@@ -29,7 +29,7 @@ export function TrustSection() {
       title: 'Professional Control',
       principle: 'Assistive, Not Adjudicative',
       description:
-        'NyayaTrace assists lawyers and law students to organize and understand cases; it does not decide cases, determine guilt, or replace professional legal judgment.',
+        'NyayaSetu assists lawyers and law students to organize and understand cases; it does not decide cases, determine guilt, or replace professional legal judgment.',
       icon: UserCheck,
       accent: 'teal',
     },

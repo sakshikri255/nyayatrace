@@ -104,7 +104,7 @@ export function exportCourtDocx(data: CaseBriefData) {
 
     <h3>I. SYNOPSIS &amp; BACKGROUND OF RECORD</h3>
     <p style="text-align: justify; text-indent: 0.5in;">
-      ${data.case.description || 'The present case arises out of the case records and exhibits reviewed under NyayaTrace workstation.'}
+      ${data.case.description || 'The present case arises out of the case records and exhibits reviewed under NyayaSetu workstation.'}
     </p>
     <p style="text-align: justify; text-indent: 0.5in;">
       The record contains a total of <strong>${data.documents.count}</strong> authorized exhibits/documents. Cross-referencing has yielded <strong>${data.findings.total}</strong> material evidentiary observations, of which <strong>${data.findings.verified}</strong> have been verified by counsel/reviewers.

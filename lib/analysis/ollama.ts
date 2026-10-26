@@ -1,5 +1,5 @@
 /**
- * Local Ollama inference provider for NyayaTrace.
+ * Local Ollama inference provider for NyayaSetu.
  *
  * Configuration (all server-side, no API key needed):
  *   OLLAMA_BASE_URL  – default: http://localhost:11434

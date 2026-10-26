@@ -1,6 +1,6 @@
-# NyayaTrace
+# NyayaSetu
 
-NyayaTrace is a local case-record workspace. Create a case, upload authorized documents, extract page text, review source-linked observations, and save versioned synopses.
+NyayaSetu is a local case-record workspace. Create a case, upload authorized documents, extract page text, review source-linked observations, and save versioned synopses.
 
 ## Run locally
 
@@ -10,7 +10,7 @@ npm run db:migrate
 npm run dev
 ```
 
-Open http://localhost:3000. The app starts with an empty case list; it does not seed records or reset the database on startup. SQLite data is stored in `nyayatrace.db`, and original uploads are stored under `uploads/`.
+Open http://localhost:3000. The app starts with an empty case list; it does not seed records or reset the database on startup. SQLite data is stored in `nyayatrace.db` (filename unchanged), and original uploads are stored under `uploads/`.
 
 ## Document processing
 

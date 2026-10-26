@@ -11,6 +11,7 @@ import type { FindingRow } from '@/lib/queries/findings'
 import type { HearingRow, HearingChartPoint } from '@/lib/queries/hearings'
 import { OverviewTab } from './tabs/OverviewTab'
 import { DocumentsTab } from './tabs/DocumentsTab'
+import { UploadsTab } from './tabs/UploadsTab'
 import { FindingsTab } from './tabs/FindingsTab'
 import { HearingsTab } from './tabs/HearingsTab'
 import { ReportTab } from './tabs/ReportTab'
@@ -27,8 +28,7 @@ interface CaseDetailTabsProps {
 }
 
 type TabId =
-  | 'overview'
-  | 'documents'
+  | 'uploads'
   | 'chronology'
   | 'synopsis'
   | 'findings'
@@ -49,30 +49,31 @@ export function CaseDetailTabs({
   hearings,
   hearingChartData,
 }: CaseDetailTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [activeTab, setActiveTab] = useState<TabId>('uploads')
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const tabParam = new URLSearchParams(window.location.search).get('tab') as TabId | 'detective' | null
+      const tabParam = new URLSearchParams(window.location.search).get('tab') as string | null
       if (tabParam === 'detective' || tabParam === 'chronology') {
-        setActiveTab('chronology')
-      } else if (
-        tabParam &&
-        [
-          'overview',
-          'documents',
-          'chronology',
-          'synopsis',
-          'findings',
-          'sections',
-          'hearings',
-          'report',
-        ].includes(tabParam)
-      ) {
-        setActiveTab(tabParam as TabId)
-      } else {
-        setActiveTab('overview')
-      }
+          setActiveTab('chronology')
+        } else if (tabParam === 'overview' || tabParam === 'documents') {
+          setActiveTab('uploads')
+        } else if (
+          tabParam &&
+          [
+            'uploads',
+            'chronology',
+            'synopsis',
+            'findings',
+            'sections',
+            'hearings',
+            'report',
+          ].includes(tabParam)
+        ) {
+          setActiveTab(tabParam as TabId)
+        } else {
+          setActiveTab('uploads')
+        }
     }
   }, [caseData.id])
 
@@ -87,8 +88,7 @@ export function CaseDetailTabs({
       icon?: React.ElementType
       badgeClassName?: string
     }> = [
-      { id: 'overview', label: 'Overview' },
-      { id: 'documents', label: 'Documents', count: documents.length },
+      { id: 'uploads', label: 'Uploads', count: documents.length },
       { id: 'chronology', label: 'Checkpoints & Chronology', icon: Clock },
       { id: 'synopsis', label: 'Analysis & Synopsis' },
       { id: 'findings', label: 'Findings', count: findings.length, badgeClassName: 'text-amber-700 bg-amber-50 border border-amber-200' },
@@ -153,17 +153,14 @@ export function CaseDetailTabs({
           exit="exit"
           className="w-full pt-1"
         >
-          {activeTab === 'overview' && (
-            <OverviewTab
+          {activeTab === 'uploads' && (
+            <UploadsTab
               caseData={caseData}
               documents={documents}
               findings={findings}
               hearings={hearings}
               onGoToAnalysis={() => changeActiveTab('synopsis')}
             />
-          )}
-          {activeTab === 'documents' && (
-            <DocumentsTab caseId={caseData.id} initialDocuments={documents} />
           )}
           {activeTab === 'chronology' && (
             <MasterChronologyView
@@ -176,7 +173,7 @@ export function CaseDetailTabs({
             <AnalysisWorkspace
               caseData={caseData}
               documents={documents}
-              onUploadDocuments={() => changeActiveTab('documents')}
+              onUploadDocuments={() => changeActiveTab('uploads')}
             />
           )}
           {activeTab === 'findings' && (

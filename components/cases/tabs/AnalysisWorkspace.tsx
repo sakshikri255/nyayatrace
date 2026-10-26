@@ -119,7 +119,7 @@ function SourceBadge({
   )
 }
 
-type AnalysisSectionId = 'overview' | 'data' | 'summary' | 'documents' | 'facts' | 'citations'
+type AnalysisSectionId = 'data' | 'summary' | 'documents' | 'facts' | 'citations'
 
 
 const STATUTORY_PATTERN =
@@ -336,7 +336,7 @@ export function AnalysisWorkspace({
   const [selectedSource, setSelectedSource] = useState<(EvidenceReference & { relatedFinding?: string }) | null>(null)
   
   // Interactive features
-  const [activeSection, setActiveSection] = useState<AnalysisSectionId>('overview')
+  const [activeSection, setActiveSection] = useState<AnalysisSectionId>('facts')
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [entityCategoryFilter, setEntityCategoryFilter] = useState<'all' | 'charges' | 'person' | 'datetime' | 'location' | 'evidence' | 'custody'>('all')
@@ -1160,11 +1160,10 @@ export function AnalysisWorkspace({
           <nav aria-label="Analysis sections" className="analysis-controls flex items-center justify-between gap-3 border-y border-slate-200/80 py-2">
             <div className="flex items-center gap-1 overflow-x-auto scrollbar-none min-w-0 flex-1">
               {[
-                { id: 'overview', label: 'Overview' },
+                { id: 'facts', label: 'Key Facts' },
                 { id: 'data', label: 'Fact Matrix' },
                 { id: 'summary', label: 'Summary' },
                 { id: 'documents', label: 'Documents' },
-                { id: 'facts', label: 'Key Facts' },
                 { id: 'citations', label: 'Citations' },
               ].map((tab) => (
                 <a
@@ -1224,101 +1223,34 @@ export function AnalysisWorkspace({
           )}
 
                     {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 1: CASE OVERVIEW (HIGH-DENSITY SUMMARY BANNER)         */}
+          {/* SECTION 1: KEY FACTS & QUOTES EXTRACTED                        */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          {(() => {
-            const headerCourt = synopsis.metadataHeader?.courtName || synopsis.caseOverview.court || 'District Judge Court, Purnea'
-            const headerCaseNumber = synopsis.metadataHeader?.caseNumber || synopsis.caseOverview.reference || caseData.caseNumber || 'Arb. R.D. Case No. 04/2023'
-            const headerProvision = synopsis.metadataHeader?.primaryActs || 'Section 34, Arbitration & Conciliation Act 1996'
-            const headerDate = synopsis.metadataHeader?.keyDates?.orderDate ||
-              synopsis.metadataHeader?.keyDates?.filingDate ||
-              (filingDate
-                ? new Date(`${filingDate}T00:00:00`).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })
-                : 'March 30, 2022')
-            const headerParties = synopsis.metadataHeader?.parties || null
-
-            return (
-              <section
-                id="analysis-section-overview"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  borderColor: 'var(--border-subtle)',
-                  boxShadow: 'var(--card-shadow)',
-                }}
-                className="scroll-mt-4 rounded-xl border p-4 transition-all"
-              >
-                {/* Single-row header */}
-                <div style={{ borderColor: 'var(--border-subtle)' }} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
-                    <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">1. Case Overview</h3>
-                  </div>
-                  {headerParties && (
-                    <span style={{ color: 'var(--text-secondary)' }} className="inline-flex items-center gap-1 text-xs font-medium truncate max-w-[280px]">
-                      <User className="h-3 w-3 text-teal shrink-0" />
-                      {headerParties}
-                    </span>
-                  )}
-                </div>
-
-                {/* Compact 4-col grid — tighter cells */}
-                <div
-                  style={{ backgroundColor: 'var(--border-subtle)', borderColor: 'var(--border-subtle)' }}
-                  className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border lg:grid-cols-4"
-                >
-                  {headerCourt && (
-                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
-                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
-                        <Building2 className="h-3 w-3 text-teal shrink-0" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide">Court</span>
-                      </div>
-                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold leading-snug">{headerCourt}</p>
-                    </div>
-                  )}
-                  {headerCaseNumber && (
-                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
-                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
-                        <FileText className="h-3 w-3 text-teal shrink-0" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide">Case No.</span>
-                      </div>
-                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold font-mono leading-snug">{headerCaseNumber}</p>
-                    </div>
-                  )}
-                  {headerProvision && (
-                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
-                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
-                        <Scale className="h-3 w-3 text-teal shrink-0" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide">Provision</span>
-                      </div>
-                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold leading-snug">{headerProvision}</p>
-                    </div>
-                  )}
-                  {headerDate && (
-                    <div style={{ backgroundColor: 'var(--bg-card)' }} className="px-3 py-2.5">
-                      <div style={{ color: 'var(--text-muted)' }} className="mb-0.5 flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3 text-teal shrink-0" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide">Date</span>
-                      </div>
-                      <p style={{ color: 'var(--text-primary)' }} className="text-xs font-bold leading-snug">{headerDate}</p>
-                    </div>
-                  )}
-                </div>
-
-                {synopsis.caseOverview.userNotes && (
-                  <div style={{ backgroundColor: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
-                    className="mt-3 rounded-lg border px-3 py-2 text-xs"
-                  >
-                    <span style={{ color: 'var(--text-secondary)' }} className="block mb-0.5 text-[10px] font-bold uppercase tracking-wider">Case Notes</span>
-                    <p className="whitespace-pre-wrap leading-relaxed">{synopsis.caseOverview.userNotes}</p>
-                  </div>
-                )}
-              </section>
-            )
-          })()}
+          <section
+            id="analysis-section-facts"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-subtle)',
+              boxShadow: 'var(--card-shadow)',
+            }}
+            className="scroll-mt-4 space-y-3 rounded-xl border p-4 transition-all"
+          >
+            <div
+              style={{ borderColor: 'var(--border-subtle)' }}
+              className="flex items-center gap-2 border-b pb-2"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
+              <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
+                1. Key Facts &amp; Quotes Extracted
+              </h3>
+            </div>
+            <ExtractedQuotesSection
+              rawQuotes={filteredFacts.map((fact, index) => ({
+                ...fact,
+                passage: t(`fact.${index}`, fact.passage),
+              }))}
+              onOpen={openSource}
+            />
+          </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
           {/* SECTION 2: KEY CASE DATA & FACT MATRIX (CLEAN DATA TABLE)      */}
@@ -1849,37 +1781,7 @@ export function AnalysisWorkspace({
           </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 5: KEY FACTS & QUOTES EXTRACTED                       */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section
-            id="analysis-section-facts"
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              borderColor: 'var(--border-subtle)',
-              boxShadow: 'var(--card-shadow)',
-            }}
-            className="scroll-mt-4 space-y-3 rounded-xl border p-4 transition-all"
-          >
-            <div
-              style={{ borderColor: 'var(--border-subtle)' }}
-              className="flex items-center gap-2 border-b pb-2"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
-              <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
-                5. Key Facts &amp; Quotes Extracted
-              </h3>
-            </div>
-            <ExtractedQuotesSection
-              rawQuotes={filteredFacts.map((fact, index) => ({
-                ...fact,
-                passage: t(`fact.${index}`, fact.passage),
-              }))}
-              onOpen={openSource}
-            />
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 6: PAGE CITATIONS & SOURCE INDEX                     */}
+          {/* SECTION 5: PAGE CITATIONS & SOURCE INDEX                     */}
           {/* ═════════════════════════════════════════════════════════════ */}
           <section
             id="analysis-section-citations"
@@ -1897,7 +1799,7 @@ export function AnalysisWorkspace({
                 <div className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
                   <h3 style={{ color: 'var(--text-primary)' }} className="text-sm font-bold">
-                    6. Page Citations &amp; Source Index
+                    5. Page Citations &amp; Source Index
                   </h3>
                 </div>
                 <span

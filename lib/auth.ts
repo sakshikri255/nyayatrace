@@ -16,21 +16,21 @@ export const DEMO_USERS: Array<UserRecord & { password: string }> = [
   {
     id: '1',
     name: 'Aditi Sharma',
-    email: 'aditi@nyayatrace.in',
+    email: 'aditi@nyayasetu.in',
     password: 'Demo@1234',
     role: 'Senior Advocate',
   },
   {
     id: '2',
     name: 'Rohan Mehta',
-    email: 'rohan@nyayatrace.in',
+    email: 'rohan@nyayasetu.in',
     password: 'Demo@1234',
     role: 'Junior Associate',
   },
 ]
 
-export const SESSION_KEY = 'nyayatrace_session'
-export const SESSION_CHANGE_EVENT = 'nyayatrace_session_change'
+export const SESSION_KEY = 'nyayasetu_session'
+export const SESSION_CHANGE_EVENT = 'nyayasetu_session_change'
 
 export function setSession(session: UserRecord | null): void {
   if (typeof window === 'undefined') return

@@ -4,7 +4,7 @@ import type { AIAnalysis } from './openai'
 
 export async function generateGroqAnalysis(documents: DocumentWithPages[], language = 'English'): Promise<AIAnalysis> {
   const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) throw new Error('Groq is not configured. Set GROQ_API_KEY on the server and restart NyayaTrace.')
+  if (!apiKey) throw new Error('Groq is not configured. Set GROQ_API_KEY on the server and restart NyayaSetu.')
 
   const model = process.env.GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile'
   const pageInputs: Array<{ documentId: number; documentName: string; pageNumber: number; text: string }> = []

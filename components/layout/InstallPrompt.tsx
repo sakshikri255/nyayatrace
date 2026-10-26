@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, X } from 'lucide-react'
 
-const DISMISSED_KEY = 'nyayatrace_pwa_install_dismissed'
+const DISMISSED_KEY = 'nyayasetu_pwa_install_dismissed'
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -61,7 +61,7 @@ export function InstallPrompt() {
         >
           <Download size={16} className="text-gold shrink-0" />
           <span className="flex-1">
-            Install NyayaTrace for offline access
+            Install NyayaSetu for offline access
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
             <button

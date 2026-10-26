@@ -40,7 +40,7 @@ interface ProfileData {
   specialisation: string
 }
 
-const PROFILE_KEY = 'nyayatrace_profile'
+const PROFILE_KEY = 'nyayasetu_profile'
 
 function loadProfile(): ProfileData | null {
   try {
@@ -62,7 +62,7 @@ interface DiaryNote {
   done: boolean
 }
 
-const DIARY_KEY = 'nyayatrace_diary_notes'
+const DIARY_KEY = 'nyayasetu_diary_notes'
 
 function loadNotes(): DiaryNote[] {
   try {
@@ -377,7 +377,7 @@ export function SettingsClient() {
               <StyledInput
                 value={profile.email}
                 readOnly
-                placeholder="aditi@nyayatrace.in"
+                placeholder="aditi@nyayasetu.in"
               />
             </Field>
             <Field label="Designation / Role">

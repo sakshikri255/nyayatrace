@@ -157,7 +157,7 @@ export async function POST(
       .map((p) => `[DOC:${p.documentId}|${p.documentName}|PAGE:${p.pageNumber}]\n${p.extractedText?.slice(0, 500) ?? ''}`)
       .join('\n\n---\n\n')
 
-    const systemPrompt = `You are a legal research assistant for NyayaTrace. You have access ONLY to the following extracted document pages from this specific legal case. 
+    const systemPrompt = `You are a legal research assistant for NyayaSetu. You have access ONLY to the following extracted document pages from this specific legal case.
 
 RULES:
 1. Answer ONLY from the supplied document text. Never use outside knowledge about specific case facts.
