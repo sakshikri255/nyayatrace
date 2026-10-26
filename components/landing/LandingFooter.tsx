@@ -105,6 +105,11 @@ export function LandingFooter() {
                   Procedural Chronology
                 </Link>
               </li>
+              <li>
+                <Link href="/overview#references" className="hover:text-gold-light transition-colors">
+                  References
+                </Link>
+              </li>
             </ul>
           </div>
 

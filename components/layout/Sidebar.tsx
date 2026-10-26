@@ -16,6 +16,7 @@ import {
   ChevronUp,
   User,
   Check,
+  Users,
 } from 'lucide-react'
 import { NyayaTraceLogo } from '@/components/logo/NyayaTraceLogo'
 import {
@@ -46,6 +47,7 @@ const NAV_ITEMS = [
   { label: 'Verification', href: '/verification', icon: Search },
   { label: 'Bail & Parole', href: '/bail-briefs', icon: Scale },
   { label: 'Concordance', href: '/concordance', icon: BookOpen },
+  { label: 'References', href: '/overview#references', icon: Users },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
 

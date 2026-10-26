@@ -5,6 +5,7 @@ import { OurProcessSection } from '@/components/landing/OurProcessSection'
 import { IntroductionSection } from '@/components/landing/IntroductionSection'
 import { TrustedServicesSection } from '@/components/landing/TrustedServicesSection'
 import { TrustSection } from '@/components/landing/TrustSection'
+import { ReferencesSection } from '@/components/landing/ReferencesSection'
 import { LandingFooter } from '@/components/landing/LandingFooter'
 
 export const dynamic = 'force-dynamic'
@@ -27,7 +28,10 @@ export default function OverviewPage() {
       {/* 5. Trust and Responsibility */}
       <TrustSection />
 
-      {/* 6. Footer and calls to action */}
+      {/* 6. Professional References — Judges & Advocates */}
+      <ReferencesSection />
+
+      {/* 7. Footer and calls to action */}
       <LandingFooter />
     </div>
   )
