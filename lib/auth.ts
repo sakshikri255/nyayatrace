@@ -16,14 +16,14 @@ export const DEMO_USERS: Array<UserRecord & { password: string }> = [
   {
     id: '1',
     name: 'Aditi Sharma',
-    email: 'aditi@nyayasetu.in',
+    email: 'aditi@nyayatrace.in',
     password: 'Demo@1234',
     role: 'Senior Advocate',
   },
   {
     id: '2',
     name: 'Rohan Mehta',
-    email: 'rohan@nyayasetu.in',
+    email: 'rohan@nyayatrace.in',
     password: 'Demo@1234',
     role: 'Junior Associate',
   },

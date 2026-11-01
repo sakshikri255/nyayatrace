@@ -1,7 +1,7 @@
 import type { CaseDetail } from '@/lib/queries/cases'
 import type { DocumentWithPages } from '@/lib/queries/documents'
-import type { AIAnalysis, CaseMetadataHeader, FactMatrixItem, VerifiedCitation } from '@/lib/analysis/openai'
-import { extractLegalDates, cleanOcrRegex, categorizeLegalText, generateStoryAndDossier } from '@/lib/legalSanitizer'
+import type { AIAnalysis, CaseMetadataHeader, FactMatrixItem } from '@/lib/analysis/openai'
+import { extractLegalDates, cleanOcrRegex, generateStoryAndDossier } from '@/lib/legalSanitizer'
 import type { TechnicalDossierItem } from '@/lib/legalSanitizer'
 
 export interface EvidenceReference {
@@ -71,8 +71,6 @@ export interface CaseSynopsis {
 }
 
 const DATE_LABEL_PATTERN = /\b(date of (?:incident|occurrence|event|award|order|filing)|(?:incident|occurrence|event|award|order|filing) date)\b/gi
-const PERSON_NAME_PATTERN = /\bname of (accused|applicant|witness|complainant|petitioner|respondent)\b|\b(accused|applicant|witness|complainant|petitioner|respondent)(?:'s)? name\b/gi
-const INCIDENT_LOCATION_PATTERN = /\b(place of occurrence|location of incident|incident location|location of land|disputed property)\b/gi
 
 function apparentDocumentType(documentName: string, text: string) {
   const content = `${documentName} ${text}`.toLowerCase()

@@ -107,7 +107,7 @@ if (!existingShow1) {
   console.log(`\n✓ [BAIL-SHOW-001] Case inserted — id ${show1Id}  (remand: ${remandDate1})`)
 
   // Judicial orders
-  const o1a = run(`
+  run(`
     INSERT INTO judicial_orders (case_id, order_date, order_type, summary, issued_by, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `, [show1Id, remandDate1, 'other', `First production. Accused produced before the Chief Metropolitan Magistrate and remanded to judicial custody for 14 days. Next date fixed for ${daysAgo(81)}.`, 'CMM Court, Mumbai', now])

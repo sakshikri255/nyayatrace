@@ -156,7 +156,7 @@ const insertOrder = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?)
 `)
 
-const oRemand = insertOrder.run(caseId, '2024-03-05', 'other',
+insertOrder.run(caseId, '2024-03-05', 'other',
   'Police remand order: Accused remanded to police custody for 5 days to facilitate recovery of iron rod weapon, examination of CCTV from petrol pump adjacent to incident site, and interrogation of co-accused.',
   'Metropolitan Magistrate, Court No. 2, Jaipur', now)
 
@@ -196,11 +196,11 @@ const bc2 = insertCond.run(caseId,
   'reporting', 'active', bailOrderId, now)
 const bc2Id = bc2.lastInsertRowid as number
 
-const bc3 = insertCond.run(caseId,
+insertCond.run(caseId,
   'Surrender passport and original government-issued identity documents to Court Registry. Do not leave Jaipur District without written leave of Court.',
   'travel', 'active', bailOrderId, now)
 
-const bc4 = insertCond.run(caseId,
+insertCond.run(caseId,
   'Accused shall not directly or indirectly contact, communicate with, or be within 500 metres of complainant Mahesh Kumar Verma or any prosecution witness.',
   'activity', 'active', bailOrderId, now)
 
@@ -210,7 +210,7 @@ const pc1 = insertCond.run(caseId,
   'reporting', 'completed', paroleOrderId, now)
 const pc1Id = pc1.lastInsertRowid as number
 
-const pc2 = insertCond.run(caseId,
+insertCond.run(caseId,
   'Parolee shall not travel outside Jaipur Municipal Corporation limits during parole period without prior written permission from Superintendent, Jaipur Central Prison.',
   'travel', 'active', paroleOrderId, now)
 
@@ -219,7 +219,7 @@ const pc3 = insertCond.run(caseId,
   'surety', 'completed', paroleOrderId, now)
 const pc3Id = pc3.lastInsertRowid as number
 
-const pc4 = insertCond.run(caseId,
+insertCond.run(caseId,
   'Parolee shall maintain a daily curfew — shall remain indoors at his registered residence after 9:00 PM and before 6:00 AM throughout the parole period.',
   'activity', 'active', paroleOrderId, now)
 

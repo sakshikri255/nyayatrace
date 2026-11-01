@@ -13,21 +13,13 @@ import {
   Save,
   GitCompare,
   Search,
-  Calendar,
   Sparkles,
-  Clock,
-  Building2,
-  MapPin,
   CheckCircle2,
   X,
-  Quote,
-  ShieldAlert,
   FileCheck,
   FolderOpen,
   ExternalLink,
   Copy,
-  User,
-  Scale,
   Eye,
   FileSpreadsheet,
 } from 'lucide-react'
@@ -36,7 +28,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { CitationHoverCard } from '@/components/shared/CitationHoverCard'
 import { ExtractedQuotesSection } from '@/components/cases/ExtractedQuotesSection'
 import { cn } from '@/lib/utils'
 import { sanitizeExtractedValue } from '@/lib/ocrSanitizer'
@@ -95,29 +86,6 @@ function sourceHref(source: Pick<EvidenceReference, 'documentId' | 'pageNumber'>
   return `/api/documents/${source.documentId}/file#page=${source.pageNumber}`
 }
 
-function SourceBadge({
-  source,
-  onOpen,
-}: {
-  source: EvidenceReference
-  onOpen: (source: EvidenceReference) => void
-}) {
-  return (
-    <CitationHoverCard
-      documentId={source.documentId}
-      documentName={source.documentName}
-      pageNumber={source.pageNumber}
-      passage={source.passage}
-      onOpen={() => onOpen(source)}
-    >
-      <span className="inline-flex max-w-full flex-wrap items-center gap-1.5">
-        <FileText className="h-3 w-3 shrink-0 text-emerald-700" />
-        <span className="break-words">{source.documentName}</span>
-        <span className="shrink-0 text-emerald-700 font-semibold">· p. {source.pageNumber}</span>
-      </span>
-    </CitationHoverCard>
-  )
-}
 
 type AnalysisSectionId = 'data' | 'summary' | 'documents' | 'facts' | 'citations'
 
@@ -339,8 +307,6 @@ export function AnalysisWorkspace({
   const [activeSection, setActiveSection] = useState<AnalysisSectionId>('facts')
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-  const [entityCategoryFilter, setEntityCategoryFilter] = useState<'all' | 'charges' | 'person' | 'datetime' | 'location' | 'evidence' | 'custody'>('all')
-  const [tableSearchQuery, setTableSearchQuery] = useState('')
 
   function copyToClipboard(text: string, label: string) {
     if (typeof window !== 'undefined' && navigator.clipboard) {
@@ -663,19 +629,6 @@ export function AnalysisWorkspace({
     return fallbackList
   }, [synopsis])
 
-  const filteredKeyEntities = useMemo(() => {
-    return keyEntities.filter((item) => {
-      const matchesCategory = entityCategoryFilter === 'all' || item.category === entityCategoryFilter
-      const query = tableSearchQuery.trim().toLowerCase()
-      const matchesSearch =
-        !query ||
-        item.field.toLowerCase().includes(query) ||
-        item.value.toLowerCase().includes(query) ||
-        (item.contextSnippet && item.contextSnippet.toLowerCase().includes(query)) ||
-        item.source.documentName.toLowerCase().includes(query)
-      return matchesCategory && matchesSearch
-    })
-  }, [keyEntities, entityCategoryFilter, tableSearchQuery])
 
 
     // ── Unified Fact Matrix State & Filtering ───────────────────────
@@ -808,7 +761,6 @@ export function AnalysisWorkspace({
   const groundCount = new Set(
     (synopsis?.facts ?? []).map((fact) => categorizeLegalText(fact.passage).category)
   ).size
-  const filingDate = synopsis?.chronology.find((entry) => /\b(?:filed|filing)\b/i.test(entry.passage))?.date
 
   return (
     <div className="min-w-0 space-y-5 pb-12">
