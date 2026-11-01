@@ -3,6 +3,7 @@ import { getDashboardStats, getRecentCases } from '@/lib/queries/cases'
 import { getAllHearingsPerMonth } from '@/lib/queries/hearings'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export function GET() {
   const stats = getDashboardStats()

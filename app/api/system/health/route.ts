@@ -6,6 +6,7 @@ import { cases, documents, pages, findings, hearings } from '@/lib/db/schema'
 import { count } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 // Pre-compute base directory at module level for Turbopack compatibility
 const BASE_DIR = process.cwd()
@@ -28,7 +29,7 @@ function dirSizeBytes(dir: string): number {
 export async function GET() {
   try {
     // ── DB stats ─────────────────────────────────────────────────────────────
-    const dbPath = path.join(BASE_DIR, 'local.db')
+    const dbPath = path.join(BASE_DIR, 'nyayatrace.db')
     let dbSizeBytes = 0
     try { dbSizeBytes = fs.statSync(dbPath).size } catch { /* doesn't exist */ }
 

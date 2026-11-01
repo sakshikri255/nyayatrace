@@ -5,6 +5,7 @@ import { cases } from '@/lib/db/schema'
 import { randomUUID } from 'crypto'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
